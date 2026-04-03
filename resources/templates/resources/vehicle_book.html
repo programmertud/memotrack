@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Vehicle Booking | MemoTrack{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between gap-4">
+  <div>
+    <h1 class="text-2xl font-bold tracking-tight">Vehicle Booking</h1>
+    <p class="text-sm text-slate-500 mt-1">Assign a vehicle to this memo. Double booking is prevented automatically.</p>
+  </div>
+</div>
+
+<div class="mt-6 grid grid-cols-1 xl:grid-cols-3 gap-6">
+  <div class="xl:col-span-2 rounded-2xl bg-white border border-slate-100 shadow-soft p-6">
+    <div class="font-semibold">Memo Details</div>
+    <div class="text-sm text-slate-500 mt-1">{{ memo.title }} • {{ memo.date }} • {{ memo.start_time }} - {{ memo.end_time }}</div>
+    <div class="text-sm text-slate-500 mt-1">Destination: {{ memo.destination }}</div>
+
+    <form method="post" class="mt-6">
+      {% csrf_token %}
+      <label class="text-sm font-semibold text-slate-700">Select Vehicle</label>
+      {{ form.vehicle }}
+      {% for e in form.vehicle.errors %}<div class="text-sm text-red-700 mt-1">{{ e }}</div>{% endfor %}
+
+      <button class="mt-5 inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-uniGreen text-white shadow-soft hover:opacity-95 transition" type="submit">
+        <i class="fa-solid fa-van-shuttle"></i>
+        <span class="font-semibold">Save Booking</span>
+      </button>
+    </form>
+
+    <script>
+      (function() {
+        const el = document.querySelector('select');
+        if (el) {
+          el.classList.add('mt-2','w-full','px-4','py-3','rounded-2xl','border','border-slate-200','bg-white','focus:outline-none','focus:ring-2','focus:ring-uniGold/50','focus:border-uniGold','transition');
+        }
+      })();
+    </script>
+  </div>
+
+  <div class="rounded-2xl bg-white border border-slate-100 shadow-soft overflow-hidden">
+    <div class="p-5 border-b border-slate-100">
+      <div class="font-semibold">Smart Suggestions</div>
+      <div class="text-sm text-slate-500 mt-1">Same destination trips on the same day may be shared.</div>
+    </div>
+    <div class="p-5 space-y-3">
+      {% for m in suggestions %}
+        <div class="p-4 rounded-2xl border border-slate-100 hover:border-uniGold/60 hover:bg-green-50/40 transition">
+          <div class="font-semibold">{{ m.title }}</div>
+          <div class="text-sm text-slate-500 mt-1">{{ m.start_time }} - {{ m.end_time }}</div>
+        </div>
+      {% empty %}
+        <div class="text-sm text-slate-500">No shared-trip suggestions.</div>
+      {% endfor %}
+      <a href="{% url 'resources:grouped_trips' %}" class="text-sm font-semibold text-uniGreen hover:underline">View grouped trips</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}HR Dashboard | MemoTrack{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between gap-4">
+  <div>
+    <h1 class="text-2xl font-bold tracking-tight">HR Dashboard</h1>
+    <p class="text-sm text-slate-500 mt-1">Personnel monitoring: attendance, leave, availability, and department allocation.</p>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mt-6">
+  <div class="rounded-2xl bg-white border border-slate-100 p-5 shadow-soft">
+    <div class="text-sm text-slate-500">Employee Records</div>
+    <div class="text-3xl font-bold mt-2">{{ employee_records }}</div>
+  </div>
+  <div class="rounded-2xl bg-white border border-slate-100 p-5 shadow-soft">
+    <div class="text-sm text-slate-500">Attendance (Present)</div>
+    <div class="text-3xl font-bold mt-2">{{ attendance_present }}</div>
+  </div>
+  <div class="rounded-2xl bg-white border border-slate-100 p-5 shadow-soft">
+    <div class="text-sm text-slate-500">Attendance (Absent)</div>
+    <div class="text-3xl font-bold mt-2">{{ attendance_absent }}</div>
+  </div>
+  <div class="rounded-2xl bg-white border border-slate-100 p-5 shadow-soft">
+    <div class="text-sm text-slate-500">Leave Requests (Pending)</div>
+    <div class="text-3xl font-bold mt-2">{{ leave_pending }}</div>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-6">
+  <div class="rounded-2xl bg-white border border-slate-100 shadow-soft overflow-hidden">
+    <div class="p-5 border-b border-slate-100">
+      <div class="font-semibold">Availability Snapshot</div>
+      <div class="text-sm text-slate-500 mt-1">Based on today’s schedules</div>
+    </div>
+    <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div class="rounded-2xl border border-slate-100 p-5">
+        <div class="text-sm text-slate-500">Available Staff</div>
+        <div class="text-3xl font-bold mt-2 text-uniGreen">{{ available_staff }}</div>
+      </div>
+      <div class="rounded-2xl border border-slate-100 p-5">
+        <div class="text-sm text-slate-500">Unavailable Staff</div>
+        <div class="text-3xl font-bold mt-2 text-amber-700">{{ unavailable_staff }}</div>
+      </div>
+      <div class="rounded-2xl border border-slate-100 p-5 sm:col-span-2">
+        <div class="text-sm text-slate-500">Department Assignments</div>
+        <div class="text-3xl font-bold mt-2">{{ department_assignments }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="rounded-2xl bg-white border border-slate-100 shadow-soft overflow-hidden">
+    <div class="p-5 border-b border-slate-100">
+      <div class="font-semibold">Workload Summary</div>
+      <div class="text-sm text-slate-500 mt-1">Users with scheduled items today</div>
+    </div>
+    <div class="p-5 text-sm text-slate-600">
+      {% if workload_summary %}
+        <div class="space-y-2">
+          {% for row in workload_summary %}
+            <div class="p-3 rounded-2xl border border-slate-100 hover:bg-green-50/40 transition">
+              <div class="font-semibold">{{ row.assigned_user__username }}</div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        No workload data yet.
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="rounded-2xl bg-white border border-slate-100 shadow-soft overflow-hidden mt-6">
+  <div class="p-5 border-b border-slate-100">
+    <div class="font-semibold">Attendance Breakdown</div>
+    <div class="text-sm text-slate-500 mt-1">Today</div>
+  </div>
+  <div class="p-5">
+    <canvas
+      id="hrAttendanceChart"
+      height="120"
+      data-present="{{ attendance_present|default:0 }}"
+      data-absent="{{ attendance_absent|default:0 }}"
+    ></canvas>
+  </div>
+</div>
+
+<script>
+  (() => {
+    const el = document.getElementById('hrAttendanceChart');
+    if (!el || typeof Chart === 'undefined') return;
+
+    const present = parseInt(el.dataset.present || '0', 10);
+    const absent = parseInt(el.dataset.absent || '0', 10);
+
+    new Chart(el, {
+      type: 'bar',
+      data: {
+        labels: ['Present', 'Absent'],
+        datasets: [{
+          label: 'Count',
+          data: [present, absent],
+          backgroundColor: ['#1B5E20', '#EF4444'],
+          borderWidth: 0,
+          borderRadius: 10,
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          y: { beginAtZero: true }
+        }
+      }
+    });
+  })();
+</script>
+{% endblock %}

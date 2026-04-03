@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Notifications | MemoTrack{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between gap-4">
+  <div>
+    <h1 class="text-2xl font-bold tracking-tight">Notifications</h1>
+    <p class="text-sm text-slate-500 mt-1">Alerts for conflicts, decisions, and vehicle availability.</p>
+  </div>
+</div>
+
+<div class="mt-6 rounded-2xl bg-white border border-slate-100 shadow-soft overflow-hidden">
+  <div class="p-5 border-b border-slate-100 text-sm text-slate-500">
+    Showing {{ notifications|length }} notification(s)
+  </div>
+
+  <div class="divide-y divide-slate-100">
+    {% for n in notifications %}
+      <div class="p-5 hover:bg-green-50/40 transition">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <div class="font-semibold flex items-center gap-2">
+              {% if not n.is_read %}
+                <span class="inline-block h-2 w-2 rounded-full bg-uniGold"></span>
+              {% endif %}
+              <span>{{ n.title }}</span>
+            </div>
+            <div class="text-sm text-slate-600 mt-1">{{ n.message }}</div>
+            <div class="text-xs text-slate-500 mt-2">{{ n.created_at }}</div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="px-3 py-1 rounded-full text-xs font-semibold bg-uniGold/40 text-uniGreen">{{ n.get_severity_display }}</span>
+            {% if not n.is_read %}
+              <form method="post" action="{% url 'notifications:notification_mark_read' n.pk %}">
+                {% csrf_token %}
+                <button class="px-3 py-2 rounded-xl bg-white border border-slate-200 text-sm font-semibold hover:border-uniGold transition" type="submit">Mark read</button>
+              </form>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    {% empty %}
+      <div class="p-10 text-center text-sm text-slate-500">No notifications.</div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

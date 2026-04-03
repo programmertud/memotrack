@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}Instructor Dashboard | MemoTrack{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between gap-4">
+  <div>
+    <h1 class="text-2xl font-bold tracking-tight">Instructor Dashboard</h1>
+    <p class="text-sm text-slate-500 mt-1">Your schedule, assignments, travel, events, leave status, and alerts.</p>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
+  <div class="xl:col-span-2 rounded-2xl bg-white border border-slate-100 shadow-soft overflow-hidden">
+    <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+      <div>
+        <div class="font-semibold">Personal Schedule</div>
+        <div class="text-sm text-slate-500 mt-1">Upcoming items</div>
+      </div>
+      <a href="{% url 'memos:memo_list' %}" class="text-sm font-semibold text-uniGreen hover:underline">View memos</a>
+    </div>
+    <div class="divide-y divide-slate-100">
+      {% for m in personal_schedule %}
+        <div class="p-5 hover:bg-green-50/40 transition">
+          <div class="font-semibold">{{ m.title }}</div>
+          <div class="text-sm text-slate-500 mt-1">{{ m.date }} • {{ m.start_time }} - {{ m.end_time }}</div>
+          <div class="text-sm text-slate-500 mt-1">Venue: {{ m.venue }} • Destination: {{ m.destination }}</div>
+        </div>
+      {% empty %}
+        <div class="p-8 text-sm text-slate-500">No upcoming schedules.</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="rounded-2xl bg-white border border-slate-100 shadow-soft overflow-hidden">
+    <div class="p-5 border-b border-slate-100">
+      <div class="font-semibold">Notifications</div>
+      <div class="text-sm text-slate-500 mt-1">Latest alerts</div>
+    </div>
+    <div class="p-5 space-y-3">
+      {% for n in notifications %}
+        <div class="p-4 rounded-2xl border border-slate-100 hover:border-uniGold/60 hover:bg-green-50/40 transition">
+          <div class="font-semibold">{{ n.title }}</div>
+          <div class="text-sm text-slate-500 mt-1">{{ n.created_at }}</div>
+        </div>
+      {% empty %}
+        <div class="text-sm text-slate-500">No notifications.</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
+  <div class="rounded-2xl bg-white border border-slate-100 shadow-soft overflow-hidden">
+    <div class="p-5 border-b border-slate-100">
+      <div class="font-semibold">Class Assignments</div>
+    </div>
+    <div class="p-5 space-y-3">
+      {% for m in class_assignments %}
+        <div class="p-4 rounded-2xl border border-slate-100">
+          <div class="font-semibold">{{ m.title }}</div>
+          <div class="text-sm text-slate-500 mt-1">{{ m.date }}</div>
+        </div>
+      {% empty %}
+        <div class="text-sm text-slate-500">No class assignments.</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="rounded-2xl bg-white border border-slate-100 shadow-soft overflow-hidden">
+    <div class="p-5 border-b border-slate-100">
+      <div class="font-semibold">Travel Assignments</div>
+    </div>
+    <div class="p-5 space-y-3">
+      {% for m in travel_assignments %}
+        <div class="p-4 rounded-2xl border border-slate-100">
+          <div class="font-semibold">{{ m.destination }}</div>
+          <div class="text-sm text-slate-500 mt-1">{{ m.date }} • {{ m.start_time }} - {{ m.end_time }}</div>
+        </div>
+      {% empty %}
+        <div class="text-sm text-slate-500">No travel assignments.</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="rounded-2xl bg-white border border-slate-100 shadow-soft overflow-hidden">
+    <div class="p-5 border-b border-slate-100">
+      <div class="font-semibold">Leave Request Status</div>
+    </div>
+    <div class="p-5 space-y-3">
+      {% for r in leave_requests %}
+        <div class="p-4 rounded-2xl border border-slate-100">
+          <div class="font-semibold">{{ r.start_date }} - {{ r.end_date }}</div>
+          <div class="text-sm text-slate-500 mt-1">{{ r.get_status_display }}</div>
+        </div>
+      {% empty %}
+        <div class="text-sm text-slate-500">No leave requests.</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="rounded-2xl bg-white border border-slate-100 shadow-soft overflow-hidden mt-6">
+  <div class="p-5 border-b border-slate-100">
+    <div class="font-semibold">Your Activity Summary</div>
+    <div class="text-sm text-slate-500 mt-1">Schedule vs Class vs Travel vs Events</div>
+  </div>
+  <div class="p-5">
+    <canvas
+      id="instructorSummaryChart"
+      height="110"
+      data-schedule="{{ chart_counts.schedule|default:0 }}"
+      data-class="{{ chart_counts.class|default:0 }}"
+      data-travel="{{ chart_counts.travel|default:0 }}"
+      data-events="{{ chart_counts.events|default:0 }}"
+    ></canvas>
+  </div>
+</div>
+
+<script>
+  (() => {
+    const el = document.getElementById('instructorSummaryChart');
+    if (!el || typeof Chart === 'undefined') return;
+
+    const counts = {
+      schedule: parseInt(el.dataset.schedule || '0', 10),
+      class: parseInt(el.dataset.class || '0', 10),
+      travel: parseInt(el.dataset.travel || '0', 10),
+      events: parseInt(el.dataset.events || '0', 10),
+    };
+
+    new Chart(el, {
+      type: 'bar',
+      data: {
+        labels: ['Schedule', 'Classes', 'Travel', 'Events'],
+        datasets: [{
+          label: 'Count',
+          data: [counts.schedule, counts.class, counts.travel, counts.events],
+          backgroundColor: ['#1B5E20', '#FBC02D', '#0EA5E9', '#A855F7'],
+          borderWidth: 0,
+          borderRadius: 10,
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true } }
+      }
+    });
+  })();
+</script>
+{% endblock %}

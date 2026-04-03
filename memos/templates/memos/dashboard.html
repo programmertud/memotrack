@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | MemoTrack{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between gap-4">
+  <div>
+    <h1 class="text-2xl font-bold tracking-tight">Dashboard</h1>
+    <p class="text-sm text-slate-500 mt-1">Overview of memorandums, conflicts, and resource allocation.</p>
+  </div>
+  <div class="flex items-center gap-3">
+    <a href="{% url 'memos:memo_create' %}" class="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-uniGreen text-white shadow-soft hover:opacity-95 transition">
+      <i class="fa-solid fa-calendar-plus"></i>
+      <span class="font-semibold">Create Memo</span>
+    </a>
+    {% if request.user.is_staff %}
+      <a href="{% url 'memos:decision_panel' %}" class="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-white border border-slate-200 hover:border-uniGold transition">
+        <i class="fa-solid fa-clipboard-check"></i>
+        <span class="font-semibold">Decision Panel</span>
+      </a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mt-6">
+  <div class="rounded-2xl bg-white border border-slate-100 p-5 shadow-soft">
+    <div class="text-sm text-slate-500">Total Memos</div>
+    <div class="text-3xl font-bold mt-2">{{ recent_memos|length }}</div>
+  </div>
+  <div class="rounded-2xl bg-white border border-slate-100 p-5 shadow-soft">
+    <div class="text-sm text-slate-500">Conflicts</div>
+    <div class="text-3xl font-bold mt-2 text-amber-600">{{ conflicts_count }}</div>
+  </div>
+  <div class="rounded-2xl bg-white border border-slate-100 p-5 shadow-soft">
+    <div class="text-sm text-slate-500">Pending Decisions</div>
+    <div class="text-3xl font-bold mt-2">{{ pending_decisions_count }}</div>
+  </div>
+  <div class="rounded-2xl bg-white border border-slate-100 p-5 shadow-soft">
+    <div class="text-sm text-slate-500">Vehicle Bookings</div>
+    <div class="text-3xl font-bold mt-2">0</div>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
+  <div class="xl:col-span-2 rounded-2xl bg-white border border-slate-100 shadow-soft">
+    <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+      <h2 class="font-semibold">Recent Memorandums</h2>
+      <a class="text-sm font-semibold text-uniGreen hover:underline" href="{% url 'memos:memo_list' %}">View all</a>
+    </div>
+    <div class="p-5">
+      {% if recent_memos %}
+        <div class="space-y-3">
+          {% for memo in recent_memos %}
+            <div class="p-4 rounded-2xl border border-slate-100 hover:border-uniGold/60 hover:bg-green-50/40 transition">
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <div class="font-semibold">{{ memo.title }}</div>
+                  <div class="text-sm text-slate-500 mt-1">{{ memo.date }} • {{ memo.start_time }} - {{ memo.end_time }}</div>
+                </div>
+                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-uniGold/40 text-uniGreen">{{ memo.get_priority_display }}</span>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="text-sm text-slate-500">No memos yet. Create one to get started.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="rounded-2xl bg-white border border-slate-100 shadow-soft">
+    <div class="p-5 border-b border-slate-100">
+      <h2 class="font-semibold">Quick Actions</h2>
+    </div>
+    <div class="p-5 space-y-3">
+      <a href="{% url 'resources:vehicle_list' %}" class="block p-4 rounded-2xl border border-slate-100 hover:border-uniGold/60 hover:bg-green-50/40 transition">
+        <div class="font-semibold">Manage Vehicles</div>
+        <div class="text-sm text-slate-500 mt-1">Add vehicles, track availability, and view bookings.</div>
+      </a>
+      <a href="{% url 'notifications:notification_list' %}" class="block p-4 rounded-2xl border border-slate-100 hover:border-uniGold/60 hover:bg-green-50/40 transition">
+        <div class="font-semibold">View Alerts</div>
+        <div class="text-sm text-slate-500 mt-1">Conflicts, decisions, and resource warnings.</div>
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

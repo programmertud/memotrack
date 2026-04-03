@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}{% if mode == 'edit' %}Edit Memo{% else %}Create Memo{% endif %} | MemoTrack{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between gap-4">
+  <div>
+    <h1 class="text-2xl font-bold tracking-tight">{% if mode == 'edit' %}Edit Memorandum{% else %}Create Memorandum{% endif %}</h1>
+    <p class="text-sm text-slate-500 mt-1">Enter schedule details. Conflicts are detected automatically.</p>
+  </div>
+</div>
+
+<form method="post" class="mt-6">
+  {% csrf_token %}
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="lg:col-span-2 rounded-2xl bg-white border border-slate-100 shadow-soft p-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div class="md:col-span-2">
+          <label class="text-sm font-semibold text-slate-700">Title</label>
+          {{ form.title }}
+          {% for e in form.title.errors %}<div class="text-sm text-red-700 mt-1">{{ e }}</div>{% endfor %}
+        </div>
+
+        <div class="md:col-span-2">
+          <label class="text-sm font-semibold text-slate-700">Description</label>
+          {{ form.description }}
+          {% for e in form.description.errors %}<div class="text-sm text-red-700 mt-1">{{ e }}</div>{% endfor %}
+        </div>
+
+        <div>
+          <label class="text-sm font-semibold text-slate-700">Assigned User</label>
+          {{ form.assigned_user }}
+          {% for e in form.assigned_user.errors %}<div class="text-sm text-red-700 mt-1">{{ e }}</div>{% endfor %}
+        </div>
+
+        <div>
+          <label class="text-sm font-semibold text-slate-700">Priority</label>
+          {{ form.priority }}
+        </div>
+
+        <div>
+          <label class="text-sm font-semibold text-slate-700">Date</label>
+          {{ form.date }}
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="text-sm font-semibold text-slate-700">Start</label>
+            {{ form.start_time }}
+          </div>
+          <div>
+            <label class="text-sm font-semibold text-slate-700">End</label>
+            {{ form.end_time }}
+          </div>
+        </div>
+
+        <div>
+          <label class="text-sm font-semibold text-slate-700">Venue</label>
+          {{ form.venue }}
+        </div>
+
+        <div>
+          <label class="text-sm font-semibold text-slate-700">Destination</label>
+          {{ form.destination }}
+        </div>
+      </div>
+    </div>
+
+    <div class="rounded-2xl bg-white border border-slate-100 shadow-soft p-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="text-sm font-semibold">Decision Support</div>
+          <div class="text-xs text-slate-500 mt-1">Required memos can be accepted despite conflicts.</div>
+        </div>
+      </div>
+
+      <div class="mt-4">
+        <label class="inline-flex items-center gap-3">
+          {{ form.required }}
+          <span class="text-sm font-semibold text-slate-700">Required</span>
+        </label>
+      </div>
+
+      <div class="mt-6">
+        <label class="text-sm font-semibold text-slate-700">Delegate To (optional)</label>
+        {{ form.delegated_to }}
+      </div>
+
+      <div class="mt-8 flex flex-col gap-3">
+        <button class="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-uniGreen text-white shadow-soft hover:opacity-95 transition" type="submit">
+          <i class="fa-solid fa-floppy-disk"></i>
+          <span class="font-semibold">Save</span>
+        </button>
+        <a href="{% url 'memos:memo_list' %}" class="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-white border border-slate-200 hover:border-uniGold transition">
+          <i class="fa-solid fa-arrow-left"></i>
+          <span class="font-semibold">Back</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</form>
+
+<script>
+  (function() {
+    const inputs = document.querySelectorAll('input, select, textarea');
+    inputs.forEach((el) => {
+      el.classList.add('mt-2','w-full','px-4','py-3','rounded-2xl','border','border-slate-200','bg-white','focus:outline-none','focus:ring-2','focus:ring-uniGold/50','focus:border-uniGold','transition');
+    });
+    const checkbox = document.querySelector('input[type="checkbox"]');
+    if (checkbox) {
+      checkbox.classList.remove('w-full','px-4','py-3');
+      checkbox.classList.add('h-5','w-5','rounded','border-slate-300','text-uniGreen','focus:ring-uniGold/50');
+    }
+  })();
+</script>
+{% endblock %}

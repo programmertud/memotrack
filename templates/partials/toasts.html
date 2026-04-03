@@ -1,0 +1,25 @@
+{% if messages %}
+<div x-data="{show:true}" x-init="setTimeout(()=>show=false, 4500)" x-show="show" class="fixed top-5 right-5 z-50 space-y-3">
+  {% for message in messages %}
+    <div class="w-96 max-w-[90vw] rounded-2xl bg-white border border-slate-100 shadow-soft p-4">
+      <div class="flex items-start gap-3">
+        <div class="h-10 w-10 rounded-xl flex items-center justify-center"
+             :class="{
+               'bg-green-100 text-uniGreen': '{{ message.tags }}'.includes('success'),
+               'bg-amber-100 text-amber-700': '{{ message.tags }}'.includes('warning') || '{{ message.tags }}'.includes('info'),
+               'bg-red-100 text-red-700': '{{ message.tags }}'.includes('error')
+             }">
+          <i class="fa-solid fa-circle-info"></i>
+        </div>
+        <div class="flex-1">
+          <div class="text-sm font-semibold">{{ message.tags|title }}</div>
+          <div class="text-sm text-slate-600 mt-1">{{ message }}</div>
+        </div>
+        <button @click="show=false" class="h-8 w-8 rounded-xl hover:bg-slate-100 transition flex items-center justify-center">
+          <i class="fa-solid fa-xmark text-slate-500"></i>
+        </button>
+      </div>
+    </div>
+  {% endfor %}
+</div>
+{% endif %}

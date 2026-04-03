@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Decision Panel | MemoTrack{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between gap-4">
+  <div>
+    <h1 class="text-2xl font-bold tracking-tight">Admin Decision Panel</h1>
+    <p class="text-sm text-slate-500 mt-1">Review conflicts and approve/reject pending memorandums.</p>
+  </div>
+</div>
+
+<div class="mt-6 grid grid-cols-1 xl:grid-cols-2 gap-6">
+  <div class="rounded-2xl bg-white border border-slate-100 shadow-soft overflow-hidden">
+    <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+      <div class="font-semibold">Conflicted</div>
+      <span class="text-sm text-slate-500">{{ conflicted|length }}</span>
+    </div>
+    <div class="divide-y divide-slate-100">
+      {% for memo in conflicted %}
+        <div class="p-5">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <div class="font-semibold">{{ memo.title }}</div>
+              <div class="text-sm text-slate-500 mt-1">{{ memo.assigned_user }} • {{ memo.date }} • {{ memo.start_time }} - {{ memo.end_time }}</div>
+            </div>
+            <a class="px-3 py-2 rounded-xl bg-red-50 text-red-700 border border-red-100 text-sm font-semibold" href="{% url 'memos:memo_conflict' memo.pk %}">Review</a>
+          </div>
+        </div>
+      {% empty %}
+        <div class="p-8 text-sm text-slate-500">No conflicts.</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="rounded-2xl bg-white border border-slate-100 shadow-soft overflow-hidden">
+    <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+      <div class="font-semibold">Pending Approval</div>
+      <span class="text-sm text-slate-500">{{ pending|length }}</span>
+    </div>
+    <div class="divide-y divide-slate-100">
+      {% for memo in pending %}
+        <div class="p-5">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <div class="font-semibold">{{ memo.title }}</div>
+              <div class="text-sm text-slate-500 mt-1">{{ memo.assigned_user }} • {{ memo.date }} • {{ memo.start_time }} - {{ memo.end_time }}</div>
+            </div>
+            <div class="flex items-center gap-2">
+              <form method="post" action="{% url 'memos:decision_approve' memo.pk %}">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{% url 'memos:decision_panel' %}">
+                <button class="px-3 py-2 rounded-xl bg-uniGreen text-white text-sm font-semibold shadow-soft hover:opacity-95 transition" type="submit">Approve</button>
+              </form>
+              <form method="post" action="{% url 'memos:decision_reject' memo.pk %}">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{% url 'memos:decision_panel' %}">
+                <button class="px-3 py-2 rounded-xl bg-white border border-slate-200 text-sm font-semibold hover:border-uniGold transition" type="submit">Reject</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      {% empty %}
+        <div class="p-8 text-sm text-slate-500">No pending memos.</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

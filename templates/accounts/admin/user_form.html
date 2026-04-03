@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}User Form | MemoTrack{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between gap-4">
+  <div>
+    <h1 class="text-2xl font-bold tracking-tight">{% if mode == 'create' %}Create{% else %}Edit{% endif %} {{ role|title }}</h1>
+    <p class="text-sm text-slate-500 mt-1">{% if mode == 'create' %}Add a new account.{% else %}Update account details.{% endif %}</p>
+  </div>
+</div>
+
+<div class="rounded-2xl bg-white border border-slate-100 shadow-soft p-6 mt-6">
+  <form method="post" class="space-y-4">
+    {% csrf_token %}
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="text-sm font-semibold">Username</label>
+        <div class="mt-1">{{ form.username }}</div>
+        {% if form.username.errors %}
+          <div class="text-xs text-red-700 mt-1">{{ form.username.errors }}</div>
+        {% endif %}
+      </div>
+      <div>
+        <label class="text-sm font-semibold">Email</label>
+        <div class="mt-1">{{ form.email }}</div>
+        {% if form.email.errors %}
+          <div class="text-xs text-red-700 mt-1">{{ form.email.errors }}</div>
+        {% endif %}
+      </div>
+
+      {% if form.password1 %}
+        <div>
+          <label class="text-sm font-semibold">Password</label>
+          <div class="mt-1">{{ form.password1 }}</div>
+          {% if form.password1.errors %}
+            <div class="text-xs text-red-700 mt-1">{{ form.password1.errors }}</div>
+          {% endif %}
+        </div>
+        <div>
+          <label class="text-sm font-semibold">Confirm Password</label>
+          <div class="mt-1">{{ form.password2 }}</div>
+          {% if form.password2.errors %}
+            <div class="text-xs text-red-700 mt-1">{{ form.password2.errors }}</div>
+          {% endif %}
+        </div>
+      {% else %}
+        <div>
+          <label class="text-sm font-semibold">New Password (optional)</label>
+          <div class="mt-1">{{ form.new_password }}</div>
+          {% if form.new_password.errors %}
+            <div class="text-xs text-red-700 mt-1">{{ form.new_password.errors }}</div>
+          {% endif %}
+        </div>
+      {% endif %}
+
+      <div>
+        <label class="text-sm font-semibold">Role</label>
+        <div class="mt-1">{{ form.role }}</div>
+        {% if form.role.errors %}
+          <div class="text-xs text-red-700 mt-1">{{ form.role.errors }}</div>
+        {% endif %}
+      </div>
+      <div>
+        <label class="text-sm font-semibold">Department (optional)</label>
+        <div class="mt-1">{{ form.department }}</div>
+        {% if form.department.errors %}
+          <div class="text-xs text-red-700 mt-1">{{ form.department.errors }}</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <label class="inline-flex items-center gap-2 text-sm">
+        {{ form.is_active }}
+        <span>Active</span>
+      </label>
+    </div>
+
+    {% if form.non_field_errors %}
+      <div class="p-4 rounded-2xl bg-red-50 border border-red-100 text-sm text-red-700">{{ form.non_field_errors }}</div>
+    {% endif %}
+
+    <div class="flex items-center gap-3 pt-2">
+      <button type="submit" class="px-5 py-3 rounded-2xl bg-uniGreen text-white font-semibold shadow-soft hover:opacity-95 transition">Save</button>
+      <a href="{% url 'accounts:admin_user_list' role %}" class="px-5 py-3 rounded-2xl bg-white border border-slate-200 font-semibold hover:border-uniGold transition">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

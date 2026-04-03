@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Delete User | MemoTrack{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl">
+  <h1 class="text-2xl font-bold tracking-tight">Delete User</h1>
+  <p class="text-sm text-slate-500 mt-2">This will permanently delete <span class="font-semibold">{{ managed_user.username }}</span>.</p>
+
+  <div class="rounded-2xl bg-white border border-slate-100 shadow-soft p-6 mt-6">
+    <form method="post" class="flex items-center gap-3">
+      {% csrf_token %}
+      <button type="submit" class="px-5 py-3 rounded-2xl bg-red-600 text-white font-semibold shadow-soft hover:opacity-95 transition">Delete</button>
+      <a href="{% url 'accounts:admin_user_list' role %}" class="px-5 py-3 rounded-2xl bg-white border border-slate-200 font-semibold hover:border-uniGold transition">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

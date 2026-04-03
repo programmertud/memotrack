@@ -1,0 +1,96 @@
+<aside class="w-72 hidden lg:flex flex-col bg-white border-r border-slate-100">
+  <div class="px-6 py-6">
+    <div class="flex items-center gap-3">
+      <div class="h-12 w-12 rounded-xl bg-uniGreen text-white flex items-center justify-center shadow-soft">
+        <i class="fa-solid fa-seedling"></i>
+      </div>
+      <div>
+        <div class="text-lg font-semibold leading-tight">MemoTrack</div>
+        <div class="text-xs text-slate-500">University System</div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="px-3 pb-6 space-y-1">
+    {% if request.user.is_authenticated %}
+      {% if request.user.is_staff %}
+        <a href="{% url 'accounts:admin_dashboard' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-green-50 transition">
+          <i class="fa-solid fa-gauge text-uniGreen"></i>
+          <span class="font-medium">Admin Dashboard</span>
+        </a>
+
+        <a href="{% url 'accounts:admin_user_list' 'staff' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-green-50 transition">
+          <i class="fa-solid fa-users-gear text-uniGreen"></i>
+          <span class="font-medium">Manage Staff</span>
+        </a>
+
+        <a href="{% url 'accounts:admin_user_list' 'instructor' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-green-50 transition">
+          <i class="fa-solid fa-user-tie text-uniGreen"></i>
+          <span class="font-medium">Manage Instructors</span>
+        </a>
+
+        <a href="{% url 'resources:vehicle_admin_list' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-green-50 transition">
+          <i class="fa-solid fa-van-shuttle text-uniGreen"></i>
+          <span class="font-medium">Manage Vehicles</span>
+        </a>
+      {% endif %}
+
+      {% if request.user.profile.role == 'hr' %}
+        <a href="{% url 'accounts:hr_dashboard' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-green-50 transition">
+          <i class="fa-solid fa-user-group text-uniGreen"></i>
+          <span class="font-medium">HR Dashboard</span>
+        </a>
+      {% endif %}
+
+      {% if request.user.profile.role == 'instructor' %}
+        <a href="{% url 'accounts:instructor_dashboard' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-green-50 transition">
+          <i class="fa-solid fa-chalkboard-user text-uniGreen"></i>
+          <span class="font-medium">Instructor Dashboard</span>
+        </a>
+      {% endif %}
+
+      {% if request.user.profile.role == 'approver' %}
+        <a href="{% url 'accounts:approver_dashboard' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-green-50 transition">
+          <i class="fa-solid fa-clipboard-check text-uniGreen"></i>
+          <span class="font-medium">Approver Dashboard</span>
+        </a>
+      {% endif %}
+
+      {% if request.user.profile.role == 'transportation' %}
+        <a href="{% url 'accounts:transportation_dashboard' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-green-50 transition">
+          <i class="fa-solid fa-van-shuttle text-uniGreen"></i>
+          <span class="font-medium">Transportation Dashboard</span>
+        </a>
+      {% endif %}
+    {% endif %}
+    <a href="{% url 'memos:memo_list' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-green-50 transition">
+      <i class="fa-solid fa-calendar-check text-uniGreen"></i>
+      <span class="font-medium">Memos</span>
+    </a>
+    <a href="{% url 'resources:vehicle_list' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-green-50 transition">
+      <i class="fa-solid fa-van-shuttle text-uniGreen"></i>
+      <span class="font-medium">Vehicles</span>
+    </a>
+    <a href="{% url 'notifications:notification_list' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-green-50 transition">
+      <i class="fa-solid fa-bell text-uniGreen"></i>
+      <span class="font-medium">Notifications</span>
+    </a>
+
+    {% if request.user.is_authenticated %}
+      <form method="post" action="{% url 'accounts:logout' %}">
+        {% csrf_token %}
+        <button type="submit" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-green-50 transition text-left">
+          <i class="fa-solid fa-right-from-bracket text-uniGreen"></i>
+          <span class="font-medium">Logout</span>
+        </button>
+      </form>
+    {% endif %}
+  </nav>
+
+  <div class="mt-auto px-6 py-6">
+    <div class="rounded-2xl bg-gradient-to-r from-uniGreen to-emerald-700 text-white p-5 shadow-soft">
+      <div class="text-sm font-semibold">Conflict-safe scheduling</div>
+      <div class="text-xs text-white/80 mt-1">Prioritize required memos and optimize vehicle usage.</div>
+    </div>
+  </div>
+</aside>

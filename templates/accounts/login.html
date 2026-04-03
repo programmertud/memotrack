@@ -1,0 +1,89 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Login | MemoTrack System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            uniGreen: "#1B5E20",
+            uniGold: "#FBC02D",
+          },
+          boxShadow: {
+            soft: "0 10px 30px rgba(0,0,0,0.08)",
+          },
+        },
+      },
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    html, body { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-50">
+  <div class="min-h-screen flex items-center justify-center px-4 py-10">
+    <div class="w-full max-w-4xl grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div class="hidden lg:block rounded-3xl bg-gradient-to-br from-uniGreen to-emerald-700 text-white p-10 shadow-soft">
+        <div class="h-14 w-14 rounded-2xl bg-white/15 flex items-center justify-center">
+          <i class="fa-solid fa-seedling text-2xl"></i>
+        </div>
+        <h1 class="text-3xl font-bold mt-6">MemoTrack System</h1>
+        <p class="text-white/80 mt-3 leading-relaxed">Enterprise scheduling, conflict prevention, and vehicle resource allocation for your university.</p>
+        <div class="mt-8 space-y-3 text-sm">
+          <div class="flex items-center gap-3"><i class="fa-solid fa-shield-halved"></i><span>Conflict detection & decision support</span></div>
+          <div class="flex items-center gap-3"><i class="fa-solid fa-van-shuttle"></i><span>Vehicle booking with anti-double-booking</span></div>
+          <div class="flex items-center gap-3"><i class="fa-solid fa-bell"></i><span>Notification center & alerts</span></div>
+        </div>
+      </div>
+
+      <div class="rounded-3xl bg-white border border-slate-100 shadow-soft p-8">
+        <div class="flex items-center gap-3">
+          <div class="h-12 w-12 rounded-2xl bg-uniGreen text-white flex items-center justify-center">
+            <i class="fa-solid fa-lock"></i>
+          </div>
+          <div>
+            <div class="text-xl font-bold">Sign in</div>
+            <div class="text-sm text-slate-500">Admin access required to open the dashboard.</div>
+          </div>
+        </div>
+
+        {% if form.errors %}
+          <div class="mt-6 rounded-2xl bg-red-50 border border-red-100 p-4 text-sm text-red-700">
+            Invalid username or password.
+          </div>
+        {% endif %}
+
+        <form method="post" class="mt-6 space-y-4">
+          {% csrf_token %}
+          <div>
+            <label class="text-sm font-semibold text-slate-700">Username</label>
+            <input type="text" name="username" autofocus required class="mt-2 w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-uniGold/50 focus:border-uniGold transition" />
+          </div>
+          <div>
+            <label class="text-sm font-semibold text-slate-700">Password</label>
+            <input type="password" name="password" required class="mt-2 w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-uniGold/50 focus:border-uniGold transition" />
+          </div>
+
+          <button type="submit" class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-uniGreen text-white font-semibold shadow-soft hover:opacity-95 transition">
+            <i class="fa-solid fa-arrow-right-to-bracket"></i>
+            Sign in
+          </button>
+
+          <div class="text-xs text-slate-500 leading-relaxed">
+            Tip: create an admin/staff user via Django admin or `python manage.py createsuperuser`.
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

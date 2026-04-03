@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Vehicles | MemoTrack{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between gap-4">
+  <div>
+    <h1 class="text-2xl font-bold tracking-tight">Manage Vehicles</h1>
+    <p class="text-sm text-slate-500 mt-1">Create, edit, and remove fleet vehicles.</p>
+  </div>
+  <div class="flex items-center gap-3">
+    <a href="{% url 'resources:vehicle_admin_create' %}" class="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-uniGreen text-white shadow-soft hover:opacity-95 transition">
+      <i class="fa-solid fa-plus"></i>
+      <span class="font-semibold">Add Vehicle</span>
+    </a>
+  </div>
+</div>
+
+<div class="rounded-2xl bg-white border border-slate-100 shadow-soft overflow-hidden mt-6">
+  <div class="overflow-x-auto">
+    <table class="min-w-full text-sm">
+      <thead class="bg-slate-50 text-slate-600">
+        <tr>
+          <th class="text-left font-semibold px-5 py-3">Name</th>
+          <th class="text-left font-semibold px-5 py-3">Plate</th>
+          <th class="text-left font-semibold px-5 py-3">Capacity</th>
+          <th class="text-left font-semibold px-5 py-3">Status</th>
+          <th class="text-right font-semibold px-5 py-3">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        {% for v in vehicles %}
+          <tr class="hover:bg-green-50/40 transition">
+            <td class="px-5 py-3 font-semibold">{{ v.name }}</td>
+            <td class="px-5 py-3 text-slate-600">{{ v.plate_number }}</td>
+            <td class="px-5 py-3 text-slate-600">{{ v.capacity }}</td>
+            <td class="px-5 py-3">
+              <span class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">{{ v.get_status_display }}</span>
+            </td>
+            <td class="px-5 py-3">
+              <div class="flex items-center justify-end gap-2">
+                <a href="{% url 'resources:vehicle_admin_edit' v.pk %}" class="px-3 py-2 rounded-xl bg-white border border-slate-200 text-sm font-semibold hover:border-uniGold transition">Edit</a>
+                <a href="{% url 'resources:vehicle_admin_delete' v.pk %}" class="px-3 py-2 rounded-xl bg-red-50 text-red-700 border border-red-100 text-sm font-semibold hover:bg-red-100 transition">Delete</a>
+              </div>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td class="px-5 py-8 text-sm text-slate-500" colspan="5">No vehicles yet.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

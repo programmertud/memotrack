@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Vehicle Form | MemoTrack{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between gap-4">
+  <div>
+    <h1 class="text-2xl font-bold tracking-tight">{% if mode == 'create' %}Add Vehicle{% else %}Edit Vehicle{% endif %}</h1>
+    <p class="text-sm text-slate-500 mt-1">Update fleet details.</p>
+  </div>
+</div>
+
+<div class="rounded-2xl bg-white border border-slate-100 shadow-soft p-6 mt-6">
+  <form method="post" class="space-y-4">
+    {% csrf_token %}
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="text-sm font-semibold">Name</label>
+        <div class="mt-1">{{ form.name }}</div>
+      </div>
+      <div>
+        <label class="text-sm font-semibold">Plate Number</label>
+        <div class="mt-1">{{ form.plate_number }}</div>
+      </div>
+      <div>
+        <label class="text-sm font-semibold">Capacity</label>
+        <div class="mt-1">{{ form.capacity }}</div>
+      </div>
+      <div>
+        <label class="text-sm font-semibold">Status</label>
+        <div class="mt-1">{{ form.status }}</div>
+      </div>
+    </div>
+
+    {% if form.non_field_errors %}
+      <div class="p-4 rounded-2xl bg-red-50 border border-red-100 text-sm text-red-700">{{ form.non_field_errors }}</div>
+    {% endif %}
+
+    <div class="flex items-center gap-3 pt-2">
+      <button type="submit" class="px-5 py-3 rounded-2xl bg-uniGreen text-white font-semibold shadow-soft hover:opacity-95 transition">Save</button>
+      <a href="{% url 'resources:vehicle_admin_list' %}" class="px-5 py-3 rounded-2xl bg-white border border-slate-200 font-semibold hover:border-uniGold transition">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

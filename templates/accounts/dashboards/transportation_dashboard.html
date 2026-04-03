@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Transportation Dashboard | MemoTrack{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between gap-4">
+  <div>
+    <h1 class="text-2xl font-bold tracking-tight">Transportation Dashboard</h1>
+    <p class="text-sm text-slate-500 mt-1">Fleet and trip management: bookings, capacity, and warnings.</p>
+  </div>
+  <div class="flex items-center gap-3">
+    <a href="{% url 'resources:grouped_trips' %}" class="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-white border border-slate-200 hover:border-uniGold transition">
+      <i class="fa-solid fa-route"></i>
+      <span class="font-semibold">Grouped Trips</span>
+    </a>
+    <a href="{% url 'resources:vehicle_list' %}" class="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-uniGreen text-white shadow-soft hover:opacity-95 transition">
+      <i class="fa-solid fa-van-shuttle"></i>
+      <span class="font-semibold">Vehicles</span>
+    </a>
+  </div>
+</div>
+
+<div class="rounded-2xl bg-white border border-slate-100 shadow-soft overflow-hidden mt-6">
+  <div class="p-5 border-b border-slate-100">
+    <div class="font-semibold">Fleet Status</div>
+    <div class="text-sm text-slate-500 mt-1">Available vs Booked (Today)</div>
+  </div>
+  <div class="p-5">
+    <canvas
+      id="transportFleetChart"
+      height="120"
+      data-available="{{ chart_counts.available|default:0 }}"
+      data-booked="{{ chart_counts.booked|default:0 }}"
+    ></canvas>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mt-6">
+  <div class="rounded-2xl bg-white border border-slate-100 p-5 shadow-soft">
+    <div class="text-sm text-slate-500">Available Vehicles</div>
+    <div class="text-3xl font-bold mt-2">{{ available_vehicles|length }}</div>
+  </div>
+  <div class="rounded-2xl bg-white border border-slate-100 p-5 shadow-soft">
+    <div class="text-sm text-slate-500">Booked Vehicles (Today)</div>
+    <div class="text-3xl font-bold mt-2">{{ booked_vehicles|length }}</div>
+  </div>
+  <div class="rounded-2xl bg-white border border-slate-100 p-5 shadow-soft">
+    <div class="text-sm text-slate-500">Double Booking Warnings</div>
+    <div class="text-3xl font-bold mt-2 text-red-700">{{ double_booking_warnings }}</div>
+  </div>
+  <div class="rounded-2xl bg-white border border-slate-100 p-5 shadow-soft">
+    <div class="text-sm text-slate-500">Overcapacity Alerts</div>
+    <div class="text-3xl font-bold mt-2 text-amber-700">{{ overcapacity_alerts }}</div>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-6">
+  <div class="rounded-2xl bg-white border border-slate-100 shadow-soft overflow-hidden">
+    <div class="p-5 border-b border-slate-100">
+      <div class="font-semibold">Trip Schedules (Today)</div>
+      <div class="text-sm text-slate-500 mt-1">Bookings linked to memos</div>
+    </div>
+    <div class="divide-y divide-slate-100">
+      {% for b in trip_schedules %}
+        <div class="p-5 hover:bg-green-50/40 transition">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <div class="font-semibold">{{ b.vehicle.name }} • {{ b.vehicle.plate_number }}</div>
+              <div class="text-sm text-slate-500 mt-1">{{ b.memo.title }} • {{ b.memo.start_time }} - {{ b.memo.end_time }}</div>
+              <div class="text-sm text-slate-500 mt-1">Destination: {{ b.memo.destination }}</div>
+            </div>
+            <a href="{% url 'resources:vehicle_book' b.memo.pk %}" class="px-3 py-2 rounded-xl bg-white border border-slate-200 text-sm font-semibold hover:border-uniGold transition">Edit</a>
+          </div>
+        </div>
+      {% empty %}
+        <div class="p-8 text-sm text-slate-500">No trips booked today.</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="rounded-2xl bg-white border border-slate-100 shadow-soft overflow-hidden">
+    <div class="p-5 border-b border-slate-100">
+      <div class="font-semibold">Booked Vehicles</div>
+      <div class="text-sm text-slate-500 mt-1">Vehicles currently allocated today</div>
+    </div>
+    <div class="p-5 space-y-3">
+      {% for v in booked_vehicles %}
+        <div class="p-4 rounded-2xl border border-slate-100 hover:border-uniGold/60 hover:bg-green-50/40 transition">
+          <div class="font-semibold">{{ v.name }}</div>
+          <div class="text-sm text-slate-500 mt-1">{{ v.plate_number }} • Capacity: {{ v.capacity }}</div>
+        </div>
+      {% empty %}
+        <div class="text-sm text-slate-500">No booked vehicles today.</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<script>
+  (() => {
+    const el = document.getElementById('transportFleetChart');
+    if (!el || typeof Chart === 'undefined') return;
+
+    const available = parseInt(el.dataset.available || '0', 10);
+    const booked = parseInt(el.dataset.booked || '0', 10);
+
+    new Chart(el, {
+      type: 'doughnut',
+      data: {
+        labels: ['Available', 'Booked'],
+        datasets: [{
+          data: [available, booked],
+          backgroundColor: ['#1B5E20', '#FBC02D'],
+          borderWidth: 0,
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { position: 'bottom' } }
+      }
+    });
+  })();
+</script>
+{% endblock %}
