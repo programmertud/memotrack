@@ -1,0 +1,12 @@
+# Django / Python
+__pycache__/
+*.py[cod]
+
+# Local database
+/db.sqlite3
+
+# Collected static (optional)
+/staticfiles/
+
+# Environment
+.env

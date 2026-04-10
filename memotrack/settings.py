@@ -118,15 +118,11 @@ USE_TZ = True
 
 LOGIN_URL = "accounts:login"
 LOGIN_REDIRECT_URL = "accounts:post_login"
+
+
+STATIC_URL = "static/"
+STATICFILES_DIRS = [BASE_DIR / "static"]
 LOGOUT_REDIRECT_URL = "accounts:login"
-
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.2/howto/static-files/
-
-STATIC_URL = 'static/'
-
-STATICFILES_DIRS = [BASE_DIR / 'static']
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
