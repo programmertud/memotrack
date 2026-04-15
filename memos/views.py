@@ -54,17 +54,31 @@ def dashboard(request):
 
 def memo_list(request):
     if request.user.is_authenticated and not request.user.is_staff:
-        memos = Memo.objects.filter(assigned_user=request.user)
+        memos = Memo.objects.filter(assigned_user=request.user).select_related("created_by")
     else:
-        memos = Memo.objects.all()
+        memos = Memo.objects.all().select_related("created_by")
     return render(request, "memos/memo_list.html", {"memos": memos})
+
+
+@staff_member_required
+def memo_admin_list(request):
+    memos = Memo.objects.all().select_related("assigned_user", "created_by").order_by("-date", "start_time")
+    return render(request, "memos/memo_admin_list.html", {"memos": memos})
 
 
 @require_http_methods(["GET", "POST"])
 def memo_create(request):
+    if not request.user.is_authenticated:
+        return redirect("accounts:login")
+
+    if not request.user.is_staff:
+        messages.error(request, "You do not have permission to create memos.")
+        return redirect("accounts:post_login")
+
     form = MemoForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         memo = form.save(commit=False)
+        memo.created_by = request.user
         if memo.has_conflicts():
             memo.status = Memo.Status.CONFLICT
             memo.save()
@@ -83,6 +97,12 @@ def memo_create(request):
 @require_http_methods(["GET", "POST"])
 def memo_edit(request, pk: int):
     memo = get_object_or_404(Memo, pk=pk)
+
+    if request.user.is_authenticated and not request.user.is_staff:
+        if memo.created_by and (memo.created_by.is_staff or memo.created_by.is_superuser):
+            messages.error(request, "You cannot edit this memo.")
+            return redirect("memos:memo_list")
+
     form = MemoForm(request.POST or None, instance=memo)
     if request.method == "POST" and form.is_valid():
         memo = form.save(commit=False)
@@ -109,11 +129,53 @@ def memo_edit(request, pk: int):
 @require_http_methods(["GET", "POST"])
 def memo_delete(request, pk: int):
     memo = get_object_or_404(Memo, pk=pk)
+
+    if request.user.is_authenticated and not request.user.is_staff:
+        if memo.created_by and (memo.created_by.is_staff or memo.created_by.is_superuser):
+            messages.error(request, "You cannot delete this memo.")
+            return redirect("memos:memo_list")
+
     if request.method == "POST":
         memo.delete()
         messages.success(request, "Memo deleted.")
         return redirect("memos:memo_list")
     return render(request, "memos/memo_confirm_delete.html", {"memo": memo})
+
+
+@login_required
+@require_http_methods(["POST"])
+def memo_user_approve(request, pk: int):
+    memo = get_object_or_404(Memo, pk=pk)
+    if memo.assigned_user_id != request.user.id or request.user.is_staff:
+        messages.error(request, "You cannot perform this action.")
+        return redirect("accounts:post_login")
+
+    if memo.created_by and not (memo.created_by.is_staff or memo.created_by.is_superuser):
+        messages.error(request, "This memo cannot be answered.")
+        return redirect("memos:memo_list")
+
+    memo.status = Memo.Status.APPROVED
+    memo.save(update_fields=["status"])
+    messages.success(request, "Memo marked as approved.")
+    return redirect("memos:memo_list")
+
+
+@login_required
+@require_http_methods(["POST"])
+def memo_user_mark_conflict(request, pk: int):
+    memo = get_object_or_404(Memo, pk=pk)
+    if memo.assigned_user_id != request.user.id or request.user.is_staff:
+        messages.error(request, "You cannot perform this action.")
+        return redirect("accounts:post_login")
+
+    if memo.created_by and not (memo.created_by.is_staff or memo.created_by.is_superuser):
+        messages.error(request, "This memo cannot be answered.")
+        return redirect("memos:memo_list")
+
+    memo.status = Memo.Status.CONFLICT
+    memo.save(update_fields=["status"])
+    messages.warning(request, "Memo marked as conflict.")
+    return redirect("memos:memo_list")
 
 
 def memo_conflict(request, pk: int):

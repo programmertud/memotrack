@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}User Dashboard | MemoTrack{% endblock %}
+
+{% block content %}
+<div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+  <div class="rounded-3xl bg-white border border-slate-100 shadow-soft p-6">
+    <div class="flex items-start justify-between gap-4">
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight">User Dashboard</h1>
+        <p class="text-sm text-slate-500 mt-1">Quick access to your memos, vehicles, and notifications.</p>
+      </div>
+      <div class="hidden sm:flex items-center gap-2">
+        <a href="{% url 'memos:memo_list' %}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white border border-slate-200 hover:border-uniGold transition">
+          <i class="fa-solid fa-calendar-check"></i>
+          <span class="font-semibold">Memos</span>
+        </a>
+        <a href="{% url 'resources:vehicle_list' %}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white border border-slate-200 hover:border-uniGold transition">
+          <i class="fa-solid fa-van-shuttle"></i>
+          <span class="font-semibold">Vehicles</span>
+        </a>
+        <a href="{% url 'notifications:notification_list' %}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-uniGreen text-white shadow-soft hover:opacity-95 transition">
+          <i class="fa-solid fa-bell"></i>
+          <span class="font-semibold">Notifications</span>
+        </a>
+        <form method="post" action="{% url 'accounts:logout' %}">
+          {% csrf_token %}
+          <button type="submit" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white border border-slate-200 hover:border-uniGold transition">
+            <i class="fa-solid fa-right-from-bracket"></i>
+            <span class="font-semibold">Logout</span>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="rounded-2xl bg-slate-50 border border-slate-100 p-5">
+        <div class="flex items-start justify-between">
+          <div>
+            <div class="text-sm text-slate-500">Upcoming Memos</div>
+            <div class="text-3xl font-bold mt-2">{{ upcoming_memos_count }}</div>
+          </div>
+          <div class="h-10 w-10 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-uniGreen">
+            <i class="fa-solid fa-calendar-check"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="rounded-2xl bg-slate-50 border border-slate-100 p-5">
+        <div class="flex items-start justify-between">
+          <div>
+            <div class="text-sm text-slate-500">Unread Notifications</div>
+            <div class="text-3xl font-bold mt-2">{{ unread_count }}</div>
+          </div>
+          <div class="h-10 w-10 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-uniGreen">
+            <i class="fa-solid fa-bell"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="rounded-2xl bg-slate-50 border border-slate-100 p-5">
+        <div class="flex items-start justify-between">
+          <div>
+            <div class="text-sm text-slate-500">Vehicles Available</div>
+            <div class="text-3xl font-bold mt-2">{{ available_vehicles_count }}</div>
+          </div>
+          <div class="h-10 w-10 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-uniGreen">
+            <i class="fa-solid fa-van-shuttle"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-5 sm:hidden grid grid-cols-1 gap-3">
+      <a href="{% url 'memos:memo_list' %}" class="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-white border border-slate-200 hover:border-uniGold transition">
+        <i class="fa-solid fa-calendar-check"></i>
+        <span class="font-semibold">Open Memos</span>
+      </a>
+      <a href="{% url 'resources:vehicle_list' %}" class="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-white border border-slate-200 hover:border-uniGold transition">
+        <i class="fa-solid fa-van-shuttle"></i>
+        <span class="font-semibold">Open Vehicles</span>
+      </a>
+      <a href="{% url 'notifications:notification_list' %}" class="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-uniGreen text-white shadow-soft hover:opacity-95 transition">
+        <i class="fa-solid fa-bell"></i>
+        <span class="font-semibold">Open Notifications</span>
+      </a>
+      <form method="post" action="{% url 'accounts:logout' %}">
+        {% csrf_token %}
+        <button type="submit" class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-white border border-slate-200 hover:border-uniGold transition">
+          <i class="fa-solid fa-right-from-bracket"></i>
+          <span class="font-semibold">Logout</span>
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
+  <div class="xl:col-span-2 rounded-2xl bg-white border border-slate-100 shadow-soft overflow-hidden">
+    <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+      <div>
+        <div class="font-semibold">Your Memos</div>
+        <div class="text-sm text-slate-500 mt-1">Your assigned schedules and requests.</div>
+      </div>
+      <a href="{% url 'memos:memo_list' %}" class="text-sm font-semibold text-uniGreen hover:underline">Open</a>
+    </div>
+    <div class="divide-y divide-slate-100">
+      {% for m in recent_memos %}
+        <div class="p-5 hover:bg-green-50/40 transition">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <div class="font-semibold">{{ m.title }}</div>
+              <div class="text-sm text-slate-500 mt-1">{{ m.date }} • {{ m.start_time }} - {{ m.end_time }}</div>
+              <div class="text-sm text-slate-500 mt-1">Venue: {{ m.venue }}{% if m.destination %} • Destination: {{ m.destination }}{% endif %}</div>
+            </div>
+            <div class="text-right">
+              <span class="px-3 py-1 rounded-full text-xs font-semibold bg-uniGold/40 text-uniGreen">{{ m.get_priority_display }}</span>
+              <div class="mt-2">
+                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">{{ m.get_status_display }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% empty %}
+        <div class="p-8 text-sm text-slate-500">No memos assigned yet.</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="rounded-2xl bg-white border border-slate-100 shadow-soft overflow-hidden">
+    <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+      <div>
+        <div class="font-semibold">Vehicles</div>
+        <div class="text-sm text-slate-500 mt-1">Check available transport options.</div>
+      </div>
+      <a href="{% url 'resources:vehicle_list' %}" class="text-sm font-semibold text-uniGreen hover:underline">Open</a>
+    </div>
+    <div class="p-5 space-y-3">
+      {% for v in vehicles_preview %}
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <div class="font-semibold">{{ v.name }}</div>
+            <div class="text-xs text-slate-500">{{ v.get_status_display }}</div>
+          </div>
+          <span class="px-3 py-1 rounded-full text-xs font-semibold {% if v.status == 'available' %}bg-green-50 text-uniGreen border border-green-100{% else %}bg-slate-100 text-slate-700{% endif %}">
+            {{ v.get_status_display }}
+          </span>
+        </div>
+      {% empty %}
+        <div class="text-sm text-slate-500">No vehicles found.</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="rounded-2xl bg-white border border-slate-100 shadow-soft overflow-hidden mt-6">
+  <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+    <div>
+      <div class="font-semibold">Recent Notifications</div>
+      <div class="text-sm text-slate-500 mt-1">Updates about your requests and schedules.</div>
+    </div>
+    <a href="{% url 'notifications:notification_list' %}" class="text-sm font-semibold text-uniGreen hover:underline">Open</a>
+  </div>
+  <div class="divide-y divide-slate-100">
+    {% for n in recent_notifications %}
+      <div class="p-5 flex items-start justify-between gap-4 hover:bg-green-50/40 transition">
+        <div>
+          <div class="font-semibold {% if not n.is_read %}text-slate-900{% else %}text-slate-700{% endif %}">{{ n.title|default:"Notification" }}</div>
+          <div class="text-sm text-slate-500 mt-1">{{ n.message }}</div>
+        </div>
+        {% if not n.is_read %}
+          <span class="px-3 py-1 rounded-full text-xs font-semibold bg-uniGold/40 text-uniGreen">New</span>
+        {% endif %}
+      </div>
+    {% empty %}
+      <div class="p-8 text-sm text-slate-500">No notifications.</div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

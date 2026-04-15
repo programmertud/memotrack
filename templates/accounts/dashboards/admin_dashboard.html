@@ -3,39 +3,73 @@
 {% block title %}Admin Dashboard | MemoTrack{% endblock %}
 
 {% block content %}
-<div class="flex items-center justify-between gap-4">
-  <div>
-    <h1 class="text-2xl font-bold tracking-tight">Admin Dashboard</h1>
-    <p class="text-sm text-slate-500 mt-1">University overview: people, vehicles, requests, conflicts, and schedules.</p>
+<div class="rounded-3xl bg-white border border-slate-100 shadow-soft p-6">
+  <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight">Admin Dashboard</h1>
+      <p class="text-sm text-slate-500 mt-1">University overview: people, vehicles, requests, conflicts, and schedules.</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      <a href="{% url 'memos:decision_panel' %}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white border border-slate-200 hover:border-uniGold transition">
+        <i class="fa-solid fa-clipboard-check"></i>
+        <span class="font-semibold">Decision Panel</span>
+      </a>
+      <a href="{% url 'memos:memo_admin_list' %}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white border border-slate-200 hover:border-uniGold transition">
+        <i class="fa-solid fa-list-check"></i>
+        <span class="font-semibold">Manage Memos</span>
+      </a>
+      <a href="{% url 'memos:memo_create' %}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-uniGreen text-white shadow-soft hover:opacity-95 transition">
+        <i class="fa-solid fa-calendar-plus"></i>
+        <span class="font-semibold">Create Memo</span>
+      </a>
+    </div>
   </div>
-  <div class="flex items-center gap-3">
-    <a href="{% url 'memos:decision_panel' %}" class="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-white border border-slate-200 hover:border-uniGold transition">
-      <i class="fa-solid fa-clipboard-check"></i>
-      <span class="font-semibold">Decision Panel</span>
-    </a>
-    <a href="{% url 'memos:memo_create' %}" class="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-uniGreen text-white shadow-soft hover:opacity-95 transition">
-      <i class="fa-solid fa-calendar-plus"></i>
-      <span class="font-semibold">Create Memo</span>
-    </a>
-  </div>
-</div>
 
-<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mt-6">
-  <div class="rounded-2xl bg-white border border-slate-100 p-5 shadow-soft">
-    <div class="text-sm text-slate-500">Total Instructors</div>
-    <div class="text-3xl font-bold mt-2">{{ total_instructors }}</div>
-  </div>
-  <div class="rounded-2xl bg-white border border-slate-100 p-5 shadow-soft">
-    <div class="text-sm text-slate-500">Total Staff</div>
-    <div class="text-3xl font-bold mt-2">{{ total_staff }}</div>
-  </div>
-  <div class="rounded-2xl bg-white border border-slate-100 p-5 shadow-soft">
-    <div class="text-sm text-slate-500">Total Vehicles</div>
-    <div class="text-3xl font-bold mt-2">{{ total_vehicles }}</div>
-  </div>
-  <div class="rounded-2xl bg-white border border-slate-100 p-5 shadow-soft">
-    <div class="text-sm text-slate-500">Pending Requests</div>
-    <div class="text-3xl font-bold mt-2">{{ pending_requests }}</div>
+  <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mt-5">
+    <div class="rounded-2xl bg-slate-50 border border-slate-100 p-5">
+      <div class="flex items-start justify-between">
+        <div>
+          <div class="text-sm text-slate-500">Total Instructors</div>
+          <div class="text-3xl font-bold mt-2">{{ total_instructors }}</div>
+        </div>
+        <div class="h-10 w-10 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-uniGreen">
+          <i class="fa-solid fa-chalkboard-user"></i>
+        </div>
+      </div>
+    </div>
+    <div class="rounded-2xl bg-slate-50 border border-slate-100 p-5">
+      <div class="flex items-start justify-between">
+        <div>
+          <div class="text-sm text-slate-500">Total Staff</div>
+          <div class="text-3xl font-bold mt-2">{{ total_staff }}</div>
+        </div>
+        <div class="h-10 w-10 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-uniGreen">
+          <i class="fa-solid fa-users"></i>
+        </div>
+      </div>
+    </div>
+    <div class="rounded-2xl bg-slate-50 border border-slate-100 p-5">
+      <div class="flex items-start justify-between">
+        <div>
+          <div class="text-sm text-slate-500">Total Vehicles</div>
+          <div class="text-3xl font-bold mt-2">{{ total_vehicles }}</div>
+        </div>
+        <div class="h-10 w-10 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-uniGreen">
+          <i class="fa-solid fa-van-shuttle"></i>
+        </div>
+      </div>
+    </div>
+    <div class="rounded-2xl bg-slate-50 border border-slate-100 p-5">
+      <div class="flex items-start justify-between">
+        <div>
+          <div class="text-sm text-slate-500">Pending Requests</div>
+          <div class="text-3xl font-bold mt-2">{{ pending_requests }}</div>
+        </div>
+        <div class="h-10 w-10 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-uniGreen">
+          <i class="fa-solid fa-hourglass-half"></i>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 

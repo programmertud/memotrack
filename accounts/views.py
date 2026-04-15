@@ -3,12 +3,15 @@ from django.shortcuts import render
 from datetime import timedelta
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth import login
+from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.views.decorators.csrf import csrf_protect
 
 from memos.models import Memo
 from memos.models import MemoDecision
@@ -16,7 +19,7 @@ from notifications.models import Notification
 from resources.models import Vehicle, VehicleBooking
 
 from .models import Attendance, LeaveRequest, Profile
-from .forms import AdminUserCreateForm, AdminUserUpdateForm
+from .forms import AdminUserCreateForm, AdminUserUpdateForm, UserRegisterForm
 
 
 User = get_user_model()
@@ -26,6 +29,45 @@ def home(request):
     if not request.user.is_authenticated:
         return redirect("accounts:login")
     return redirect("accounts:post_login")
+
+
+@csrf_protect
+def login_view(request):
+    if request.user.is_authenticated:
+        return redirect("accounts:post_login")
+
+    login_type = (request.POST.get("login_type") or request.GET.get("login_type") or "user").strip().lower()
+    if login_type not in {"user", "admin"}:
+        login_type = "user"
+
+    form = AuthenticationForm(request, data=request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        user = form.get_user()
+
+        if login_type == "admin" and not (user.is_staff or user.is_superuser):
+            messages.error(request, "This account is not allowed to sign in as admin.")
+        elif login_type == "user" and (user.is_staff or user.is_superuser):
+            messages.error(request, "Not registered.")
+        else:
+            login(request, user)
+            return redirect("accounts:post_login")
+
+    return render(request, "accounts/login.html", {"form": form, "login_type": login_type})
+
+
+@csrf_protect
+def register(request):
+    if request.user.is_authenticated:
+        return redirect("accounts:post_login")
+
+    form = UserRegisterForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        user = form.save()
+        login(request, user)
+        messages.success(request, "Account created.")
+        return redirect("accounts:post_login")
+
+    return render(request, "accounts/register.html", {"form": form})
 
 
 @login_required
@@ -44,7 +86,39 @@ def post_login(request):
     if role == Profile.Role.TRANSPORTATION:
         return redirect("accounts:transportation_dashboard")
 
-    return redirect("memos:memo_list")
+    return redirect("accounts:user_dashboard")
+
+
+@login_required
+def user_dashboard(request):
+    if request.user.is_staff:
+        return redirect("accounts:post_login")
+
+    today = timezone.localdate()
+
+    upcoming_memos = Memo.objects.filter(assigned_user=request.user, date__gte=today).order_by(
+        "date", "start_time"
+    )
+    recent_memos = upcoming_memos.select_related("assigned_user")[:10]
+
+    recent_notifications = Notification.objects.filter(user=request.user).order_by("-created_at")[:10]
+    unread_count = Notification.objects.filter(user=request.user, is_read=False).count()
+
+    vehicles_preview = Vehicle.objects.all().order_by("name")[:6]
+    available_vehicles_count = Vehicle.objects.filter(status=Vehicle.Status.AVAILABLE).count()
+
+    return render(
+        request,
+        "accounts/dashboards/user_dashboard.html",
+        {
+            "upcoming_memos_count": upcoming_memos.count(),
+            "recent_memos": recent_memos,
+            "recent_notifications": recent_notifications,
+            "unread_count": unread_count,
+            "vehicles_preview": vehicles_preview,
+            "available_vehicles_count": available_vehicles_count,
+        },
+    )
 
 
 @login_required

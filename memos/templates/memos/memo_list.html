@@ -9,10 +9,12 @@
     <p class="text-sm text-slate-500 mt-1">List view (calendar view will be added next).</p>
   </div>
   <div class="flex items-center gap-3">
-    <a href="{% url 'memos:memo_create' %}" class="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-uniGreen text-white shadow-soft hover:opacity-95 transition">
-      <i class="fa-solid fa-plus"></i>
-      <span class="font-semibold">New Memo</span>
-    </a>
+    {% if request.user.is_staff %}
+      <a href="{% url 'memos:memo_create' %}" class="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-uniGreen text-white shadow-soft hover:opacity-95 transition">
+        <i class="fa-solid fa-plus"></i>
+        <span class="font-semibold">New Memo</span>
+      </a>
+    {% endif %}
     {% if request.user.is_staff %}
       <a href="{% url 'memos:decision_panel' %}" class="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-white border border-slate-200 hover:border-uniGold transition">
         <i class="fa-solid fa-clipboard-check"></i>
@@ -69,9 +71,22 @@
                 {% if memo.status == 'conflict' %}
                   <a href="{% url 'memos:memo_conflict' memo.pk %}" class="px-3 py-2 rounded-xl bg-red-50 text-red-700 border border-red-100 text-sm font-semibold">Resolve</a>
                 {% endif %}
-                <a href="{% url 'resources:vehicle_book' memo.pk %}" class="px-3 py-2 rounded-xl bg-white border border-slate-200 text-sm font-semibold hover:border-uniGold transition">Book Vehicle</a>
-                <a href="{% url 'memos:memo_edit' memo.pk %}" class="px-3 py-2 rounded-xl bg-white border border-slate-200 text-sm font-semibold hover:border-uniGold transition">Edit</a>
-                <a href="{% url 'memos:memo_delete' memo.pk %}" class="px-3 py-2 rounded-xl bg-white border border-slate-200 text-sm font-semibold hover:border-uniGold transition">Delete</a>
+
+                {% if request.user.is_staff %}
+                  <a href="{% url 'memos:memo_edit' memo.pk %}" class="px-3 py-2 rounded-xl bg-white border border-slate-200 text-sm font-semibold hover:border-uniGold transition">Edit</a>
+                  <a href="{% url 'memos:memo_delete' memo.pk %}" class="px-3 py-2 rounded-xl bg-white border border-slate-200 text-sm font-semibold hover:border-uniGold transition">Delete</a>
+                {% else %}
+                  {% if not memo.created_by or memo.created_by.is_staff %}
+                    <form method="post" action="{% url 'memos:memo_user_approve' memo.pk %}">
+                      {% csrf_token %}
+                      <button type="submit" class="px-3 py-2 rounded-xl bg-green-50 text-uniGreen border border-green-100 text-sm font-semibold">Approve</button>
+                    </form>
+                    <form method="post" action="{% url 'memos:memo_user_mark_conflict' memo.pk %}">
+                      {% csrf_token %}
+                      <button type="submit" class="px-3 py-2 rounded-xl bg-red-50 text-red-700 border border-red-100 text-sm font-semibold">Conflict</button>
+                    </form>
+                  {% endif %}
+                {% endif %}
               </div>
             </td>
           </tr>

@@ -35,6 +35,18 @@
           <i class="fa-solid fa-van-shuttle text-uniGreen"></i>
           <span class="font-medium">Manage Vehicles</span>
         </a>
+
+        <a href="{% url 'memos:memo_admin_list' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-green-50 transition">
+          <i class="fa-solid fa-calendar-check text-uniGreen"></i>
+          <span class="font-medium">Manage Memos</span>
+        </a>
+      {% endif %}
+
+      {% if not request.user.is_staff and request.user.profile.role != 'hr' and request.user.profile.role != 'instructor' and request.user.profile.role != 'approver' and request.user.profile.role != 'transportation' %}
+        <a href="{% url 'accounts:user_dashboard' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-green-50 transition">
+          <i class="fa-solid fa-gauge text-uniGreen"></i>
+          <span class="font-medium">User Dashboard</span>
+        </a>
       {% endif %}
 
       {% if request.user.profile.role == 'hr' %}
@@ -65,14 +77,17 @@
         </a>
       {% endif %}
     {% endif %}
-    <a href="{% url 'memos:memo_list' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-green-50 transition">
-      <i class="fa-solid fa-calendar-check text-uniGreen"></i>
-      <span class="font-medium">Memos</span>
-    </a>
-    <a href="{% url 'resources:vehicle_list' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-green-50 transition">
-      <i class="fa-solid fa-van-shuttle text-uniGreen"></i>
-      <span class="font-medium">Vehicles</span>
-    </a>
+
+    {% if not request.user.is_authenticated or not request.user.is_staff %}
+      <a href="{% url 'memos:memo_list' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-green-50 transition">
+        <i class="fa-solid fa-calendar-check text-uniGreen"></i>
+        <span class="font-medium">Memos</span>
+      </a>
+      <a href="{% url 'resources:vehicle_list' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-green-50 transition">
+        <i class="fa-solid fa-van-shuttle text-uniGreen"></i>
+        <span class="font-medium">Vehicles</span>
+      </a>
+    {% endif %}
     <a href="{% url 'notifications:notification_list' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-green-50 transition">
       <i class="fa-solid fa-bell text-uniGreen"></i>
       <span class="font-medium">Notifications</span>
@@ -89,10 +104,4 @@
     {% endif %}
   </nav>
 
-  <div class="mt-auto px-6 py-6">
-    <div class="rounded-2xl bg-gradient-to-r from-uniGreen to-emerald-700 text-white p-5 shadow-soft">
-      <div class="text-sm font-semibold">Conflict-safe scheduling</div>
-      <div class="text-xs text-white/80 mt-1">Prioritize required memos and optimize vehicle usage.</div>
-    </div>
-  </div>
 </aside>

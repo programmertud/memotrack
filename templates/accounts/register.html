@@ -1,0 +1,93 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Register | MemoTrack System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            uniGreen: "#2F6B2F",
+            uniGold: "#F2B705",
+          },
+          boxShadow: {
+            soft: "0 10px 30px rgba(0,0,0,0.08)",
+          },
+        },
+      },
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    html, body { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-50">
+  <div class="min-h-screen flex items-center justify-center px-4 py-10">
+    <div class="w-full max-w-lg">
+      <div class="rounded-3xl bg-white border border-slate-100 shadow-soft p-8">
+        <div class="flex items-center gap-3">
+          <div class="h-12 w-12 rounded-2xl bg-white border border-slate-200 flex items-center justify-center overflow-hidden">
+            <img src="{% static 'img/logo.png' %}" alt="MemoTrack Logo" class="h-full w-full object-contain p-1" />
+          </div>
+          <div>
+            <div class="text-xl font-bold">Create account</div>
+            <div class="text-sm text-slate-500">Register as a user to access your dashboard.</div>
+          </div>
+        </div>
+
+        {% if form.errors %}
+          <div class="mt-6 rounded-2xl bg-red-50 border border-red-100 p-4 text-sm text-red-700">
+            Please fix the errors below.
+          </div>
+        {% endif %}
+
+        <form method="post" class="mt-6 space-y-4">
+          {% csrf_token %}
+
+          <div>
+            <label class="text-sm font-semibold text-slate-700">Username</label>
+            <div class="mt-2">{{ form.username }}</div>
+            {% if form.username.errors %}<div class="text-xs text-red-700 mt-2">{{ form.username.errors|striptags }}</div>{% endif %}
+          </div>
+
+          <div>
+            <label class="text-sm font-semibold text-slate-700">Email (optional)</label>
+            <div class="mt-2">{{ form.email }}</div>
+            {% if form.email.errors %}<div class="text-xs text-red-700 mt-2">{{ form.email.errors|striptags }}</div>{% endif %}
+          </div>
+
+          <div>
+            <label class="text-sm font-semibold text-slate-700">Password</label>
+            <div class="mt-2">{{ form.password1 }}</div>
+            {% if form.password1.errors %}<div class="text-xs text-red-700 mt-2">{{ form.password1.errors|striptags }}</div>{% endif %}
+          </div>
+
+          <div>
+            <label class="text-sm font-semibold text-slate-700">Confirm password</label>
+            <div class="mt-2">{{ form.password2 }}</div>
+            {% if form.password2.errors %}<div class="text-xs text-red-700 mt-2">{{ form.password2.errors|striptags }}</div>{% endif %}
+          </div>
+
+          <button type="submit" class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-uniGreen text-white font-semibold shadow-soft hover:opacity-95 transition">
+            <i class="fa-solid fa-user-plus"></i>
+            Create account
+          </button>
+
+          <div class="text-sm text-slate-500 text-center">
+            Already have an account?
+            <a href="{% url 'accounts:login' %}?login_type=user" class="font-semibold text-uniGreen hover:underline">Sign in</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

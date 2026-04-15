@@ -52,7 +52,11 @@
           </div>
           <div>
             <div class="text-xl font-bold">Sign in</div>
-            <div class="text-sm text-slate-500">Admin access required to open the dashboard.</div>
+            {% if login_type == 'admin' %}
+              <div class="text-sm text-slate-500">Admin access required to open the dashboard.</div>
+            {% else %}
+              <div class="text-sm text-slate-500">Sign in to your user dashboard.</div>
+            {% endif %}
           </div>
         </div>
 
@@ -62,8 +66,25 @@
           </div>
         {% endif %}
 
+        {% if messages %}
+          <div class="mt-6 space-y-3">
+            {% for message in messages %}
+              <div class="rounded-2xl border p-4 text-sm {% if message.tags == 'success' %}bg-green-50 border-green-100 text-green-800{% else %}bg-red-50 border-red-100 text-red-700{% endif %}">
+                {{ message }}
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+
         <form method="post" class="mt-6 space-y-4">
           {% csrf_token %}
+          <div>
+            <label class="text-sm font-semibold text-slate-700">Login as</label>
+            <select name="login_type" class="mt-2 w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-uniGold/50 focus:border-uniGold transition">
+              <option value="user" {% if login_type != 'admin' %}selected{% endif %}>User</option>
+              <option value="admin" {% if login_type == 'admin' %}selected{% endif %}>Admin</option>
+            </select>
+          </div>
           <div>
             <label class="text-sm font-semibold text-slate-700">Username</label>
             <input type="text" name="username" autofocus required class="mt-2 w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-uniGold/50 focus:border-uniGold transition" />
@@ -77,6 +98,13 @@
             <i class="fa-solid fa-arrow-right-to-bracket"></i>
             Sign in
           </button>
+
+          {% if login_type != 'admin' %}
+            <div class="text-sm text-slate-500 text-center">
+              No account yet?
+              <a href="{% url 'accounts:register' %}" class="font-semibold text-uniGreen hover:underline">Create one</a>
+            </div>
+          {% endif %}
         </form>
       </div>
     </div>

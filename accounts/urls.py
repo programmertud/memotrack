@@ -8,11 +8,13 @@ app_name = "accounts"
 urlpatterns = [
     path(
         "login/",
-        auth_views.LoginView.as_view(template_name="accounts/login.html"),
+        views.login_view,
         name="login",
     ),
+    path("register/", views.register, name="register"),
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
     path("post-login/", views.post_login, name="post_login"),
+    path("dashboards/user/", views.user_dashboard, name="user_dashboard"),
     path("dashboards/admin/", views.admin_dashboard, name="admin_dashboard"),
     path("dashboards/hr/", views.hr_dashboard, name="hr_dashboard"),
     path("dashboards/instructor/", views.instructor_dashboard, name="instructor_dashboard"),

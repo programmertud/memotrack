@@ -1,5 +1,6 @@
 from django import forms
 from django.contrib.auth import get_user_model
+from django.contrib.auth.forms import UserCreationForm
 
 from .models import Department, Profile
 
@@ -124,3 +125,15 @@ class AdminUserUpdateForm(forms.Form):
         profile.department = data.get("department")
         profile.save(update_fields=["role", "department"])
         return self.user
+
+
+class UserRegisterForm(UserCreationForm):
+    username = forms.CharField(max_length=150, widget=_TEXT_INPUT)
+    email = forms.EmailField(required=False, widget=_EMAIL_INPUT)
+    password1 = forms.CharField(widget=_PASSWORD_INPUT)
+    password2 = forms.CharField(widget=_PASSWORD_INPUT)
+
+    class Meta(UserCreationForm.Meta):
+        model = User
+        fields = ("username", "email", "password1", "password2")
+

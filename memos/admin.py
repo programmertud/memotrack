@@ -26,3 +26,6 @@ class MemoDecisionAdmin(admin.ModelAdmin):
     list_filter = ("action", "created_at")
     search_fields = ("memo__title", "memo__assigned_user__username", "decided_by__username", "note")
     autocomplete_fields = ("memo", "decided_by")
+
+
+
