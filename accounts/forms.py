@@ -130,10 +130,24 @@ class AdminUserUpdateForm(forms.Form):
 class UserRegisterForm(UserCreationForm):
     username = forms.CharField(max_length=150, widget=_TEXT_INPUT)
     email = forms.EmailField(required=False, widget=_EMAIL_INPUT)
+    role = forms.ChoiceField(
+        choices=[
+            ("student", "Student"),
+            ("instructor", "Faculty"),
+        ],
+        widget=_SELECT,
+    )
     password1 = forms.CharField(widget=_PASSWORD_INPUT)
     password2 = forms.CharField(widget=_PASSWORD_INPUT)
 
     class Meta(UserCreationForm.Meta):
         model = User
-        fields = ("username", "email", "password1", "password2")
+        fields = ("username", "email")
+
+    def save(self, commit=True):
+        user = super().save(commit=commit)
+        if commit:
+            user.profile.role = self.cleaned_data["role"]
+            user.profile.save(update_fields=["role"])
+        return user
 

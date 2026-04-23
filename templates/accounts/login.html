@@ -337,7 +337,11 @@
       {% if messages %}
         <div style="margin-bottom: 2rem; display: flex; flex-direction: column; gap: 0.5rem;">
           {% for message in messages %}
-            <div style="padding: 1rem; border-radius: 1rem; font-size: 0.875rem; {% if message.tags == 'success' %}background: #e6fffa; border: 1px solid #b2f5ea; color: #285e61;{% else %}background: #fff5f5; border: 1px solid #feb2b2; color: #c53030;{% endif %}">
+            {% if message.tags == 'success' %}
+              <div style="padding: 1rem; border-radius: 1rem; font-size: 0.875rem; background: #e6fffa; border: 1px solid #b2f5ea; color: #285e61;">
+            {% else %}
+              <div style="padding: 1rem; border-radius: 1rem; font-size: 0.875rem; background: #fff5f5; border: 1px solid #feb2b2; color: #c53030;">
+            {% endif %}
               {{ message }}
             </div>
           {% endfor %}
@@ -349,8 +353,13 @@
         <div class="form-group">
           <label for="login_type">Login as</label>
           <select id="login_type" name="login_type" class="form-control">
-            <option value="user" {% if login_type != 'admin' %}selected{% endif %}>User</option>
-            <option value="admin" {% if login_type == 'admin' %}selected{% endif %}>Admin</option>
+            {% if login_type != 'admin' %}
+              <option value="user" selected>User</option>
+              <option value="admin">Admin</option>
+            {% else %}
+              <option value="user">User</option>
+              <option value="admin" selected>Admin</option>
+            {% endif %}
           </select>
         </div>
         <div class="form-group">
