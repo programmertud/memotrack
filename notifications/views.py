@@ -1,3 +1,4 @@
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 
 from django.contrib import messages
@@ -29,4 +30,13 @@ def notification_mark_read(request, pk: int):
     notification.is_read = True
     notification.save(update_fields=["is_read"])
     messages.success(request, "Notification marked as read.")
-    return redirect("notifications:notification_list")
+    next_url = request.POST.get("next") or request.META.get("HTTP_REFERER") or "notifications:notification_list"
+    return redirect(next_url)
+
+
+@login_required
+@require_http_methods(["POST"])
+def mark_all_read(request):
+    Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
+    next_url = request.POST.get("next") or request.META.get("HTTP_REFERER") or "notifications:notification_list"
+    return redirect(next_url)

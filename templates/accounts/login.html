@@ -323,30 +323,7 @@
         <div class="login-subtitle">Enter your credentials to access the secure dashboard.</div>
       </div>
 
-      {% if form.errors %}
-      <div class="error-box">
-        <svg style="width:20px;height:20px;flex-shrink:0;" fill="currentColor" viewBox="0 0 20 20">
-          <path fill-rule="evenodd"
-            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-            clip-rule="evenodd" />
-        </svg>
-        <span>Invalid username or password.</span>
-      </div>
-      {% endif %}
 
-      {% if messages %}
-        <div style="margin-bottom: 2rem; display: flex; flex-direction: column; gap: 0.5rem;">
-          {% for message in messages %}
-            {% if message.tags == 'success' %}
-              <div style="padding: 1rem; border-radius: 1rem; font-size: 0.875rem; background: #e6fffa; border: 1px solid #b2f5ea; color: #285e61;">
-            {% else %}
-              <div style="padding: 1rem; border-radius: 1rem; font-size: 0.875rem; background: #fff5f5; border: 1px solid #feb2b2; color: #c53030;">
-            {% endif %}
-              {{ message }}
-            </div>
-          {% endfor %}
-        </div>
-      {% endif %}
 
       <form method="post">
         {% csrf_token %}
@@ -363,8 +340,8 @@
           </select>
         </div>
         <div class="form-group">
-          <label for="username">Username</label>
-          <input type="text" id="username" name="username" autofocus required placeholder="School ID or Username"
+          <label for="username">School ID / Email / Mobile Number</label>
+          <input type="text" id="username" name="username" autofocus required placeholder="School ID, Email, or Mobile Number"
             class="form-control" />
         </div>
         <div class="form-group">
@@ -389,5 +366,5 @@
     </div>
   </div>
 </body>
-
+{% include "partials/toast_engine.html" %}
 </html>

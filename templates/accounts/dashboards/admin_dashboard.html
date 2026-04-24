@@ -1,179 +1,436 @@
 {% extends "base.html" %}
-
 {% block title %}Admin Dashboard | MemoTrack{% endblock %}
-
 {% block content %}
-<div class="rounded-3xl bg-white border border-slate-100 shadow-soft p-6">
-  <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-    <div>
-      <h1 class="text-2xl font-bold tracking-tight">Admin Dashboard</h1>
-      <p class="text-sm text-slate-500 mt-1">University overview: people, vehicles, requests, conflicts, and schedules.</p>
-    </div>
-    <div class="flex flex-wrap items-center gap-2">
-      <a href="{% url 'memos:decision_panel' %}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white border border-slate-200 hover:border-uniGold transition">
-        <i class="fa-solid fa-clipboard-check"></i>
-        <span class="font-semibold">Decision Panel</span>
-      </a>
-      <a href="{% url 'memos:memo_admin_list' %}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white border border-slate-200 hover:border-uniGold transition">
-        <i class="fa-solid fa-list-check"></i>
-        <span class="font-semibold">Manage Memos</span>
-      </a>
-      <a href="{% url 'memos:memo_create' %}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-uniGreen text-white shadow-soft hover:opacity-95 transition">
-        <i class="fa-solid fa-calendar-plus"></i>
-        <span class="font-semibold">Create Memo</span>
-      </a>
-    </div>
-  </div>
+<style>
+  .kpi {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    padding: 1.1rem 1.25rem;
+    box-shadow: 0 4px 16px -4px rgba(0,0,0,.08), 0 1px 3px rgba(0,0,0,.05);
+    transition: box-shadow .15s;
+  }
+  .kpi:hover { box-shadow: 0 8px 24px -4px rgba(0,0,0,.12), 0 2px 6px rgba(0,0,0,.06); }
+  .kpi .lbl { font-size:.7rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:#64748b; margin-bottom:.4rem; }
+  .kpi .val { font-size:2rem; font-weight:800; line-height:1; color:#1e293b; }
+  .kpi .sub { font-size:.72rem; color:#94a3b8; margin-top:.3rem; }
+  .kpi .ico { width:40px;height:40px;border-radius:.75rem;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0; }
 
-  <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mt-5">
-    <div class="rounded-2xl bg-slate-50 border border-slate-100 p-5">
-      <div class="flex items-start justify-between">
-        <div>
-          <div class="text-sm text-slate-500">Total Instructors</div>
-          <div class="text-3xl font-bold mt-2">{{ total_instructors }}</div>
+  .panel {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 4px 16px -4px rgba(0,0,0,.08), 0 1px 3px rgba(0,0,0,.05);
+  }
+  .panel-hd { padding:.9rem 1.25rem; border-bottom:1px solid #f1f5f9; display:flex; align-items:center; justify-content:space-between; }
+  .panel-hd-title { font-weight:700; font-size:.88rem; color:#1e293b; }
+  .panel-hd-sub   { font-size:.72rem; color:#94a3b8; margin-top:.1rem; }
+
+  .row { padding:.75rem 1.25rem; display:flex; align-items:flex-start; gap:.75rem; border-bottom:1px solid #f8fafc; transition:background .12s; }
+  .row:hover { background:#f8fafc; }
+  .row:last-child { border-bottom:none; }
+
+  .badge { display:inline-flex;align-items:center;padding:.15rem .55rem;border-radius:9999px;font-size:.65rem;font-weight:700;white-space:nowrap; }
+  .b-pending  { background:#fef3c7;color:#92400e; }
+  .b-approved { background:#d1fae5;color:#065f46; }
+  .b-rejected { background:#fee2e2;color:#991b1b; }
+  .b-conflict { background:#ffe4e6;color:#9f1239; }
+  .b-high     { background:#fee2e2;color:#b91c1c; }
+  .b-medium   { background:#fef3c7;color:#92400e; }
+  .b-low      { background:#d1fae5;color:#065f46; }
+  .b-draft    { background:#f1f5f9;color:#475569; }
+
+  .qlink { display:flex;align-items:center;gap:.75rem;padding:.7rem 1rem;border-radius:.75rem;font-size:.82rem;font-weight:600;color:#475569;transition:background .12s,color .12s; border:1px solid #e2e8f0; }
+  .qlink:hover { background:#f0fdf4;color:#2F6B2F; }
+  .qlink .cnt { margin-left:auto;font-size:.7rem;color:#94a3b8; }
+
+  .chart-box { position:relative; height:180px; }
+</style>
+
+<!-- ── HEADER ── -->
+<div class="rounded-3xl bg-white p-6 mb-6"
+     style="border:1px solid #e2e8f0; box-shadow:0 4px 24px -4px rgba(0,0,0,.10), 0 1px 4px rgba(0,0,0,.06);">
+  <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+
+    <!-- Left: avatar + greeting -->
+    <div class="flex items-center gap-5">
+
+      <!-- Profile avatar — perfect circle, bigger frame -->
+      <div class="flex-shrink-0 relative" style="width:80px;height:80px;">
+        <div id="adminAvatarCircle"
+             style="width:80px;height:80px;border-radius:50%;border:3px solid #d1fae5;overflow:hidden;background:#f0fdf4;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(47,107,47,.18);">
+          {% if request.user.profile.profile_picture %}
+            <img src="{{ request.user.profile.profile_picture.url }}"
+                 alt="profile"
+                 style="width:100%;height:100%;object-fit:cover;" />
+          {% else %}
+            <canvas id="adminDashIdenticon" width="80" height="80"
+                    style="display:block;border-radius:50%;"></canvas>
+          {% endif %}
         </div>
-        <div class="h-10 w-10 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-uniGreen">
-          <i class="fa-solid fa-chalkboard-user"></i>
+        <!-- Online dot -->
+        <span style="position:absolute;bottom:3px;right:3px;width:13px;height:13px;border-radius:50%;background:#34d399;border:2px solid #fff;"></span>
+      </div>
+
+      <!-- Greeting text -->
+      <div>
+        <div class="text-xs font-semibold tracking-widest uppercase text-uniGreen mb-0.5">
+          {{ today|date:"l, F j, Y" }}
         </div>
+        <h1 class="text-xl font-bold tracking-tight leading-tight">
+          Welcome back,
+          <span class="text-uniGreen">
+            {# Name from profile model (not User model) #}
+            {% with fn=request.user.profile.first_name mn=request.user.profile.middle_name ln=request.user.profile.last_name %}
+              {% if fn or ln %}
+                {{ fn }}{% if mn %} {{ mn|slice:":1" }}.{% endif %}{% if ln %} {{ ln }}{% endif %}
+              {% else %}
+                {{ request.user.username }}
+              {% endif %}
+            {% endwith %}
+          </span> 👋
+        </h1>
+        <p class="text-sm text-slate-500 mt-0.5">Admin · Scheduling oversight · Conflict resolution · Memo management</p>
       </div>
     </div>
-    <div class="rounded-2xl bg-slate-50 border border-slate-100 p-5">
-      <div class="flex items-start justify-between">
-        <div>
-          <div class="text-sm text-slate-500">Total Staff</div>
-          <div class="text-3xl font-bold mt-2">{{ total_staff }}</div>
-        </div>
-        <div class="h-10 w-10 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-uniGreen">
-          <i class="fa-solid fa-users"></i>
-        </div>
-      </div>
+
+    <!-- Right: action buttons — vertical series -->
+    <div class="flex flex-col gap-2" style="min-width:175px;">
+      <a href="{% url 'memos:memo_create' %}"
+         class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-uniGreen text-white hover:opacity-90 transition text-sm font-semibold"
+         style="box-shadow:0 2px 8px rgba(47,107,47,.25);">
+        <i class="fa-solid fa-calendar-plus w-4 text-center"></i>
+        Create Memo
+      </a>
+      <a href="{% url 'memos:decision_panel' %}"
+         class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-slate-200 hover:border-uniGold hover:bg-amber-50 transition text-sm font-semibold text-slate-700">
+        <i class="fa-solid fa-clipboard-check w-4 text-center text-amber-500"></i>
+        Decision Panel
+        {% if pending_requests %}
+          <span class="ml-auto bg-amber-400 text-black rounded-full px-2 py-0.5 text-xs font-bold">{{ pending_requests }}</span>
+        {% endif %}
+      </a>
+      <a href="{% url 'memos:memo_admin_list' %}"
+         class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-slate-200 hover:border-uniGreen hover:bg-green-50 transition text-sm font-semibold text-slate-700">
+        <i class="fa-solid fa-list-check w-4 text-center text-uniGreen"></i>
+        All Memos
+      </a>
     </div>
-    <div class="rounded-2xl bg-slate-50 border border-slate-100 p-5">
-      <div class="flex items-start justify-between">
-        <div>
-          <div class="text-sm text-slate-500">Total Vehicles</div>
-          <div class="text-3xl font-bold mt-2">{{ total_vehicles }}</div>
-        </div>
-        <div class="h-10 w-10 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-uniGreen">
-          <i class="fa-solid fa-van-shuttle"></i>
-        </div>
-      </div>
-    </div>
-    <div class="rounded-2xl bg-slate-50 border border-slate-100 p-5">
-      <div class="flex items-start justify-between">
-        <div>
-          <div class="text-sm text-slate-500">Pending Requests</div>
-          <div class="text-3xl font-bold mt-2">{{ pending_requests }}</div>
-        </div>
-        <div class="h-10 w-10 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-uniGreen">
-          <i class="fa-solid fa-hourglass-half"></i>
-        </div>
-      </div>
-    </div>
+
   </div>
 </div>
 
-<div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
-  <div class="xl:col-span-2 rounded-2xl bg-white border border-slate-100 shadow-soft overflow-hidden">
-    <div class="p-5 border-b border-slate-100 flex items-center justify-between">
-      <div>
-        <div class="font-semibold">Today’s Schedules</div>
-        <div class="text-sm text-slate-500 mt-1">Live snapshot of today’s memo allocations.</div>
-      </div>
-      <div class="flex items-center gap-2">
-        <span class="px-3 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-100">Conflicts: {{ conflict_alerts }}</span>
+{% if not request.user.profile.profile_picture %}
+<script>
+(function() {
+  var canvas = document.getElementById('adminDashIdenticon');
+  if (!canvas) return;
+  var username = "{{ request.user.username|escapejs }}";
+  var ctx = canvas.getContext('2d');
+  var str = username || 'admin';
+  var h = 0;
+  for (var i = 0; i < str.length; i++) { h = Math.imul(31, h) + str.charCodeAt(i) | 0; }
+  h = Math.abs(h);
+  var hue = h % 360;
+  var size = 80;
+  var cell = size / 5;
+  ctx.fillStyle = 'hsl(' + hue + ',60%,92%)';
+  ctx.fillRect(0, 0, size, size);
+  ctx.fillStyle = 'hsl(' + hue + ',55%,38%)';
+  for (var row = 0; row < 5; row++) {
+    for (var col = 0; col < 3; col++) {
+      if ((h >> (row * 3 + col)) & 1) {
+        ctx.fillRect(col * cell, row * cell, cell, cell);
+        if (col < 2) ctx.fillRect((4 - col) * cell, row * cell, cell, cell);
+      }
+    }
+  }
+})();
+</script>
+{% endif %}
+
+<!-- ── KPI CARDS ── -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:1rem;margin-bottom:1.5rem;">
+
+  <div class="kpi" style="border-left:4px solid #3b82f6;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div><div class="lbl">Today's Memos</div><div class="val" style="color:#1d4ed8;">{{ today_count }}</div><div class="sub">{{ conflict_alerts }} conflict{{ conflict_alerts|pluralize }}</div></div>
+      <div class="ico" style="background:#dbeafe;color:#1d4ed8;"><i class="fa-solid fa-calendar-day"></i></div>
+    </div>
+  </div>
+
+  <div class="kpi" style="border-left:4px solid #f59e0b;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div><div class="lbl">Pending</div><div class="val" style="color:#b45309;">{{ pending_requests }}</div><div class="sub">Awaiting decision</div></div>
+      <div class="ico" style="background:#fef3c7;color:#b45309;"><i class="fa-solid fa-hourglass-half"></i></div>
+    </div>
+  </div>
+
+  <div class="kpi" style="border-left:4px solid #ef4444;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div><div class="lbl">Conflicts</div><div class="val" style="color:#b91c1c;">{{ conflict_alerts }}</div><div class="sub">Needs resolution</div></div>
+      <div class="ico" style="background:#fee2e2;color:#b91c1c;"><i class="fa-solid fa-triangle-exclamation"></i></div>
+    </div>
+  </div>
+
+  <div class="kpi" style="border-left:4px solid #2F6B2F;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div><div class="lbl">Instructors</div><div class="val" style="color:#2F6B2F;">{{ total_instructors }}</div><div class="sub">+ {{ total_students }} students</div></div>
+      <div class="ico" style="background:#d1fae5;color:#065f46;"><i class="fa-solid fa-chalkboard-user"></i></div>
+    </div>
+  </div>
+
+  <div class="kpi" style="border-left:4px solid #7c3aed;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div><div class="lbl">Vehicles</div><div class="val" style="color:#6d28d9;">{{ total_vehicles }}</div><div class="sub">{{ available_vehicles }} available</div></div>
+      <div class="ico" style="background:#ede9fe;color:#6d28d9;"><i class="fa-solid fa-van-shuttle"></i></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── CHARTS ROW ── -->
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:1rem;margin-bottom:1.5rem;">
+
+  <div class="panel">
+    <div class="panel-hd">
+      <div><div class="panel-hd-title">Weekly Scheduling Activity</div><div class="panel-hd-sub">Memos per day — last 7 days</div></div>
+    </div>
+    <div style="padding:1.25rem;">
+      <div class="chart-box"><canvas id="weeklyChart" data-labels="{{ weekly_labels|join:',' }}" data-values="{{ weekly_data|join:','}}"></canvas></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-hd">
+      <div><div class="panel-hd-title">Memo Status</div><div class="panel-hd-sub">All-time breakdown</div></div>
+    </div>
+    <div style="padding:1.25rem;">
+      <div class="chart-box" style="height:160px;"><canvas id="statusChart" data-pending="{{ pending_requests }}" data-approved="{{ approved_requests }}" data-rejected="{{ rejected_requests }}" data-conflicts="{{ conflict_alerts }}"></canvas></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem;margin-top:.75rem;font-size:.7rem;">
+        <div style="display:flex;align-items:center;gap:.35rem;color:#94a3b8;"><span style="width:10px;height:10px;border-radius:50%;background:#fbbf24;flex-shrink:0;"></span>Pending <strong style="color:#e2e8f0;margin-left:auto;">{{ pending_requests }}</strong></div>
+        <div style="display:flex;align-items:center;gap:.35rem;color:#94a3b8;"><span style="width:10px;height:10px;border-radius:50%;background:#10b981;flex-shrink:0;"></span>Approved <strong style="color:#e2e8f0;margin-left:auto;">{{ approved_requests }}</strong></div>
+        <div style="display:flex;align-items:center;gap:.35rem;color:#94a3b8;"><span style="width:10px;height:10px;border-radius:50%;background:#f87171;flex-shrink:0;"></span>Rejected <strong style="color:#e2e8f0;margin-left:auto;">{{ rejected_requests }}</strong></div>
+        <div style="display:flex;align-items:center;gap:.35rem;color:#94a3b8;"><span style="width:10px;height:10px;border-radius:50%;background:#fb7185;flex-shrink:0;"></span>Conflict <strong style="color:#e2e8f0;margin-left:auto;">{{ conflict_alerts }}</strong></div>
       </div>
     </div>
-    <div class="divide-y divide-slate-100">
+  </div>
+
+</div>
+
+<!-- ── SCHEDULE + URGENT ── -->
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:1rem;margin-bottom:1.5rem;">
+
+  <!-- Today's Schedule -->
+  <div class="panel">
+    <div class="panel-hd">
+      <div>
+        <div class="panel-hd-title" style="display:flex;align-items:center;gap:.5rem;">
+          <span style="width:8px;height:8px;border-radius:50%;background:#10b981;display:inline-block;animation:pulse 2s infinite;"></span>
+          Today's Schedule
+        </div>
+        <div class="panel-hd-sub">{{ today|date:"F j, Y" }} · {{ today_count }} memo{{ today_count|pluralize }}</div>
+      </div>
+      <a href="{% url 'memos:memo_admin_list' %}" style="font-size:.72rem;color:#38bdf8;font-weight:600;">View all →</a>
+    </div>
+    <div style="max-height:280px;overflow-y:auto;">
       {% for m in today_schedules %}
-        <div class="p-5 hover:bg-green-50/40 transition {% if m.status == 'conflict' %}bg-red-50/30{% endif %}">
-          <div class="flex items-start justify-between gap-4">
-            <div>
-              <div class="font-semibold">{{ m.title }}</div>
-              <div class="text-sm text-slate-500 mt-1">{{ m.assigned_user }} • {{ m.start_time }} - {{ m.end_time }}</div>
-              <div class="text-sm text-slate-500 mt-1">Venue: {{ m.venue }} • Destination: {{ m.destination }}</div>
+        <div class="row {% if m.status == 'conflict' %}{% endif %}" {% if m.status == 'conflict' %}style="background:rgba(248,113,113,.06);"{% endif %}>
+          <div style="font-size:.72rem;font-weight:700;padding:.2rem .5rem;border-radius:.4rem;background:#0f172a;color:#64748b;white-space:nowrap;margin-top:2px;flex-shrink:0;">{{ m.start_time|time:"H:i" }}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:600;font-size:.82rem;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ m.title }}</div>
+            <div style="font-size:.72rem;color:#64748b;margin-top:.15rem;">
+              {% with p=m.assigned_user.profile %}{{ p.first_name|default:m.assigned_user.username }} {{ p.last_name }}{% endwith %}
+              {% if m.venue %} · {{ m.venue }}{% endif %}
             </div>
-            <div class="text-right">
-              <span class="px-3 py-1 rounded-full text-xs font-semibold bg-uniGold/40 text-uniGreen">{{ m.get_priority_display }}</span>
-              <div class="mt-2">
-                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">{{ m.get_status_display }}</span>
-              </div>
-            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.2rem;flex-shrink:0;">
+            <span class="badge b-{{ m.status }}">{{ m.get_status_display }}</span>
+            <span class="badge b-{{ m.priority }}">{{ m.get_priority_display }}</span>
           </div>
         </div>
       {% empty %}
-        <div class="p-8 text-sm text-slate-500">No schedules for today.</div>
-      {% endfor %}
-    </div>
-  </div>
-
-  <div class="rounded-2xl bg-white border border-slate-100 shadow-soft overflow-hidden">
-    <div class="p-5 border-b border-slate-100">
-      <div class="font-semibold">Requests Overview</div>
-      <div class="text-sm text-slate-500 mt-1">Pending vs Approved vs Rejected</div>
-    </div>
-    <div class="p-5">
-      <canvas
-        id="adminRequestsChart"
-        height="180"
-        data-pending="{{ pending_requests|default:0 }}"
-        data-approved="{{ approved_requests|default:0 }}"
-        data-rejected="{{ rejected_requests|default:0 }}"
-        data-conflicts="{{ conflict_alerts|default:0 }}"
-      ></canvas>
-    </div>
-  </div>
-
-  <div class="rounded-2xl bg-white border border-slate-100 shadow-soft overflow-hidden">
-    <div class="p-5 border-b border-slate-100">
-      <div class="font-semibold">Upcoming Events</div>
-      <div class="text-sm text-slate-500 mt-1">Next 7 days</div>
-    </div>
-    <div class="p-5 space-y-3">
-      {% for m in upcoming_events %}
-        <div class="p-4 rounded-2xl border border-slate-100 hover:border-uniGold/60 hover:bg-green-50/40 transition">
-          <div class="font-semibold">{{ m.title }}</div>
-          <div class="text-sm text-slate-500 mt-1">{{ m.date }} • {{ m.start_time }} - {{ m.end_time }}</div>
+        <div style="padding:2rem;text-align:center;color:#475569;font-size:.82rem;">
+          <i class="fa-regular fa-calendar-check" style="font-size:1.5rem;display:block;margin-bottom:.5rem;color:#10b981;"></i>
+          No schedules for today.
         </div>
-      {% empty %}
-        <div class="text-sm text-slate-500">No upcoming events in the next 7 days.</div>
       {% endfor %}
     </div>
+  </div>
+
+  <!-- Urgent / Action Required -->
+  <div class="panel">
+    <div class="panel-hd">
+      <div>
+        <div class="panel-hd-title" style="color:#fca5a5;display:flex;align-items:center;gap:.4rem;"><i class="fa-solid fa-fire" style="color:#f87171;"></i> Urgent — Act Now</div>
+        <div class="panel-hd-sub">High-priority pending memos</div>
+      </div>
+    </div>
+    {% for m in urgent_memos %}
+      <div class="row">
+        <div style="width:8px;height:8px;border-radius:50%;background:#f87171;margin-top:5px;flex-shrink:0;"></div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:600;font-size:.82rem;color:#fca5a5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ m.title }}</div>
+          <div style="font-size:.7rem;color:#64748b;margin-top:.1rem;">{{ m.date|date:"M j" }} · {{ m.start_time|time:"H:i" }}</div>
+          <div style="font-size:.7rem;color:#475569;">{% with p=m.assigned_user.profile %}{{ p.first_name|default:m.assigned_user.username }} {{ p.last_name }}{% endwith %}</div>
+        </div>
+        <a href="{% url 'memos:decision_panel' %}" style="font-size:.7rem;color:#38bdf8;font-weight:700;flex-shrink:0;">Decide</a>
+      </div>
+    {% empty %}
+      <div style="padding:1.5rem;text-align:center;color:#475569;font-size:.82rem;">
+        <i class="fa-solid fa-circle-check" style="color:#10b981;font-size:1.5rem;display:block;margin-bottom:.5rem;"></i>
+        No urgent memos.
+      </div>
+    {% endfor %}
+  </div>
+
+</div>
+
+<!-- ── UPCOMING + CONFLICTS + QUICK LINKS ── -->
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:1.5rem;">
+
+  <!-- Upcoming 7 Days -->
+  <div class="panel">
+    <div class="panel-hd">
+      <div><div class="panel-hd-title">Upcoming Events</div><div class="panel-hd-sub">Next 7 days</div></div>
+    </div>
+    {% for m in upcoming_events %}
+      <div class="row">
+        <div style="width:36px;flex-shrink:0;text-align:center;">
+          <div style="font-size:.6rem;font-weight:700;color:#38bdf8;text-transform:uppercase;">{{ m.date|date:"M" }}</div>
+          <div style="font-size:1.1rem;font-weight:800;color:#e2e8f0;line-height:1.1;">{{ m.date|date:"j" }}</div>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:600;font-size:.8rem;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ m.title }}</div>
+          <div style="font-size:.7rem;color:#64748b;">{{ m.start_time|time:"H:i" }}–{{ m.end_time|time:"H:i" }}</div>
+        </div>
+        <span class="badge b-{{ m.priority }}">{{ m.get_priority_display }}</span>
+      </div>
+    {% empty %}
+      <div style="padding:1.5rem;text-align:center;color:#475569;font-size:.82rem;">No upcoming events.</div>
+    {% endfor %}
+  </div>
+
+  <!-- Conflicts -->
+  <div class="panel">
+    <div class="panel-hd">
+      <div><div class="panel-hd-title" style="color:#fca5a5;"><i class="fa-solid fa-triangle-exclamation" style="margin-right:.3rem;color:#f87171;"></i>Conflicts</div><div class="panel-hd-sub">{{ conflict_alerts }} detected</div></div>
+      <a href="{% url 'memos:decision_panel' %}" style="font-size:.7rem;color:#f87171;font-weight:700;">Resolve →</a>
+    </div>
+    {% for m in conflict_memos %}
+      <div class="row" style="background:rgba(248,113,113,.05);">
+        <i class="fa-solid fa-circle-exclamation" style="color:#f87171;margin-top:2px;flex-shrink:0;font-size:.85rem;"></i>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:600;font-size:.8rem;color:#fca5a5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ m.title }}</div>
+          <div style="font-size:.7rem;color:#64748b;">{{ m.date|date:"M j" }} · {{ m.start_time|time:"H:i" }}–{{ m.end_time|time:"H:i" }}</div>
+          <div style="font-size:.7rem;color:#475569;">{% with p=m.assigned_user.profile %}{{ p.first_name|default:m.assigned_user.username }} {{ p.last_name }}{% endwith %}</div>
+        </div>
+      </div>
+    {% empty %}
+      <div style="padding:1.5rem;text-align:center;color:#475569;font-size:.82rem;">
+        <i class="fa-solid fa-circle-check" style="color:#10b981;font-size:1.5rem;display:block;margin-bottom:.5rem;"></i>
+        No conflicts.
+      </div>
+    {% endfor %}
+  </div>
+
+  <!-- Quick Links & Recommendations -->
+  <div class="panel">
+    <div class="panel-hd"><div class="panel-hd-title">Management & Tools</div></div>
+    <div style="padding:.5rem;">
+      <a href="{% url 'memos:memo_create' %}" class="qlink">
+        <i class="fa-solid fa-calendar-plus" style="color:#10b981;width:1rem;text-align:center;"></i> Assign Memo
+      </a>
+      <a href="{% url 'memos:decision_panel' %}" class="qlink">
+        <i class="fa-solid fa-clipboard-check" style="color:#38bdf8;width:1rem;text-align:center;"></i> Decision Panel
+        {% if pending_requests %}<span style="background:#f59e0b;color:#000;border-radius:9999px;padding:.05rem .4rem;font-size:.65rem;">{{ pending_requests }}</span>{% endif %}
+      </a>
+      <a href="{% url 'memos:memo_admin_list' %}" class="qlink">
+        <i class="fa-solid fa-list-check" style="color:#a78bfa;width:1rem;text-align:center;"></i> All Memos
+        <span class="cnt">{{ total_memos }}</span>
+      </a>
+      <a href="{% url 'accounts:admin_user_list' 'instructor' %}" class="qlink">
+        <i class="fa-solid fa-chalkboard-user" style="color:#60a5fa;width:1rem;text-align:center;"></i> Instructors
+        <span class="cnt">{{ total_instructors }}</span>
+      </a>
+      <a href="{% url 'accounts:admin_user_list' 'staff' %}" class="qlink">
+        <i class="fa-solid fa-users-gear" style="color:#c4b5fd;width:1rem;text-align:center;"></i> Staff
+        <span class="cnt">{{ total_staff }}</span>
+      </a>
+      <a href="{% url 'resources:vehicle_admin_list' %}" class="qlink">
+        <i class="fa-solid fa-van-shuttle" style="color:#f9a8d4;width:1rem;text-align:center;"></i> Vehicles
+        <span class="cnt">{{ available_vehicles }}/{{ total_vehicles }}</span>
+      </a>
+    </div>
+
+    <!-- Recommendations -->
+    <div style="margin:.5rem;padding:.75rem;background:#0f172a;border-radius:.75rem;border:1px solid #1e3a4a;">
+      <div style="font-size:.7rem;font-weight:700;color:#38bdf8;letter-spacing:.06em;text-transform:uppercase;margin-bottom:.5rem;">💡 Recommendations</div>
+      {% if conflict_alerts %}
+        <div style="font-size:.72rem;color:#fca5a5;margin-bottom:.3rem;">⚠️ {{ conflict_alerts }} schedule conflict{{ conflict_alerts|pluralize }} need resolution.</div>
+      {% endif %}
+      {% if pending_requests %}
+        <div style="font-size:.72rem;color:#fcd34d;margin-bottom:.3rem;">📋 {{ pending_requests }} memo{{ pending_requests|pluralize }} awaiting approval.</div>
+      {% endif %}
+      {% if available_vehicles == 0 %}
+        <div style="font-size:.72rem;color:#f87171;margin-bottom:.3rem;">🚐 No vehicles currently available.</div>
+      {% endif %}
+      {% if not conflict_alerts and not pending_requests %}
+        <div style="font-size:.72rem;color:#6ee7b7;">✅ System is running smoothly. No issues detected.</div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+
+<!-- ── RECENT ACTIVITY ── -->
+<div class="panel">
+  <div class="panel-hd">
+    <div><div class="panel-hd-title">Recent Activity</div><div class="panel-hd-sub">Latest memo entries across all users</div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));">
+    {% for m in recent_memos %}
+      <div class="row">
+        <div style="width:32px;height:32px;border-radius:50%;background:#2F6B2F;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:800;color:#fff;flex-shrink:0;text-transform:uppercase;">
+          {% with p=m.assigned_user.profile %}{{ p.first_name|slice:":1" }}{{ p.last_name|slice:":1" }}{% endwith %}
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:600;font-size:.82rem;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ m.title }}</div>
+          <div style="font-size:.7rem;color:#64748b;">{% with p=m.assigned_user.profile %}{{ p.first_name|default:m.assigned_user.username }} {{ p.last_name }}{% endwith %} · {{ m.date|date:"M j" }}</div>
+          <div style="font-size:.68rem;color:#334155;">{{ m.created_at|timesince }} ago</div>
+        </div>
+        <span class="badge b-{{ m.status }}">{{ m.get_status_display }}</span>
+      </div>
+    {% empty %}
+      <div style="padding:2rem;color:#475569;font-size:.82rem;">No recent activity.</div>
+    {% endfor %}
   </div>
 </div>
 
+<style>
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.8)} }
+</style>
+
 <script>
-  (() => {
-    const el = document.getElementById('adminRequestsChart');
-    if (!el || typeof Chart === 'undefined') return;
+(function(){
+  if(typeof Chart==='undefined') return;
+  Chart.defaults.color='#64748b';
 
-    const pending = parseInt(el.dataset.pending || '0', 10);
-    const approved = parseInt(el.dataset.approved || '0', 10);
-    const rejected = parseInt(el.dataset.rejected || '0', 10);
-    const conflicts = parseInt(el.dataset.conflicts || '0', 10);
+  // Bar - weekly
+  const wEl=document.getElementById('weeklyChart');
+  if(wEl){
+    const labels=(wEl.dataset.labels||'').split(',').map(s=>s.trim()).filter(Boolean);
+    const values=(wEl.dataset.values||'').split(',').map(Number);
+    new Chart(wEl,{type:'bar',data:{labels,datasets:[{label:'Memos',data:values,backgroundColor:'rgba(56,189,248,.18)',borderColor:'#38bdf8',borderWidth:2,borderRadius:6,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{font:{size:10}}},y:{beginAtZero:true,ticks:{precision:0,font:{size:10}},grid:{color:'rgba(255,255,255,.04)'}}}}});
+  }
 
-    new Chart(el, {
-      type: 'doughnut',
-      data: {
-        labels: ['Pending', 'Approved', 'Rejected', 'Conflicts'],
-        datasets: [{
-          data: [
-            pending,
-            approved,
-            rejected,
-            conflicts,
-          ],
-          backgroundColor: ['#F2B705', '#2F6B2F', '#EF4444', '#FB7185'],
-          borderWidth: 0,
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: { position: 'bottom' }
-        }
-      }
-    });
-  })();
+  // Doughnut - status
+  const sEl=document.getElementById('statusChart');
+  if(sEl){
+    const p=+sEl.dataset.pending||0,a=+sEl.dataset.approved||0,r=+sEl.dataset.rejected||0,c=+sEl.dataset.conflicts||0;
+    new Chart(sEl,{type:'doughnut',data:{labels:['Pending','Approved','Rejected','Conflict'],datasets:[{data:[p,a,r,c],backgroundColor:['#fbbf24','#10b981','#f87171','#fb7185'],borderWidth:0,hoverOffset:4}]},options:{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{legend:{display:false}}}});
+  }
+})();
 </script>
 {% endblock %}

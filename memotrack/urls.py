@@ -16,6 +16,8 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import include, path
+from django.conf import settings
+from django.conf.urls.static import static
 
 from accounts import views as accounts_views
 
@@ -26,4 +28,4 @@ urlpatterns = [
     path('', include('memos.urls')),
     path('resources/', include('resources.urls')),
     path('notifications/', include('notifications.urls')),
-]
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

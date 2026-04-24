@@ -1,107 +1,212 @@
 {% load static %}
 
-<aside class="w-72 hidden lg:flex flex-col bg-white border-r border-slate-100">
-  <div class="px-6 py-6">
+<div class="flex flex-col h-full">
+  <!-- Logo -->
+  <div class="px-5 py-5 border-b border-slate-100 flex-shrink-0">
     <div class="flex items-center gap-3">
-      <div class="h-12 w-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-soft overflow-hidden">
+      <div class="h-10 w-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-soft overflow-hidden flex-shrink-0">
         <img src="{% static 'img/logo.png' %}" alt="MemoTrack Logo" class="h-full w-full object-contain p-1" />
       </div>
       <div>
-        <div class="text-lg font-semibold leading-tight">MemoTrack</div>
-        <div class="text-xs text-slate-500">University System</div>
+        <div class="text-sm font-bold leading-tight text-slate-800">MemoTrack</div>
+        <div class="text-xs text-slate-400">University System</div>
       </div>
     </div>
   </div>
 
-  <nav class="px-3 pb-6 space-y-1">
-    {% if request.user.is_authenticated %}
-      {% if request.user.is_staff %}
-        <a href="{% url 'accounts:admin_dashboard' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-green-50 transition">
-          <i class="fa-solid fa-gauge text-uniGreen"></i>
-          <span class="font-medium">Admin Dashboard</span>
-        </a>
-
-        <a href="{% url 'accounts:admin_user_list' 'staff' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-green-50 transition">
-          <i class="fa-solid fa-users-gear text-uniGreen"></i>
-          <span class="font-medium">Manage Staff</span>
-        </a>
-
-        <a href="{% url 'accounts:admin_user_list' 'instructor' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-green-50 transition">
-          <i class="fa-solid fa-user-tie text-uniGreen"></i>
-          <span class="font-medium">Manage Instructors</span>
-        </a>
-
-        <a href="{% url 'resources:vehicle_admin_list' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-green-50 transition">
-          <i class="fa-solid fa-van-shuttle text-uniGreen"></i>
-          <span class="font-medium">Manage Vehicles</span>
-        </a>
-
-        <a href="{% url 'memos:memo_admin_list' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-green-50 transition">
-          <i class="fa-solid fa-calendar-check text-uniGreen"></i>
-          <span class="font-medium">Manage Memos</span>
-        </a>
-      {% endif %}
-
-      {% if not request.user.is_staff and request.user.profile.role != 'hr' and request.user.profile.role != 'instructor' and request.user.profile.role != 'approver' and request.user.profile.role != 'transportation' %}
-        <a href="{% url 'accounts:user_dashboard' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-green-50 transition">
-          <i class="fa-solid fa-gauge text-uniGreen"></i>
-          <span class="font-medium">User Dashboard</span>
-        </a>
-      {% endif %}
-
-      {% if request.user.profile.role == 'hr' %}
-        <a href="{% url 'accounts:hr_dashboard' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-green-50 transition">
-          <i class="fa-solid fa-user-group text-uniGreen"></i>
-          <span class="font-medium">HR Dashboard</span>
-        </a>
-      {% endif %}
-
-      {% if request.user.profile.role == 'instructor' %}
-        <a href="{% url 'accounts:instructor_dashboard' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-green-50 transition">
-          <i class="fa-solid fa-chalkboard-user text-uniGreen"></i>
-          <span class="font-medium">Instructor Dashboard</span>
-        </a>
-      {% endif %}
-
-      {% if request.user.profile.role == 'approver' %}
-        <a href="{% url 'accounts:approver_dashboard' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-green-50 transition">
-          <i class="fa-solid fa-clipboard-check text-uniGreen"></i>
-          <span class="font-medium">Approver Dashboard</span>
-        </a>
-      {% endif %}
-
-      {% if request.user.profile.role == 'transportation' %}
-        <a href="{% url 'accounts:transportation_dashboard' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-green-50 transition">
-          <i class="fa-solid fa-van-shuttle text-uniGreen"></i>
-          <span class="font-medium">Transportation Dashboard</span>
-        </a>
-      {% endif %}
-    {% endif %}
-
-    {% if not request.user.is_authenticated or not request.user.is_staff %}
-      <a href="{% url 'memos:memo_list' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-green-50 transition">
-        <i class="fa-solid fa-calendar-check text-uniGreen"></i>
-        <span class="font-medium">Memos</span>
-      </a>
-      <a href="{% url 'resources:vehicle_list' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-green-50 transition">
-        <i class="fa-solid fa-van-shuttle text-uniGreen"></i>
-        <span class="font-medium">Vehicles</span>
-      </a>
-    {% endif %}
-    <a href="{% url 'notifications:notification_list' %}" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-green-50 transition">
-      <i class="fa-solid fa-bell text-uniGreen"></i>
-      <span class="font-medium">Notifications</span>
-    </a>
+  <!-- Navigation (scrollable if needed) -->
+  <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
 
     {% if request.user.is_authenticated %}
-      <form method="post" action="{% url 'accounts:logout' %}">
-        {% csrf_token %}
-        <button type="submit" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-green-50 transition text-left">
-          <i class="fa-solid fa-right-from-bracket text-uniGreen"></i>
-          <span class="font-medium">Logout</span>
-        </button>
-      </form>
+
+      {% if request.user.is_staff or request.user.profile.role == 'admin' %}
+
+        {# ── ADMIN SECTION ── #}
+        <div class="sidebar-section-label">Overview</div>
+
+        <a href="{% url 'accounts:admin_dashboard' %}"
+           class="sidebar-link {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}">
+          <i class="fa-solid fa-gauge sidebar-icon"></i>
+          <span>Dashboard</span>
+        </a>
+
+        <div class="sidebar-section-label mt-3">People</div>
+
+        <a href="{% url 'accounts:admin_user_list' 'instructor' %}"
+           class="sidebar-link {% if request.resolver_match.url_name == 'admin_user_list' and request.resolver_match.kwargs.role == 'instructor' %}active{% endif %}">
+          <i class="fa-solid fa-chalkboard-user sidebar-icon"></i>
+          <span>Instructors</span>
+        </a>
+
+        <a href="{% url 'accounts:admin_user_list' 'staff' %}"
+           class="sidebar-link {% if request.resolver_match.url_name == 'admin_user_list' and request.resolver_match.kwargs.role == 'staff' %}active{% endif %}">
+          <i class="fa-solid fa-users-gear sidebar-icon"></i>
+          <span>Staff</span>
+        </a>
+
+        <a href="{% url 'accounts:admin_user_list' 'student' %}"
+           class="sidebar-link {% if request.resolver_match.url_name == 'admin_user_list' and request.resolver_match.kwargs.role == 'student' %}active{% endif %}">
+          <i class="fa-solid fa-user-graduate sidebar-icon"></i>
+          <span>Students</span>
+        </a>
+
+        <div class="sidebar-section-label mt-3">Memos</div>
+
+        <a href="{% url 'memos:memo_admin_list' %}"
+           class="sidebar-link {% if request.resolver_match.url_name == 'memo_admin_list' %}active{% endif %}">
+          <i class="fa-solid fa-calendar-check sidebar-icon"></i>
+          <span>All Memos</span>
+        </a>
+
+        <a href="{% url 'memos:memo_create' %}"
+           class="sidebar-link {% if request.resolver_match.url_name == 'memo_create' %}active{% endif %}">
+          <i class="fa-solid fa-calendar-plus sidebar-icon"></i>
+          <span>Create Memo</span>
+        </a>
+
+        <a href="{% url 'memos:decision_panel' %}"
+           class="sidebar-link {% if request.resolver_match.url_name == 'decision_panel' %}active{% endif %}">
+          <i class="fa-solid fa-clipboard-check sidebar-icon"></i>
+          <span>Decision Panel</span>
+        </a>
+
+        <div class="sidebar-section-label mt-3">Resources</div>
+
+        <a href="{% url 'resources:vehicle_admin_list' %}"
+           class="sidebar-link {% if request.resolver_match.url_name == 'vehicle_admin_list' %}active{% endif %}">
+          <i class="fa-solid fa-van-shuttle sidebar-icon"></i>
+          <span>Vehicles</span>
+        </a>
+
+        <a href="{% url 'resources:grouped_trips' %}"
+           class="sidebar-link {% if request.resolver_match.url_name == 'grouped_trips' %}active{% endif %}">
+          <i class="fa-solid fa-route sidebar-icon"></i>
+          <span>Grouped Trips</span>
+        </a>
+
+      {% else %}
+
+        {# ── ROLE-SPECIFIC DASHBOARDS ── #}
+        <div class="sidebar-section-label">Overview</div>
+
+        {% if request.user.profile.role == 'hr' %}
+          <a href="{% url 'accounts:hr_dashboard' %}"
+             class="sidebar-link {% if request.resolver_match.url_name == 'hr_dashboard' %}active{% endif %}">
+            <i class="fa-solid fa-user-group sidebar-icon"></i>
+            <span>HR Dashboard</span>
+          </a>
+
+        {% elif request.user.profile.role == 'instructor' %}
+          <a href="{% url 'accounts:instructor_dashboard' %}"
+             class="sidebar-link {% if request.resolver_match.url_name == 'instructor_dashboard' %}active{% endif %}">
+            <i class="fa-solid fa-chalkboard-user sidebar-icon"></i>
+            <span>Dashboard</span>
+          </a>
+
+        {% elif request.user.profile.role == 'approver' %}
+          <a href="{% url 'accounts:approver_dashboard' %}"
+             class="sidebar-link {% if request.resolver_match.url_name == 'approver_dashboard' %}active{% endif %}">
+            <i class="fa-solid fa-clipboard-check sidebar-icon"></i>
+            <span>Dashboard</span>
+          </a>
+
+        {% elif request.user.profile.role == 'transportation' %}
+          <a href="{% url 'accounts:transportation_dashboard' %}"
+             class="sidebar-link {% if request.resolver_match.url_name == 'transportation_dashboard' %}active{% endif %}">
+            <i class="fa-solid fa-van-shuttle sidebar-icon"></i>
+            <span>Dashboard</span>
+          </a>
+
+        {% else %}
+          <a href="{% url 'accounts:user_dashboard' %}"
+             class="sidebar-link {% if request.resolver_match.url_name == 'user_dashboard' %}active{% endif %}">
+            <i class="fa-solid fa-gauge sidebar-icon"></i>
+            <span>Dashboard</span>
+          </a>
+        {% endif %}
+
+        {# ── COMMON USER LINKS ── #}
+        <div class="sidebar-section-label mt-3">My Work</div>
+
+        <a href="{% url 'memos:memo_list' %}"
+           class="sidebar-link {% if request.resolver_match.url_name == 'memo_list' %}active{% endif %}">
+          <i class="fa-solid fa-calendar-check sidebar-icon"></i>
+          <span>Memos</span>
+        </a>
+
+        <a href="{% url 'resources:vehicle_list' %}"
+           class="sidebar-link {% if request.resolver_match.url_name == 'vehicle_list' %}active{% endif %}">
+          <i class="fa-solid fa-van-shuttle sidebar-icon"></i>
+          <span>Vehicles</span>
+        </a>
+
+        {% if request.user.profile.role == 'approver' %}
+          <a href="{% url 'memos:decision_panel' %}"
+             class="sidebar-link {% if request.resolver_match.url_name == 'decision_panel' %}active{% endif %}">
+            <i class="fa-solid fa-gavel sidebar-icon"></i>
+            <span>Decision Panel</span>
+          </a>
+        {% endif %}
+
+      {% endif %}
+
     {% endif %}
   </nav>
 
-</aside>
+  <!-- Logout pinned at bottom -->
+  {% if request.user.is_authenticated %}
+    <div class="flex-shrink-0 px-3 py-3 border-t border-slate-100">
+      <form method="post" action="{% url 'accounts:logout' %}">
+        {% csrf_token %}
+        <button type="submit"
+                class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-50 transition text-red-500 text-sm font-medium text-left">
+          <i class="fa-solid fa-right-from-bracket text-red-400 w-4 text-center"></i>
+          <span>Logout</span>
+        </button>
+      </form>
+    </div>
+  {% endif %}
+</div>
+
+<style>
+  .sidebar-section-label {
+    font-size: .65rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: #94a3b8;
+    padding: .35rem 1rem .2rem;
+    margin-top: .25rem;
+  }
+  .sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+    padding: .6rem 1rem;
+    border-radius: .75rem;
+    font-size: .825rem;
+    color: #475569;
+    text-decoration: none;
+    transition: background .14s, color .14s;
+    font-weight: 500;
+  }
+  .sidebar-link:hover {
+    background: #f0fdf4;
+    color: #2F6B2F;
+  }
+  .sidebar-link:hover .sidebar-icon { color: #2F6B2F; }
+  .sidebar-link.active {
+    background: #dcfce7;
+    color: #166534;
+    font-weight: 700;
+  }
+  .sidebar-link.active .sidebar-icon { color: #166534; }
+  .sidebar-icon {
+    width: 1rem;
+    text-align: center;
+    font-size: .85rem;
+    color: #94a3b8;
+    flex-shrink: 0;
+    transition: color .14s;
+  }
+</style>

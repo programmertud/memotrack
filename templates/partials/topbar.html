@@ -1,4 +1,5 @@
 {% load static %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css"/>
 
 <header class="sticky top-0 z-20 bg-white/70 backdrop-blur border-b border-slate-100">
   <div class="px-4 sm:px-6 lg:px-10 py-4 flex items-center justify-between gap-4">
@@ -21,32 +22,882 @@
     </div>
 
     <div class="flex items-center gap-3">
-      <a href="{% url 'notifications:notification_list' %}" class="relative h-11 w-11 rounded-2xl bg-white border border-slate-200 hover:border-uniGold transition flex items-center justify-center">
-        <i class="fa-solid fa-bell text-slate-700"></i>
-        {% if unread_notifications_count and unread_notifications_count > 0 %}
-          <span class="absolute -top-1 -right-1 h-5 min-w-5 px-1 rounded-full bg-uniGold text-uniGreen text-xs font-bold flex items-center justify-center">{{ unread_notifications_count }}</span>
-        {% endif %}
-      </a>
-      <div class="h-11 px-4 rounded-2xl bg-white border border-slate-200 flex items-center gap-3">
-        <div class="h-8 w-8 rounded-xl bg-green-100 text-uniGreen flex items-center justify-center">
-          <i class="fa-solid fa-user"></i>
-        </div>
-        <div class="leading-tight">
-          {% if request.user.is_authenticated %}
-            <div class="text-sm font-semibold">{{ request.user.username }}</div>
-            <div class="text-xs text-slate-500">
-              {% if request.user.is_staff %}
-                Admin
-              {% else %}
-                {{ request.user.profile.get_role_display|default:"User" }}
-              {% endif %}
+
+      <!-- AI Assistant button -->
+      <div class="relative" id="aiChatWrapper">
+        <button id="aiChatBtn"
+                title="AI Assistant"
+                class="relative h-11 w-11 rounded-2xl bg-gradient-to-br from-uniGreen to-green-400 border border-green-300 hover:opacity-90 transition flex items-center justify-center focus:outline-none shadow-soft"
+                aria-haspopup="true" aria-expanded="false">
+          <!-- Sparkle / AI icon (inline SVG) -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+            <path d="M12 2l2.09 6.26L20 10l-5.91 1.74L12 18l-2.09-6.26L4 10l5.91-1.74L12 2z"/>
+            <path d="M5 21l1.09 2.91L9 25l-2.91 1.09L5 29l-1.09-2.91L1 25l2.91-1.09L5 21z" opacity=".5" transform="scale(0.55) translate(2 -4)"/>
+          </svg>
+        </button>
+
+        <!-- AI Chat Panel -->
+        <div id="aiChatPanel"
+             class="absolute right-0 mt-2 rounded-2xl z-50 overflow-hidden flex-col"
+             style="width:340px; display:none; flex-direction:column; height:460px; background:#fff; border:2px solid #e2e8f0; box-shadow:0 24px 60px -10px rgba(0,0,0,.20), 0 4px 20px rgba(0,0,0,.08);">
+
+          <!-- Panel header -->
+          <div style="background:linear-gradient(135deg,#2F6B2F,#22c55e); padding:.85rem 1rem; flex-shrink:0; display:flex; align-items:center; gap:.65rem;">
+            <div style="width:34px;height:34px;border-radius:.6rem;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;">
+                <path d="M12 2l2.09 6.26L20 10l-5.91 1.74L12 18l-2.09-6.26L4 10l5.91-1.74L12 2z"/>
+              </svg>
             </div>
-          {% else %}
-            <div class="text-sm font-semibold">Guest</div>
-            <div class="text-xs text-slate-500">Sign in required</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-weight:700;font-size:.82rem;color:#fff;line-height:1.2;">MemoTrack AI Assistant</div>
+              <div style="font-size:.68rem;color:rgba(255,255,255,.75);">Always online · Ask me anything</div>
+            </div>
+            <button id="aiChatClose" style="width:28px;height:28px;border:none;background:rgba(255,255,255,.2);border-radius:.5rem;cursor:pointer;color:#fff;display:flex;align-items:center;justify-content:center;font-size:.85rem;transition:background .12s;" onmouseover="this.style.background='rgba(255,255,255,.35)'" onmouseout="this.style.background='rgba(255,255,255,.2)'" aria-label="Close">
+              <svg viewBox="0 0 20 20" fill="currentColor" style="width:14px;height:14px;"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+            </button>
+          </div>
+
+          <!-- Messages area -->
+          <div id="aiMessages" style="flex:1;overflow-y:auto;padding:.85rem;display:flex;flex-direction:column;gap:.65rem;">
+            <!-- Greeting bubble -->
+            <div style="display:flex;gap:.5rem;align-items:flex-start;">
+              <div style="width:28px;height:28px;border-radius:.5rem;background:#dcfce7;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#166534" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M12 2l2.09 6.26L20 10l-5.91 1.74L12 18l-2.09-6.26L4 10l5.91-1.74L12 2z"/></svg>
+              </div>
+              <div style="max-width:85%;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:0 .85rem .85rem .85rem;padding:.6rem .85rem;">
+                <div style="font-size:.75rem;color:#166534;font-weight:600;margin-bottom:.2rem;">AI Assistant</div>
+                <div style="font-size:.78rem;color:#374151;line-height:1.5;">Hi! I'm your MemoTrack AI Assistant. I can help you with scheduling, memos, conflicts, and system queries. What can I help you with today?</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Input area -->
+          <div style="padding:.75rem;border-top:1px solid #f1f5f9;flex-shrink:0;display:flex;gap:.5rem;align-items:flex-end;">
+            <textarea id="aiChatInput" rows="1"
+                      placeholder="Ask anything about memos, schedules…"
+                      style="flex:1;resize:none;border:1.5px solid #e2e8f0;border-radius:.75rem;padding:.55rem .75rem;font-size:.78rem;font-family:inherit;outline:none;max-height:90px;overflow-y:auto;transition:border .15s;line-height:1.45;"
+                      onfocus="this.style.borderColor='#2F6B2F'" onblur="this.style.borderColor='#e2e8f0'"></textarea>
+            <button id="aiSendBtn"
+                    style="width:36px;height:36px;border-radius:.75rem;background:#2F6B2F;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:opacity .15s;"
+                    onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'" aria-label="Send">
+              <svg viewBox="0 0 20 20" fill="white" style="width:15px;height:15px;"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="relative" id="notifDropdownWrapper">
+        <button id="notifBellBtn"
+                class="relative h-11 w-11 rounded-2xl bg-white border border-slate-200 hover:border-uniGold transition flex items-center justify-center focus:outline-none"
+                aria-haspopup="true" aria-expanded="false">
+          <i class="fa-solid fa-bell text-slate-700"></i>
+          {% if unread_notifications_count and unread_notifications_count > 0 %}
+            <span id="notifBadge" class="absolute -top-1 -right-1 h-5 min-w-5 px-1 rounded-full bg-uniGold text-uniGreen text-xs font-bold flex items-center justify-center">{{ unread_notifications_count }}</span>
           {% endif %}
+        </button>
+
+        <!-- Notification dropdown panel -->
+        <div id="notifDropdownMenu"
+             class="absolute right-0 mt-2 w-80 rounded-2xl z-50 overflow-hidden"
+             style="max-height:420px; display:none; flex-direction:column; background:#ffffff; border:2px solid #e2e8f0; box-shadow:0 20px 50px -8px rgba(0,0,0,.22), 0 4px 16px rgba(0,0,0,.1);">
+
+          <!-- Header -->
+          <div class="flex items-center justify-between px-4 py-3 border-b border-slate-100 flex-shrink-0">
+            <div class="font-semibold text-sm text-slate-800">Notifications</div>
+            {% if unread_notifications_count and unread_notifications_count > 0 %}
+              <form method="post" action="{% url 'notifications:mark_all_read' %}" style="margin:0;">
+                {% csrf_token %}
+                <button type="submit" class="text-xs text-uniGreen font-semibold hover:underline">Mark all read</button>
+              </form>
+            {% endif %}
+          </div>
+
+          <!-- Notification list -->
+          <div class="overflow-y-auto flex-1">
+            {% if recent_notifications %}
+              {% for notif in recent_notifications %}
+                <div class="flex items-start gap-3 px-4 py-3 border-b border-slate-50 hover:bg-slate-50 transition {% if not notif.is_read %}bg-green-50/50{% endif %}">
+                  <!-- Severity dot -->
+                  <div class="flex-shrink-0 mt-0.5">
+                    {% if notif.severity == 'danger' %}
+                      <div class="h-2 w-2 rounded-full bg-red-500 mt-1.5"></div>
+                    {% elif notif.severity == 'warning' %}
+                      <div class="h-2 w-2 rounded-full bg-amber-400 mt-1.5"></div>
+                    {% else %}
+                      <div class="h-2 w-2 rounded-full bg-blue-400 mt-1.5"></div>
+                    {% endif %}
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="text-xs font-semibold text-slate-800 leading-tight {% if not notif.is_read %}text-uniGreen{% endif %}">{{ notif.title }}</div>
+                    {% if notif.message %}
+                      <div class="text-xs text-slate-500 mt-0.5 leading-snug line-clamp-2">{{ notif.message }}</div>
+                    {% endif %}
+                    <div class="text-xs text-slate-400 mt-1">{{ notif.created_at|timesince }} ago</div>
+                  </div>
+                  {% if not notif.is_read %}
+                    <div class="w-2 h-2 rounded-full bg-uniGreen flex-shrink-0 mt-1.5"></div>
+                  {% endif %}
+                </div>
+              {% endfor %}
+            {% else %}
+              <div class="px-4 py-8 text-center">
+                <i class="fa-solid fa-bell-slash text-slate-300 text-2xl mb-2"></i>
+                <div class="text-sm text-slate-400">No notifications yet</div>
+              </div>
+            {% endif %}
+          </div>
+
+          <!-- Footer -->
+          <div class="px-4 py-2.5 border-t border-slate-100 flex-shrink-0">
+            <a href="{% url 'notifications:notification_list' %}"
+               class="block text-center text-xs font-semibold text-uniGreen hover:underline">
+              View all notifications
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="relative" id="profileDropdownWrapper">
+        <button id="profileDropdownBtn"
+                class="h-11 px-4 rounded-2xl bg-white border border-slate-200 hover:border-uniGold transition flex items-center gap-3 cursor-pointer focus:outline-none"
+                aria-haspopup="true" aria-expanded="false">
+          <div id="topbarAvatar" class="h-8 w-8 rounded-full overflow-hidden flex-shrink-0 bg-green-100 text-uniGreen flex items-center justify-center">
+            {% if request.user.is_authenticated and request.user.profile.profile_picture %}
+              <img src="{{ request.user.profile.profile_picture.url }}" alt="avatar" class="h-full w-full object-cover" />
+            {% else %}
+              <canvas id="topbarIdenticonCanvas" width="32" height="32" style="display:block;border-radius:50%;"></canvas>
+            {% endif %}
+          </div>
+          <div class="leading-tight text-left hidden sm:block">
+            {% if request.user.is_authenticated %}
+              <div class="text-sm font-semibold" id="topbarName">
+                {% if request.user.profile.first_name %}{{ request.user.profile.first_name }} {{ request.user.profile.last_name }}{% else %}{{ request.user.username }}{% endif %}
+              </div>
+              <div class="text-xs text-slate-500">
+                {% if request.user.is_staff %}Admin{% else %}{{ request.user.profile.get_role_display|default:"User" }}{% endif %}
+              </div>
+            {% else %}
+              <div class="text-sm font-semibold">Guest</div>
+              <div class="text-xs text-slate-500">Sign in required</div>
+            {% endif %}
+          </div>
+          <i class="fa-solid fa-chevron-down text-xs text-slate-400 ml-1 transition-transform duration-200" id="profileChevron"></i>
+        </button>
+
+        <div id="profileDropdownMenu" class="absolute right-0 mt-2 w-44 bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden z-50 hidden">
+          <button id="openProfileModalBtn" class="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-green-50 hover:text-uniGreen transition">
+            <i class="fa-solid fa-user-circle w-4"></i> Profile
+          </button>
+          <div class="border-t border-slate-100"></div>
+          <form method="post" action="{% url 'accounts:logout' %}" style="margin:0;">
+            {% csrf_token %}
+            <button type="submit"
+                    class="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-500 hover:bg-red-50 transition">
+              <i class="fa-solid fa-right-from-bracket w-4"></i> Log Out
+            </button>
+          </form>
         </div>
       </div>
     </div>
   </div>
 </header>
+
+<!-- ═══════════════════════════════
+     PROFILE MODAL
+═══════════════════════════════ -->
+<div id="profileModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4" role="dialog" aria-modal="true">
+  <div id="profileModalBackdrop" class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"></div>
+  <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden z-10 flex flex-col max-h-[90vh]">
+
+    <div class="h-24 bg-gradient-to-br from-uniGreen to-green-400 relative flex-shrink-0">
+      <button id="closeProfileModal" class="absolute top-4 right-4 h-9 w-9 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition text-white">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div class="flex flex-col items-center -mt-12 px-6 flex-shrink-0">
+      <div class="relative" id="avatarWrapper">
+        <!-- Circle avatar -->
+        <div id="profileAvatarCircle" class="h-24 w-24 rounded-full border-4 border-white shadow-lg overflow-hidden bg-green-100 flex items-center justify-center">
+          <canvas id="modalIdenticonCanvas" width="96" height="96" style="display:none;border-radius:50%;"></canvas>
+          <img id="profileAvatarImg" src="" alt="Profile" class="hidden h-full w-full object-cover" />
+        </div>
+        <!-- Camera overlay (edit mode only) -->
+        <label for="photoInput" id="cameraOverlay"
+               class="absolute inset-0 rounded-full flex items-center justify-center bg-black/40 cursor-pointer transition-opacity"
+               style="opacity:0; pointer-events:none;">
+          <span class="text-white text-xs font-semibold flex flex-col items-center gap-1">
+            <i class="fa-solid fa-camera text-lg"></i>Edit
+          </span>
+        </label>
+        <input type="file" id="photoInput" accept="image/*" class="hidden" />
+      </div>
+      <div class="mt-3 text-center pb-2">
+        <div id="modalFullName" class="text-xl font-bold text-slate-800">—</div>
+        <div id="modalRole" class="text-sm text-slate-500 mt-0.5">—</div>
+      </div>
+    </div>
+
+    <div class="overflow-y-auto px-6 py-3 flex-1">
+      <!-- View mode -->
+      <div id="profileInfoGrid" class="space-y-2 mb-4">
+        <div class="bg-slate-50 rounded-2xl p-3">
+          <div class="text-xs text-slate-400 uppercase tracking-wide mb-1">Email</div>
+          <div id="modalEmail" class="text-sm font-medium text-slate-700 truncate">—</div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div class="bg-slate-50 rounded-2xl p-3">
+            <div class="text-xs text-slate-400 uppercase tracking-wide mb-1">School ID</div>
+            <div id="modalSchoolId" class="text-sm font-medium text-slate-700">—</div>
+          </div>
+          <div class="bg-slate-50 rounded-2xl p-3">
+            <div class="text-xs text-slate-400 uppercase tracking-wide mb-1">Mobile</div>
+            <div id="modalMobile" class="text-sm font-medium text-slate-700">—</div>
+          </div>
+        </div>
+        <div class="bg-slate-50 rounded-2xl p-3">
+          <div class="text-xs text-slate-400 uppercase tracking-wide mb-1">Username</div>
+          <div id="modalUsername" class="text-sm font-medium text-slate-700">—</div>
+        </div>
+      </div>
+
+      <!-- Edit mode (hidden by default) -->
+      <div id="editProfileForm" class="hidden space-y-3 mb-4">
+        <div class="text-sm font-semibold text-slate-700 flex items-center gap-2 mb-1">
+          <i class="fa-solid fa-pen-to-square text-uniGreen"></i> Edit Profile
+        </div>
+        <!-- Remove photo button (only if user has a photo) -->
+        <div id="removePhotoRow" class="hidden">
+          <button id="removePhotoBtn"
+                  class="w-full flex items-center justify-center gap-2 py-2 rounded-xl border border-red-200 text-red-500 text-sm hover:bg-red-50 transition">
+            <i class="fa-solid fa-trash"></i> Remove Profile Photo
+          </button>
+        </div>
+        <div>
+          <label class="text-xs text-slate-400 uppercase tracking-wide block mb-1">First Name</label>
+          <input id="editFirstName" type="text" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-uniGold/50 focus:border-uniGold transition" />
+        </div>
+        <div>
+          <label class="text-xs text-slate-400 uppercase tracking-wide block mb-1">Middle Name</label>
+          <input id="editMiddleName" type="text" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-uniGold/50 focus:border-uniGold transition" />
+        </div>
+        <div>
+          <label class="text-xs text-slate-400 uppercase tracking-wide block mb-1">Last Name</label>
+          <input id="editLastName" type="text" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-uniGold/50 focus:border-uniGold transition" />
+        </div>
+        <div>
+          <label class="text-xs text-slate-400 uppercase tracking-wide block mb-1">Email</label>
+          <input id="editEmail" type="email" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-uniGold/50 focus:border-uniGold transition" />
+        </div>
+        <div>
+          <label class="text-xs text-slate-400 uppercase tracking-wide block mb-1">Mobile Number</label>
+          <input id="editMobile" type="text" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-uniGold/50 focus:border-uniGold transition" />
+        </div>
+      </div>
+    </div>
+
+    <div class="flex gap-3 px-6 py-4 border-t border-slate-100 flex-shrink-0 bg-white">
+      <button id="editProfileToggleBtn" class="flex-1 py-2.5 rounded-2xl border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition">
+        <i class="fa-solid fa-pen-to-square mr-2 text-uniGreen"></i>Edit
+      </button>
+      <button id="saveProfileBtn" class="hidden flex-1 py-2.5 rounded-2xl bg-uniGreen text-white text-sm font-semibold hover:bg-green-700 transition">
+        <i class="fa-solid fa-floppy-disk mr-2"></i>Save Changes
+      </button>
+      <button id="cancelEditBtn" class="hidden flex-1 py-2.5 rounded-2xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition">
+        Cancel
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+     CROP MODAL (z-[60])
+═══════════════════════════════ -->
+<div id="cropModal" class="fixed inset-0 z-[60] hidden items-center justify-center p-4" role="dialog" aria-modal="true">
+  <div id="cropModalBackdrop" class="absolute inset-0 bg-slate-900/70 backdrop-blur-sm"></div>
+  <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg z-10 flex flex-col overflow-hidden">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+      <div class="flex items-center gap-2 font-semibold text-slate-800">
+        <i class="fa-solid fa-crop-simple text-uniGreen"></i> Crop your photo
+      </div>
+      <button id="closeCropModal" class="h-9 w-9 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-500 transition">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div class="p-4 bg-slate-50" style="max-height:420px;overflow:hidden;">
+      <div class="rounded-2xl overflow-hidden bg-black flex items-center justify-center" style="height:360px;">
+        <img id="cropperImage" src="" alt="Crop" style="max-width:100%;max-height:360px;display:block;" />
+      </div>
+    </div>
+    <div class="flex gap-3 px-6 py-4 border-t border-slate-100">
+      <button id="rotateCropBtn" class="flex-1 text-sm py-2.5 rounded-2xl border border-slate-200 hover:bg-slate-100 transition text-slate-600 font-medium">
+        <i class="fa-solid fa-rotate-right mr-1"></i> Rotate
+      </button>
+      <button id="resetCropBtn" class="flex-1 text-sm py-2.5 rounded-2xl border border-slate-200 hover:bg-slate-100 transition text-slate-600 font-medium">
+        <i class="fa-solid fa-arrows-rotate mr-1"></i> Reset
+      </button>
+      <button id="applyCropBtn" class="flex-1 text-sm py-2.5 rounded-2xl bg-uniGreen text-white hover:bg-green-700 transition font-semibold">
+        <i class="fa-solid fa-check mr-1"></i> Apply Crop
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
+<script>
+(function () {
+  /* ── Helpers ── */
+  function $(id) { return document.getElementById(id); }
+  const PROFILE_URL = "{% url 'accounts:profile_update' %}";
+  const CSRF_TOKEN  = "{{ csrf_token }}";
+  const USERNAME    = "{{ request.user.username }}";
+
+  /* ─────────────────────────────────
+     IDENTICON (GitHub-style 5×5 grid)
+  ───────────────────────────────── */
+  function hashStr(str) {
+    let h = 0;
+    for (let i = 0; i < str.length; i++) {
+      h = Math.imul(31, h) + str.charCodeAt(i) | 0;
+    }
+    return Math.abs(h);
+  }
+
+  function drawIdenticon(canvas, username, size) {
+    const ctx  = canvas.getContext('2d');
+    const hash = hashStr(username || 'user');
+    const hue  = hash % 360;
+    const bg   = `hsl(${hue},60%,92%)`;
+    const fg   = `hsl(${hue},55%,38%)`;
+    const cell = size / 5;
+
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, size, size);
+
+    // 5×5 grid, symmetric: columns 0-2 mirrored to 4-2
+    for (let row = 0; row < 5; row++) {
+      for (let col = 0; col < 3; col++) {
+        const bit = (hash >> (row * 3 + col)) & 1;
+        if (bit) {
+          ctx.fillStyle = fg;
+          ctx.fillRect(col * cell, row * cell, cell, cell);
+          if (col < 2) ctx.fillRect((4 - col) * cell, row * cell, cell, cell);
+        }
+      }
+    }
+  }
+
+  // Draw identicons on page load
+  const topbarCanvas = $('topbarIdenticonCanvas');
+  if (topbarCanvas) drawIdenticon(topbarCanvas, USERNAME, 32);
+
+  const modalCanvas = $('modalIdenticonCanvas');
+  if (modalCanvas) {
+    drawIdenticon(modalCanvas, USERNAME, 96);
+    modalCanvas.style.display = 'block';
+  }
+
+  /* ── Profile Dropdown ── */
+  const dropBtn  = $('profileDropdownBtn');
+  const dropMenu = $('profileDropdownMenu');
+  const chevron  = $('profileChevron');
+
+  function openDrop() {
+    if (!dropMenu) return;
+    dropMenu.classList.remove('hidden');
+    if (chevron) chevron.style.transform = 'rotate(180deg)';
+    if (dropBtn) dropBtn.setAttribute('aria-expanded', 'true');
+    closeNotifDrop();
+  }
+  function closeDrop() {
+    if (!dropMenu) return;
+    dropMenu.classList.add('hidden');
+    if (chevron) chevron.style.transform = '';
+    if (dropBtn) dropBtn.setAttribute('aria-expanded', 'false');
+  }
+
+  if (dropBtn) {
+    dropBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      dropMenu && dropMenu.classList.contains('hidden') ? openDrop() : closeDrop();
+    });
+  }
+
+  /* ── Notification Bell Dropdown ── */
+  const notifBtn  = $('notifBellBtn');
+  const notifMenu = $('notifDropdownMenu');
+
+  function openNotifDrop() {
+    if (!notifMenu) return;
+    notifMenu.style.display = 'flex';
+    if (notifBtn) notifBtn.setAttribute('aria-expanded', 'true');
+    closeDrop();
+  }
+  function closeNotifDrop() {
+    if (!notifMenu) return;
+    notifMenu.style.display = 'none';
+    if (notifBtn) notifBtn.setAttribute('aria-expanded', 'false');
+  }
+
+  if (notifBtn) {
+    notifBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      notifMenu && notifMenu.style.display === 'flex' ? closeNotifDrop() : openNotifDrop();
+    });
+  }
+
+  /* Close both on outside click */
+  document.addEventListener('click', function(e) {
+    var nw = $('notifDropdownWrapper');
+    var pw = $('profileDropdownWrapper');
+    var aw = $('aiChatWrapper');
+    if (nw && !nw.contains(e.target)) closeNotifDrop();
+    if (pw && !pw.contains(e.target)) closeDrop();
+    if (aw && !aw.contains(e.target)) closeAiPanel();
+  });
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') { closeNotifDrop(); closeDrop(); closeAiPanel(); }
+  });
+
+  /* ── AI Chat Panel ── */
+  var aiBtn   = $('aiChatBtn');
+  var aiPanel = $('aiChatPanel');
+  var aiClose = $('aiChatClose');
+  var aiInput = $('aiChatInput');
+  var aiSend  = $('aiSendBtn');
+  var aiMsgs  = $('aiMessages');
+
+  /* Conversation history for multi-turn context */
+  var aiHistory = [];
+  var AI_CHAT_URL = "{% url 'accounts:ai_chat' %}";
+  var AI_CSRF     = "{{ csrf_token }}";
+
+  function openAiPanel() {
+    if (!aiPanel) return;
+    aiPanel.style.display = 'flex';
+    if (aiBtn) aiBtn.setAttribute('aria-expanded', 'true');
+    closeNotifDrop(); closeDrop();
+    setTimeout(function() { if (aiInput) aiInput.focus(); }, 80);
+  }
+  function closeAiPanel() {
+    if (!aiPanel) return;
+    aiPanel.style.display = 'none';
+    if (aiBtn) aiBtn.setAttribute('aria-expanded', 'false');
+  }
+
+  if (aiBtn) {
+    aiBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      aiPanel && aiPanel.style.display === 'flex' ? closeAiPanel() : openAiPanel();
+    });
+  }
+  if (aiClose) {
+    aiClose.addEventListener('click', function(e) { e.stopPropagation(); closeAiPanel(); });
+  }
+
+  /* Auto-grow textarea */
+  if (aiInput) {
+    aiInput.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 90) + 'px';
+    });
+    aiInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAiMessage(); }
+    });
+  }
+  if (aiSend) aiSend.addEventListener('click', sendAiMessage);
+
+  /* Render simple markdown: **bold**, bullets, newlines */
+  function renderMarkdown(text) {
+    return text
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g,     '<em>$1</em>')
+      .replace(/^[-•] (.+)$/gm,  '<span style="display:block;padding-left:.8rem;position:relative;"><span style="position:absolute;left:0;">•</span>$1</span>')
+      .replace(/\n/g, '<br>');
+  }
+
+  function appendBubble(role, html, isError) {
+    if (!aiMsgs) return;
+    var wrap = document.createElement('div');
+    if (role === 'user') {
+      wrap.style.cssText = 'display:flex;justify-content:flex-end;';
+      wrap.innerHTML =
+        '<div style="max-width:80%;background:#2F6B2F;color:#fff;border-radius:.85rem 0 .85rem .85rem;padding:.6rem .85rem;font-size:.78rem;line-height:1.6;">' +
+          html +
+        '</div>';
+    } else {
+      var bg  = isError ? '#fff5f5' : '#f0fdf4';
+      var bdr = isError ? '#fecaca' : '#bbf7d0';
+      var ic  = isError
+        ? '<svg viewBox="0 0 20 20" fill="#991b1b" style="width:14px;height:14px;"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd"/></svg>'
+        : '<svg viewBox="0 0 24 24" fill="none" stroke="#166534" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M12 2l2.09 6.26L20 10l-5.91 1.74L12 18l-2.09-6.26L4 10l5.91-1.74L12 2z"/></svg>';
+      var lbl = isError ? 'Error' : 'MemoBot';
+      var lc  = isError ? '#991b1b' : '#166534';
+      wrap.style.cssText = 'display:flex;gap:.5rem;align-items:flex-start;';
+      wrap.innerHTML =
+        '<div style="width:28px;height:28px;border-radius:.5rem;background:' + (isError?'#fee2e2':'#dcfce7') + ';display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;">' +
+          ic +
+        '</div>' +
+        '<div style="max-width:85%;background:' + bg + ';border:1px solid ' + bdr + ';border-radius:0 .85rem .85rem .85rem;padding:.6rem .85rem;">' +
+          '<div style="font-size:.7rem;color:' + lc + ';font-weight:700;margin-bottom:.25rem;">' + lbl + '</div>' +
+          '<div style="font-size:.78rem;color:#374151;line-height:1.65;">' + html + '</div>' +
+        '</div>';
+    }
+    aiMsgs.appendChild(wrap);
+    aiMsgs.scrollTop = aiMsgs.scrollHeight;
+    return wrap;
+  }
+
+  function appendTyping() {
+    if (!aiMsgs) return null;
+    var wrap = document.createElement('div');
+    wrap.style.cssText = 'display:flex;gap:.5rem;align-items:flex-start;';
+    wrap.innerHTML =
+      '<div style="width:28px;height:28px;border-radius:.5rem;background:#dcfce7;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="#166534" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M12 2l2.09 6.26L20 10l-5.91 1.74L12 18l-2.09-6.26L4 10l5.91-1.74L12 2z"/></svg>' +
+      '</div>' +
+      '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:0 .85rem .85rem .85rem;padding:.65rem .85rem;display:flex;gap:4px;align-items:center;">' +
+        '<span style="width:7px;height:7px;border-radius:50%;background:#6ee7b7;display:inline-block;animation:_aiDot 1s ease-in-out infinite;"></span>' +
+        '<span style="width:7px;height:7px;border-radius:50%;background:#6ee7b7;display:inline-block;animation:_aiDot 1s ease-in-out .2s infinite;"></span>' +
+        '<span style="width:7px;height:7px;border-radius:50%;background:#6ee7b7;display:inline-block;animation:_aiDot 1s ease-in-out .4s infinite;"></span>' +
+      '</div>';
+    aiMsgs.appendChild(wrap);
+    aiMsgs.scrollTop = aiMsgs.scrollHeight;
+    /* inject keyframe if not yet present */
+    if (!document.getElementById('_aiDotStyle')) {
+      var s = document.createElement('style');
+      s.id = '_aiDotStyle';
+      s.textContent = '@keyframes _aiDot{0%,80%,100%{transform:scale(.6);opacity:.5}40%{transform:scale(1);opacity:1}}';
+      document.head.appendChild(s);
+    }
+    return wrap;
+  }
+
+  function sendAiMessage() {
+    if (!aiInput || !aiMsgs) return;
+    var text = aiInput.value.trim();
+    if (!text) return;
+    if (aiSend) aiSend.disabled = true;
+
+    appendBubble('user', renderMarkdown(text));
+    aiHistory.push({ role: 'user', content: text });
+
+    aiInput.value = '';
+    aiInput.style.height = 'auto';
+
+    var typing = appendTyping();
+
+    fetch(AI_CHAT_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken':  AI_CSRF,
+      },
+      body: JSON.stringify({ message: text, history: aiHistory.slice(-10) }),
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (typing) typing.remove();
+      if (data.reply) {
+        appendBubble('assistant', renderMarkdown(data.reply));
+        aiHistory.push({ role: 'assistant', content: data.reply });
+      } else {
+        appendBubble('assistant', data.error || 'Something went wrong.', true);
+      }
+    })
+    .catch(function(err) {
+      if (typing) typing.remove();
+      appendBubble('assistant', 'Network error. Please check your connection.', true);
+    })
+    .finally(function() {
+      if (aiSend) aiSend.disabled = false;
+      if (aiInput) aiInput.focus();
+    });
+  }
+
+  function escHtml(str) {
+    var d = document.createElement('div');
+    d.appendChild(document.createTextNode(str));
+    return d.innerHTML;
+  }
+
+})();
+</script>
+
+<script>
+(function() {
+  function $(id) { return document.getElementById(id); }
+  const PROFILE_URL = "{% url 'accounts:profile_update' %}";
+  const CSRF_TOKEN  = "{{ csrf_token }}";
+  const USERNAME    = "{{ request.user.username }}";
+
+  /* ── Profile Modal ── */
+  const profileModal    = $('profileModal');
+  const profileBackdrop = $('profileModalBackdrop');
+  let profileData   = {};
+  let croppedDataUrl = null;
+  let removePicture  = false;
+  let editMode       = false;
+
+  function openProfileModal() {
+    profileModal.classList.remove('hidden');
+    profileModal.classList.add('flex');
+    fetchProfile();
+  }
+  function closeProfileModal() {
+    profileModal.classList.add('hidden');
+    profileModal.classList.remove('flex');
+    setEditMode(false);
+    croppedDataUrl = null;
+    removePicture  = false;
+    $('photoInput').value = '';
+  }
+
+  $('openProfileModalBtn').addEventListener('click', function () {
+    /* close the dropdown without referencing the outer-IIFE's dropMenu variable */
+    var dm = document.getElementById('profileDropdownMenu');
+    if (dm) dm.classList.add('hidden');
+    var dv = document.getElementById('profileChevron');
+    if (dv) dv.style.transform = '';
+    var db = document.getElementById('profileDropdownBtn');
+    if (db) db.setAttribute('aria-expanded', 'false');
+    openProfileModal();
+  });
+  $('closeProfileModal').addEventListener('click', closeProfileModal);
+  profileBackdrop.addEventListener('click', closeProfileModal);
+
+  /* ── Fetch profile ── */
+  function fetchProfile() {
+    fetch(PROFILE_URL, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+      .then(r => r.json())
+      .then(data => { profileData = data; renderProfile(data); })
+      .catch(() => {});
+  }
+
+  function renderProfile(data) {
+    const full = [data.first_name, data.middle_name, data.last_name].filter(Boolean).join(' ') || data.username;
+    $('modalFullName').textContent = full;
+    $('modalRole').textContent     = data.role || '—';
+    $('modalEmail').textContent    = data.email || '—';
+    $('modalSchoolId').textContent = data.school_id || '—';
+    $('modalMobile').textContent   = data.mobile_number || '—';
+    $('modalUsername').textContent = data.username || '—';
+    setAvatar(data.profile_picture || '', data.username || USERNAME);
+  }
+
+  /* ── Avatar: real photo or identicon ── */
+  function setAvatar(url, username) {
+    const img         = $('profileAvatarImg');
+    const canvas      = $('modalIdenticonCanvas');
+    const topAvatar   = $('topbarAvatar');
+    const dashCircle  = $('adminAvatarCircle');   // dashboard header avatar
+    const uname       = username || USERNAME;
+
+    if (url) {
+      // Show real photo in modal
+      img.src = url;
+      img.classList.remove('hidden');
+      canvas.style.display = 'none';
+
+      // Update topbar avatar
+      topAvatar.innerHTML = `<img src="${url}" alt="avatar" class="h-full w-full object-cover rounded-full" />`;
+
+      // Update dashboard avatar (if present on this page)
+      if (dashCircle) {
+        dashCircle.innerHTML = `<img src="${url}" alt="avatar" class="h-full w-full object-cover" style="border-radius:50%;" />`;
+      }
+    } else {
+      // Show identicon in modal
+      img.classList.add('hidden');
+      canvas.style.display = 'block';
+      drawIdenticon(canvas, uname, 96);
+
+      // Show identicon in topbar
+      const tmpCanvas = document.createElement('canvas');
+      tmpCanvas.width = 32; tmpCanvas.height = 32;
+      drawIdenticon(tmpCanvas, uname, 32);
+      topAvatar.innerHTML = '';
+      topAvatar.style.background = 'transparent';
+      tmpCanvas.style.borderRadius = '50%';
+      tmpCanvas.style.display = 'block';
+      tmpCanvas.style.width = '32px';
+      tmpCanvas.style.height = '32px';
+      topAvatar.appendChild(tmpCanvas);
+
+      // Update dashboard avatar with identicon (if present)
+      if (dashCircle) {
+        dashCircle.innerHTML = '';
+        const dc = document.createElement('canvas');
+        dc.width = 80; dc.height = 80;
+        dc.style.borderRadius = '50%';
+        dc.style.display = 'block';
+        dc.style.width = '100%';
+        dc.style.height = '100%';
+        drawIdenticon(dc, uname, 80);
+        dashCircle.appendChild(dc);
+      }
+    }
+  }
+
+  /* ── Edit mode ── */
+  function setEditMode(on) {
+    editMode = on;
+    $('profileInfoGrid').classList.toggle('hidden', on);
+    $('editProfileForm').classList.toggle('hidden', !on);
+    $('editProfileToggleBtn').classList.toggle('hidden', on);
+    $('saveProfileBtn').classList.toggle('hidden', !on);
+    $('cancelEditBtn').classList.toggle('hidden', !on);
+
+    const overlay = $('cameraOverlay');
+    overlay.style.opacity       = '0';
+    overlay.style.pointerEvents = on ? 'auto' : 'none';
+
+    if (on) {
+      // Show remove button only if user has a real photo
+      $('removePhotoRow').classList.toggle('hidden', !profileData.profile_picture);
+
+      $('editFirstName').value  = profileData.first_name    || '';
+      $('editMiddleName').value = profileData.middle_name   || '';
+      $('editLastName').value   = profileData.last_name     || '';
+      $('editEmail').value      = profileData.email         || '';
+      $('editMobile').value     = profileData.mobile_number || '';
+
+      // Camera hover on avatar
+      const wrapper = $('avatarWrapper');
+      wrapper.addEventListener('mouseenter', showCam);
+      wrapper.addEventListener('mouseleave', hideCam);
+    } else {
+      const wrapper = $('avatarWrapper');
+      wrapper.removeEventListener('mouseenter', showCam);
+      wrapper.removeEventListener('mouseleave', hideCam);
+    }
+  }
+
+  function showCam() { $('cameraOverlay').style.opacity = '1'; }
+  function hideCam() { $('cameraOverlay').style.opacity = '0'; }
+
+  $('editProfileToggleBtn').addEventListener('click', () => setEditMode(true));
+  $('cancelEditBtn').addEventListener('click', () => {
+    // Revert avatar preview if user had changed it
+    setAvatar(profileData.profile_picture || '', profileData.username);
+    croppedDataUrl = null;
+    removePicture  = false;
+    $('photoInput').value = '';
+    setEditMode(false);
+  });
+
+  /* ── Remove photo ── */
+  $('removePhotoBtn').addEventListener('click', function () {
+    removePicture  = true;
+    croppedDataUrl = null;
+    // Immediately preview identicon
+    setAvatar('', profileData.username || USERNAME);
+    $('removePhotoRow').classList.add('hidden');
+  });
+
+  /* ── Photo input → Crop modal ── */
+  $('photoInput').addEventListener('change', function () {
+    const file = this.files[0];
+    if (!file) return;
+    removePicture = false;
+    const reader = new FileReader();
+    reader.onload = e => openCropModal(e.target.result);
+    reader.readAsDataURL(file);
+  });
+
+  /* ── Crop Modal ── */
+  const cropModal    = $('cropModal');
+  const cropBackdrop = $('cropModalBackdrop');
+  let cropperInstance = null;
+
+  function openCropModal(src) {
+    const cropImg = $('cropperImage');
+    cropImg.src = src;
+    cropModal.classList.remove('hidden');
+    cropModal.classList.add('flex');
+    destroyCropper();
+    cropImg.onload = function () {
+      cropperInstance = new Cropper(cropImg, {
+        aspectRatio: 1, viewMode: 1, dragMode: 'move',
+        autoCropArea: 0.85, guides: true, center: true,
+        highlight: false, cropBoxMovable: true, cropBoxResizable: true,
+        toggleDragModeOnDblclick: false,
+      });
+    };
+  }
+
+  function closeCropModal() {
+    cropModal.classList.add('hidden');
+    cropModal.classList.remove('flex');
+    destroyCropper();
+    $('photoInput').value = '';
+  }
+
+  $('closeCropModal').addEventListener('click', closeCropModal);
+  cropBackdrop.addEventListener('click', closeCropModal);
+  $('rotateCropBtn').addEventListener('click', () => cropperInstance && cropperInstance.rotate(90));
+  $('resetCropBtn').addEventListener('click',  () => cropperInstance && cropperInstance.reset());
+
+  $('applyCropBtn').addEventListener('click', function () {
+    if (!cropperInstance) return;
+    const canvas = cropperInstance.getCroppedCanvas({ width: 400, height: 400 });
+    croppedDataUrl = canvas.toDataURL('image/png');
+    setAvatar(croppedDataUrl, profileData.username);
+    closeCropModal();
+  });
+
+  function destroyCropper() {
+    if (cropperInstance) { cropperInstance.destroy(); cropperInstance = null; }
+  }
+
+  /* ── Save ── */
+  $('saveProfileBtn').addEventListener('click', function () {
+    const btn = this;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Saving…';
+
+    const fd = new FormData();
+    fd.append('csrfmiddlewaretoken', CSRF_TOKEN);
+    fd.append('first_name',    $('editFirstName').value.trim());
+    fd.append('middle_name',   $('editMiddleName').value.trim());
+    fd.append('last_name',     $('editLastName').value.trim());
+    fd.append('email',         $('editEmail').value.trim());
+    fd.append('mobile_number', $('editMobile').value.trim());
+    if (removePicture)   fd.append('remove_picture', '1');
+    else if (croppedDataUrl) fd.append('cropped_image', croppedDataUrl);
+
+    fetch(PROFILE_URL, { method: 'POST', body: fd })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          profileData.first_name    = $('editFirstName').value.trim();
+          profileData.middle_name   = $('editMiddleName').value.trim();
+          profileData.last_name     = $('editLastName').value.trim();
+          profileData.email         = $('editEmail').value.trim();
+          profileData.mobile_number = $('editMobile').value.trim();
+          profileData.profile_picture = data.profile_picture || '';
+
+          renderProfile(profileData);
+
+          const nameEl = $('topbarName');
+          if (nameEl) {
+            const full = [profileData.first_name, profileData.last_name].filter(Boolean).join(' ') || profileData.username;
+            nameEl.textContent = full;
+          }
+
+          croppedDataUrl = null;
+          removePicture  = false;
+          $('photoInput').value = '';
+          setEditMode(false);
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-floppy-disk mr-2"></i>Save Changes';
+      });
+  });
+
+})();
+</script>

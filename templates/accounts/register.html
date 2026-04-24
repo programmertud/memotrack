@@ -254,6 +254,11 @@
         margin-top: 0.25rem;
     }
 
+    .required-asterisk {
+        color: #e53e3e;
+        margin-left: 0.2rem;
+    }
+
     .btn-submit {
       width: 100%;
       padding: 1.125rem;
@@ -323,6 +328,68 @@
           margin-bottom: 1.25rem;
       }
     }
+
+    /* ── Admin-exists toast ── */
+    #adminToast {
+      position: fixed;
+      top: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      z-index: 9999;
+      background: #fff;
+      border-left: 5px solid #e53e3e;
+      border-radius: 1rem;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      max-width: 420px;
+      width: calc(100% - 2rem);
+      opacity: 0;
+      transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.16,1,0.3,1);
+      pointer-events: none;
+    }
+    #adminToast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+      pointer-events: auto;
+    }
+    #adminToast .toast-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #fff5f5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      color: #e53e3e;
+      font-size: 1.2rem;
+    }
+    #adminToast .toast-body { flex: 1; }
+    #adminToast .toast-title {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #1a202c;
+      margin-bottom: 0.2rem;
+    }
+    #adminToast .toast-msg {
+      font-size: 0.82rem;
+      color: #4a5568;
+      line-height: 1.4;
+    }
+    #adminToast .toast-close {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #a0aec0;
+      font-size: 1.1rem;
+      padding: 0;
+      flex-shrink: 0;
+      align-self: flex-start;
+    }
+    #adminToast .toast-close:hover { color: #e53e3e; }
   </style>
 </head>
 
@@ -346,47 +413,62 @@
         <div class="login-subtitle">Register as a user to access your secure dashboard.</div>
       </div>
 
-      {% if form.errors %}
-      <div class="error-box">
-        <svg style="width:20px;height:20px;flex-shrink:0;" fill="currentColor" viewBox="0 0 20 20">
-          <path fill-rule="evenodd"
-            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-            clip-rule="evenodd" />
-        </svg>
-        <span>Please correct the errors below.</span>
-      </div>
-      {% endif %}
+
 
       <form method="post">
         {% csrf_token %}
         
+        <div class="form-group full-width">
+            <label for="{{ form.first_name.id_for_label }}">First Name<span class="required-asterisk">*</span></label>
+            {{ form.first_name }}
+            {% if form.first_name.errors %}<div class="field-error">{{ form.first_name.errors|striptags }}</div>{% endif %}
+        </div>
+
+        <div class="form-group full-width">
+            <label for="{{ form.middle_name.id_for_label }}">Middle Name</label>
+            {{ form.middle_name }}
+            {% if form.middle_name.errors %}<div class="field-error">{{ form.middle_name.errors|striptags }}</div>{% endif %}
+        </div>
+
+        <div class="form-group full-width">
+            <label for="{{ form.last_name.id_for_label }}">Last Name<span class="required-asterisk">*</span></label>
+            {{ form.last_name }}
+            {% if form.last_name.errors %}<div class="field-error">{{ form.last_name.errors|striptags }}</div>{% endif %}
+        </div>
+
+        <div class="form-group full-width">
+            <label for="{{ form.school_id.id_for_label }}">School ID<span class="required-asterisk">*</span></label>
+            {{ form.school_id }}
+            {% if form.school_id.errors %}<div class="field-error">{{ form.school_id.errors|striptags }}</div>{% endif %}
+        </div>
+
         <div class="form-row">
             <div class="form-group">
-                <label for="{{ form.username.id_for_label }}">Username</label>
-                {{ form.username }}
-                {% if form.username.errors %}<div class="field-error">{{ form.username.errors|striptags }}</div>{% endif %}
+                <label for="{{ form.mobile_number.id_for_label }}">Mobile Number<span class="required-asterisk">*</span></label>
+                {{ form.mobile_number }}
+                {% if form.mobile_number.errors %}<div class="field-error">{{ form.mobile_number.errors|striptags }}</div>{% endif %}
             </div>
             <div class="form-group">
-                <label for="{{ form.email.id_for_label }}">Email (optional)</label>
+                <label for="{{ form.email.id_for_label }}">Email<span class="required-asterisk">*</span></label>
                 {{ form.email }}
                 {% if form.email.errors %}<div class="field-error">{{ form.email.errors|striptags }}</div>{% endif %}
             </div>
         </div>
 
         <div class="form-group full-width">
-            <label for="{{ form.role.id_for_label }}">Role</label>
+            <label for="{{ form.role.id_for_label }}">Role<span class="required-asterisk">*</span></label>
             {{ form.role }}
             {% if form.role.errors %}<div class="field-error">{{ form.role.errors|striptags }}</div>{% endif %}
         </div>
 
         <div class="form-row">
             <div class="form-group">
-                <label for="{{ form.password1.id_for_label }}">Password</label>
+                <label for="{{ form.password1.id_for_label }}">Password<span class="required-asterisk">*</span></label>
                 {{ form.password1 }}
                 {% if form.password1.errors %}<div class="field-error">{{ form.password1.errors|striptags }}</div>{% endif %}
             </div>
             <div class="form-group">
-                <label for="{{ form.password2.id_for_label }}">Confirm password</label>
+                <label for="{{ form.password2.id_for_label }}">Confirm password<span class="required-asterisk">*</span></label>
                 {{ form.password2 }}
                 {% if form.password2.errors %}<div class="field-error">{{ form.password2.errors|striptags }}</div>{% endif %}
             </div>
@@ -406,6 +488,45 @@
       </form>
     </div>
   </div>
-</body>
 
+  {% include "partials/toast_engine.html" %}
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const adminExists = {{ admin_exists|yesno:'true,false' }};
+      const adminError  = {{ admin_error|yesno:'true,false' }};
+      const roleSelect  = document.getElementById('{{ form.role.id_for_label }}');
+
+      // Disable Admin option in dropdown if admin already exists
+      if (adminExists && roleSelect) {
+        for (const opt of roleSelect.options) {
+          if (opt.value === 'admin') {
+            opt.disabled = true;
+            opt.text = 'Admin (already registered)';
+            if (roleSelect.value === 'admin') roleSelect.value = 'student';
+            break;
+          }
+        }
+      }
+
+      // Show toast via universal engine
+      if (adminError) {
+        window.showToast('Only one admin account is allowed. An admin has already been registered.', 'error');
+      }
+
+      {% if form.errors %}
+      window.showToast('Please correct the errors in the form below.', 'error');
+      {% endif %}
+
+      if (roleSelect) {
+        roleSelect.addEventListener('change', function () {
+          if (this.value === 'admin' && adminExists) {
+            window.showToast('Only one admin account is allowed in this system.', 'warning');
+            this.value = 'student';
+          }
+        });
+      }
+    });
+  </script>
+</body>
 </html>

@@ -26,10 +26,16 @@ class Profile(models.Model):
         STUDENT = "student", "Student"
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
+    first_name = models.CharField(max_length=150, blank=True)
+    middle_name = models.CharField(max_length=150, blank=True)
+    last_name = models.CharField(max_length=150, blank=True)
+    school_id = models.CharField(max_length=50, unique=True, null=True, blank=True)
+    mobile_number = models.CharField(max_length=30, blank=True)
     role = models.CharField(max_length=20, choices=Role.choices, default=Role.STUDENT)
     department = models.ForeignKey(
         Department, on_delete=models.SET_NULL, null=True, blank=True, related_name="profiles"
     )
+    profile_picture = models.ImageField(upload_to="profile_pictures/", null=True, blank=True)
 
     def __str__(self) -> str:
         return f"{self.user.get_username()} ({self.get_role_display()})"

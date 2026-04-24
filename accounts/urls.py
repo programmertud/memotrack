@@ -37,4 +37,6 @@ urlpatterns = [
         views.admin_user_delete,
         name="admin_user_delete",
     ),
+    path("profile/update/", views.profile_update, name="profile_update"),
+    path("ai-chat/",         views.ai_chat,         name="ai_chat"),
 ]

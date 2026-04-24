@@ -1,8 +1,8 @@
 from django.shortcuts import render
 
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect
-from django.contrib.admin.views.decorators import staff_member_required
 from django.views.decorators.http import require_http_methods
 
 from .models import Vehicle
@@ -12,20 +12,36 @@ from .forms import VehicleBookingForm, VehicleForm
 from memos.models import Memo
 
 
+def _is_admin(user) -> bool:
+    """Returns True for Django staff/superusers AND system admins (profile.role='admin')."""
+    if not user or not getattr(user, "is_authenticated", False):
+        return False
+    if getattr(user, "is_staff", False) or getattr(user, "is_superuser", False):
+        return True
+    role = getattr(getattr(user, "profile", None), "role", None)
+    return role == "admin"
+
+
 def vehicle_list(request):
     vehicles = Vehicle.objects.all().order_by("name")
     return render(request, "resources/vehicle_list.html", {"vehicles": vehicles})
 
 
-@staff_member_required
+@login_required
 def vehicle_admin_list(request):
+    if not _is_admin(request.user):
+        messages.error(request, "You do not have permission to manage vehicles.")
+        return redirect("accounts:post_login")
     vehicles = Vehicle.objects.all().order_by("name")
     return render(request, "resources/vehicle_admin_list.html", {"vehicles": vehicles})
 
 
-@staff_member_required
+@login_required
 @require_http_methods(["GET", "POST"])
 def vehicle_admin_create(request):
+    if not _is_admin(request.user):
+        messages.error(request, "You do not have permission to manage vehicles.")
+        return redirect("accounts:post_login")
     form = VehicleForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         vehicle = form.save()
@@ -34,9 +50,12 @@ def vehicle_admin_create(request):
     return render(request, "resources/vehicle_admin_form.html", {"form": form, "mode": "create"})
 
 
-@staff_member_required
+@login_required
 @require_http_methods(["GET", "POST"])
 def vehicle_admin_edit(request, pk: int):
+    if not _is_admin(request.user):
+        messages.error(request, "You do not have permission to manage vehicles.")
+        return redirect("accounts:post_login")
     vehicle = get_object_or_404(Vehicle, pk=pk)
     form = VehicleForm(request.POST or None, instance=vehicle)
     if request.method == "POST" and form.is_valid():
@@ -50,9 +69,12 @@ def vehicle_admin_edit(request, pk: int):
     )
 
 
-@staff_member_required
+@login_required
 @require_http_methods(["GET", "POST"])
 def vehicle_admin_delete(request, pk: int):
+    if not _is_admin(request.user):
+        messages.error(request, "You do not have permission to manage vehicles.")
+        return redirect("accounts:post_login")
     vehicle = get_object_or_404(Vehicle, pk=pk)
     if request.method == "POST":
         name = vehicle.name

@@ -109,7 +109,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Manila'
 
 USE_I18N = True
 
@@ -124,7 +124,16 @@ STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 LOGOUT_REDIRECT_URL = "accounts:login"
 
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# ── Google Gemini API Key (FREE tier) ──────────────────────────────────────────
+# Get your FREE key at: https://aistudio.google.com/apikey
+# Free tier: 1,500 requests/day, 1 million tokens/minute — no billing required
+# Replace below with your actual key (starts with AIza...)
+GEMINI_API_KEY = "AIzaSyBrFHTsG6phTKQpALsiMMq2GndWLBn91zs"

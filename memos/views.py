@@ -29,8 +29,20 @@ def _is_approver(user) -> bool:
         return True
     role = getattr(getattr(user, "profile", None), "role", None)
     if Profile is not None:
-        return role == Profile.Role.APPROVER
-    return role == "approver"
+        return role in (Profile.Role.APPROVER, Profile.Role.ADMIN)
+    return role in ("approver", "admin")
+
+
+def _is_admin(user) -> bool:
+    """Returns True for Django staff/superusers AND system admins (profile.role='admin')."""
+    if not user or not getattr(user, "is_authenticated", False):
+        return False
+    if getattr(user, "is_staff", False) or getattr(user, "is_superuser", False):
+        return True
+    role = getattr(getattr(user, "profile", None), "role", None)
+    if Profile is not None:
+        return role == Profile.Role.ADMIN
+    return role == "admin"
 
 
 @login_required
@@ -60,8 +72,11 @@ def memo_list(request):
     return render(request, "memos/memo_list.html", {"memos": memos})
 
 
-@staff_member_required
+@login_required
 def memo_admin_list(request):
+    if not _is_admin(request.user):
+        messages.error(request, "You do not have permission to view this page.")
+        return redirect("accounts:post_login")
     memos = Memo.objects.all().select_related("assigned_user", "created_by").order_by("-date", "start_time")
     return render(request, "memos/memo_admin_list.html", {"memos": memos})
 
@@ -71,7 +86,7 @@ def memo_create(request):
     if not request.user.is_authenticated:
         return redirect("accounts:login")
 
-    if not request.user.is_staff:
+    if not _is_admin(request.user):
         messages.error(request, "You do not have permission to create memos.")
         return redirect("accounts:post_login")
 
@@ -229,8 +244,11 @@ def memo_conflict_reschedule(request, pk: int):
     return redirect("memos:memo_edit", pk=memo.pk)
 
 
-@staff_member_required
+@login_required
 def decision_panel(request):
+    if not _is_admin(request.user):
+        messages.error(request, "You do not have permission to access this panel.")
+        return redirect("accounts:post_login")
     conflicted = Memo.objects.filter(status=Memo.Status.CONFLICT).order_by("date", "start_time")
     pending = Memo.objects.filter(status=Memo.Status.PENDING).order_by("date", "start_time")
     return render(
