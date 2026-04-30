@@ -23,6 +23,7 @@ class MemoForm(forms.ModelForm):
             "venue",
             "destination",
             "priority",
+            "category",
             "required",
             "delegated_to",
         ]

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Admin Dashboard | MemoTrack{% endblock %}
+{% block title %}Admin Dashboard | SkedIt{% endblock %}
 {% block content %}
 <style>
   .kpi {
@@ -378,6 +378,25 @@
       {% endif %}
       {% if not conflict_alerts and not pending_requests %}
         <div style="font-size:.72rem;color:#6ee7b7;">✅ System is running smoothly. No issues detected.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ── AI PREDICTIVE ANALYTICS ── -->
+  <div class="panel" style="grid-column: span 1; background: linear-gradient(to bottom right, #0f172a, #1e1b4b); border: 1px solid #312e81;">
+    <div class="panel-hd" style="border-bottom-color: #312e81;">
+      <div>
+        <div class="panel-hd-title" style="color: #e0e7ff; display: flex; align-items: center; gap: 8px;">
+          <i class="fa-solid fa-chart-line" style="color: #818cf8;"></i> AI Predictive Analytics
+        </div>
+        <div class="panel-hd-sub" style="color: #a5b4fc;">Live forecasting based on upcoming schedules</div>
+      </div>
+    </div>
+    <div style="padding: 1.5rem; color: #c7d2fe; font-size: 0.85rem; line-height: 1.6;">
+      {% if ai_forecast %}
+        {{ ai_forecast|linebreaksbr }}
+      {% else %}
+        <span style="color: #6366f1; font-style: italic;">Analytics temporarily unavailable.</span>
       {% endif %}
     </div>
   </div>

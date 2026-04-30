@@ -27,6 +27,8 @@ from resources.models import Vehicle, VehicleBooking
 from .models import Attendance, LeaveRequest, Profile
 from .forms import AdminUserCreateForm, AdminUserUpdateForm, UserRegisterForm
 
+from memotrack.ai_utils import get_predictive_analytics
+
 
 User = get_user_model()
 
@@ -256,6 +258,10 @@ def admin_dashboard(request):
         .order_by("date", "start_time")
     )[:5]
 
+    # ── AI Predictive Analytics ──
+    upcoming_for_ai = Memo.objects.filter(date__gte=today).order_by("date")[:20]
+    ai_forecast = get_predictive_analytics(upcoming_for_ai)
+
     return render(
         request,
         "accounts/dashboards/admin_dashboard.html",
@@ -279,6 +285,7 @@ def admin_dashboard(request):
             "weekly_labels":      weekly_labels,
             "weekly_data":        weekly_data,
             "today":              today,
+            "ai_forecast":        ai_forecast,
         },
     )
 
@@ -286,7 +293,7 @@ def admin_dashboard(request):
 
 def _normalize_admin_role(role: str) -> str:
     role = (role or "").strip().lower()
-    if role not in {Profile.Role.STAFF, Profile.Role.INSTRUCTOR}:
+    if role not in {Profile.Role.STAFF, Profile.Role.INSTRUCTOR, Profile.Role.STUDENT}:
         return ""
     return role
 

@@ -1,5 +1,5 @@
 """
-MemoTrack AI Engine — MemoBot
+SkedIt AI Engine — MemoBot
 Self-contained, no external API required.
 Uses intent detection + knowledge base + context tracking.
 """
@@ -14,23 +14,23 @@ from datetime import datetime
 KB = [
     # ── GREETINGS ──────────────────────────────────────────────
     (["hello","hi","hey","good morning","good afternoon","good evening","sup","greetings"],
-     "Hello {name}! 👋 I'm **MemoBot**, your MemoTrack AI Assistant. I can help you with:\n- 📋 Memos & scheduling\n- ⚔️ Conflict resolution\n- 👥 User management\n- 🚗 Vehicles & trips\n- 📊 Dashboard navigation\n\nWhat would you like help with today?", 1.0),
+     "Hello {name}! 👋 I'm **MemoBot**, your SkedIt AI Assistant. I can help you with:\n- 📋 Memos & scheduling\n- ⚔️ Conflict resolution\n- 👥 User management\n- 🚗 Vehicles & trips\n- 📊 Dashboard navigation\n\nWhat would you like help with today?", 1.0),
 
     (["how are you","how r u","how do you do","are you okay"],
      "I'm running perfectly, {name}! Always online, always here to help. What do you need?", 0.9),
 
     (["who are you","what are you","introduce yourself","your name","what is memobot"],
-     "I'm **MemoBot** — the built-in AI assistant of MemoTrack. I'm trained specifically on this system and can answer any question about memos, scheduling, users, vehicles, and more. I run locally so I'm always fast and always available!", 1.0),
+     "I'm **MemoBot** — the built-in AI assistant of SkedIt. I'm trained specifically on this system and can answer any question about memos, scheduling, users, vehicles, and more. I run locally so I'm always fast and always available!", 1.0),
 
     # ── MEMOS ──────────────────────────────────────────────────
     (["create memo","make memo","new memo","add memo","write memo"],
      "To **create a memo**:\n1. Click **Create Memo** in the sidebar (under Memos section)\n2. Fill in: Title, Body/Content, Priority (High/Medium/Low)\n3. Set the Date and Time range\n4. Assign users who will be involved\n5. Attach a vehicle if needed\n6. Click **Submit** to send for approval, or **Save Draft** to save without submitting", 1.2),
 
     (["what is memo","what is a memo","memo meaning","define memo"],
-     "A **memo** (memorandum) in MemoTrack is an official university document used for:\n- Assigning tasks to staff/instructors\n- Scheduling events or meetings\n- Making formal requests\n- Broadcasting announcements\n\nEach memo has a status: **Draft → Pending → Approved/Rejected**", 1.0),
+     "A **memo** (memorandum) in SkedIt is an official university document used for:\n- Assigning tasks to staff/instructors\n- Scheduling events or meetings\n- Making formal requests\n- Broadcasting announcements\n\nEach memo has a status: **Draft → Pending → Approved/Rejected**", 1.0),
 
     (["memo status","status of memo","memo states","draft pending approved"],
-     "Memo statuses in MemoTrack:\n- **Draft** — saved but not yet submitted\n- **Pending** — submitted, awaiting decision\n- **Approved** — accepted by the approver\n- **Rejected** — declined with a reason\n\nOnly admins and approvers can change status.", 1.1),
+     "Memo statuses in SkedIt:\n- **Draft** — saved but not yet submitted\n- **Pending** — submitted, awaiting decision\n- **Approved** — accepted by the approver\n- **Rejected** — declined with a reason\n\nOnly admins and approvers can change status.", 1.1),
 
     (["edit memo","update memo","modify memo","change memo"],
      "To **edit a memo**:\n1. Go to **Memos → All Memos** in the sidebar\n2. Find the memo and click it to open\n3. Click the **Edit** button\n4. Make your changes and save\n\n⚠️ Note: Only **Draft** and **Pending** memos can be edited. Approved memos are locked.", 1.1),
@@ -58,7 +58,7 @@ KB = [
 
     # ── USERS & ROLES ──────────────────────────────────────────
     (["user role","roles","what is admin","what is hr","what is instructor","what is approver","what is staff","what is student","what is transportation"],
-     "MemoTrack has **7 user roles**:\n\n| Role | Access |\n|------|--------|\n| **Admin** | Full access — everything |\n| **HR** | Employee records, leave, attendance |\n| **Instructor** | Submit requests, view own memos |\n| **Approver** | Approve/reject dept requests |\n| **Transportation** | Manage vehicles & trips |\n| **Staff** | View memos, limited actions |\n| **Student** | Read-only memo access |", 1.2),
+     "SkedIt has **7 user roles**:\n\n| Role | Access |\n|------|--------|\n| **Admin** | Full access — everything |\n| **HR** | Employee records, leave, attendance |\n| **Instructor** | Submit requests, view own memos |\n| **Approver** | Approve/reject dept requests |\n| **Transportation** | Manage vehicles & trips |\n| **Staff** | View memos, limited actions |\n| **Student** | Read-only memo access |", 1.2),
 
     (["manage user","add user","create user","new user","register user","user management"],
      "To **manage users** (Admin only):\n1. Sidebar → **People** section\n2. Choose: **Instructors**, **Staff**, or **Students**\n3. Click **Add New** to create a user\n4. Fill in: name, school ID, email, mobile, role\n5. The user can then log in with their school ID or email", 1.2),
@@ -71,7 +71,7 @@ KB = [
 
     # ── VEHICLES ───────────────────────────────────────────────
     (["vehicle","transport","trip","van","car","bus","booking","vehicle booking"],
-     "**Vehicle management** in MemoTrack:\n- Sidebar → **Resources → Vehicles**\n- View all university vehicles and their availability\n- Vehicles are linked to memos when transport is needed\n- Transportation role approves vehicle requests\n- Double-booking is automatically prevented\n\nTo request a vehicle: include it when creating a memo.", 1.2),
+     "**Vehicle management** in SkedIt:\n- Sidebar → **Resources → Vehicles**\n- View all university vehicles and their availability\n- Vehicles are linked to memos when transport is needed\n- Transportation role approves vehicle requests\n- Double-booking is automatically prevented\n\nTo request a vehicle: include it when creating a memo.", 1.2),
 
     (["grouped trip","trip group","group trip"],
      "**Grouped Trips** consolidate multiple vehicle requests for the same route/date:\n- Sidebar → **Resources → Grouped Trips**\n- The system groups compatible trip requests automatically\n- Reduces vehicle usage and optimizes transport scheduling", 1.0),
@@ -82,7 +82,7 @@ KB = [
 
     # ── LOGIN & AUTH ───────────────────────────────────────────
     (["login","sign in","cannot login","login error","wrong password","forgot password","school id login"],
-     "**Login options** in MemoTrack:\n- Username, Email, School ID, or Mobile Number — all work!\n- Make sure you're on the correct login page (Admin vs User)\n- If login fails: check CAPS LOCK, verify your school ID format\n- Admin users must use the **Admin Login** button\n\nForgot password? Contact your system administrator to reset it.", 1.1),
+     "**Login options** in SkedIt:\n- Username, Email, School ID, or Mobile Number — all work!\n- Make sure you're on the correct login page (Admin vs User)\n- If login fails: check CAPS LOCK, verify your school ID format\n- Admin users must use the **Admin Login** button\n\nForgot password? Contact your system administrator to reset it.", 1.1),
 
     (["logout","sign out","log out"],
      "To **log out**:\n- Click the **Logout** button at the **bottom of the sidebar**\n- You'll be redirected to the login page\n- Your session is cleared automatically", 0.9),
@@ -97,17 +97,17 @@ KB = [
 
     # ── SYSTEM / TECHNICAL ─────────────────────────────────────
     (["philippines time","timezone","philippine standard time","pst","asia manila"],
-     "MemoTrack uses **Philippine Standard Time (PST / UTC+8)** for all dates and times. The dashboard date shown at the top updates according to PH time.", 0.9),
+     "SkedIt uses **Philippine Standard Time (PST / UTC+8)** for all dates and times. The dashboard date shown at the top updates according to PH time.", 0.9),
 
     (["system","what system","what is memotrack","about memotrack","cns","college of natural sciences"],
-     "**MemoTrack** is a university memorandum and scheduling management system built for the **College of Natural Sciences (CNS)**. It manages:\n- Official memos and document workflows\n- Class and event scheduling\n- Conflict detection and resolution\n- User management across all roles\n- Vehicle and trip coordination\n\nBuilt with Django (Python) and modern web technologies.", 1.0),
+     "**SkedIt** is a university memorandum and scheduling management system built for the **College of Natural Sciences (CNS)**. It manages:\n- Official memos and document workflows\n- Class and event scheduling\n- Conflict detection and resolution\n- User management across all roles\n- Vehicle and trip coordination\n\nBuilt with Django (Python) and modern web technologies.", 1.0),
 
     # ── GENERAL KNOWLEDGE ──────────────────────────────────────
     (["what is python","python language","django","what is django"],
-     "**Python** is the programming language MemoTrack is built with. **Django** is the web framework used — it handles routing, database models, authentication, and views. MemoTrack is a Django project.", 0.8),
+     "**Python** is the programming language SkedIt is built with. **Django** is the web framework used — it handles routing, database models, authentication, and views. SkedIt is a Django project.", 0.8),
 
     (["what is ai","artificial intelligence","machine learning","how does ai work"],
-     "**AI (Artificial Intelligence)** is the simulation of human intelligence in computers. I'm MemoBot — a rule-based AI trained specifically on MemoTrack's knowledge base. I use **intent detection** and a **knowledge base** to understand your questions and give accurate answers.", 0.8),
+     "**AI (Artificial Intelligence)** is the simulation of human intelligence in computers. I'm MemoBot — a rule-based AI trained specifically on SkedIt's knowledge base. I use **intent detection** and a **knowledge base** to understand your questions and give accurate answers.", 0.8),
 
     (["thank","thanks","thank you","ty","appreciate","great","awesome","nice","good job","well done"],
      "You're welcome, {name}! 😊 I'm always here if you need anything else.", 0.8),
@@ -116,7 +116,7 @@ KB = [
      "Goodbye, {name}! 👋 Come back anytime — I'm always online.", 0.8),
 
     (["help","what can you do","commands","features","capabilities"],
-     "I can help you with anything in MemoTrack:\n\n📋 **Memos** — create, edit, view, approve, reject\n⚔️ **Conflicts** — detect and resolve scheduling conflicts\n👥 **Users** — manage roles, add/edit/delete users\n🚗 **Vehicles** — bookings and trip management\n📊 **Dashboard** — understand KPI cards and panels\n🔔 **Notifications** — how they work\n🔐 **Login** — troubleshoot login issues\n\nJust ask me anything!", 1.0),
+     "I can help you with anything in SkedIt:\n\n📋 **Memos** — create, edit, view, approve, reject\n⚔️ **Conflicts** — detect and resolve scheduling conflicts\n👥 **Users** — manage roles, add/edit/delete users\n🚗 **Vehicles** — bookings and trip management\n📊 **Dashboard** — understand KPI cards and panels\n🔔 **Notifications** — how they work\n🔐 **Login** — troubleshoot login issues\n\nJust ask me anything!", 1.0),
 ]
 
 # ── MATH SUPPORT ───────────────────────────────────────────────

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Conflict Detected | MemoTrack{% endblock %}
+{% block title %}Conflict Detected | SkedIt{% endblock %}
 
 {% block content %}
 <div x-data="{open:true}">
@@ -10,6 +10,18 @@
       <p class="text-sm text-slate-500 mt-1">Your memo overlaps with existing schedules for the same user.</p>
     </div>
   </div>
+
+  {% if ai_recommendation %}
+  <div class="mt-6 p-6 rounded-2xl bg-slate-900 border border-slate-800 shadow-soft text-slate-100 flex items-start gap-4">
+    <div class="h-10 w-10 shrink-0 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400">
+      <i class="fa-solid fa-robot text-lg"></i>
+    </div>
+    <div>
+      <h3 class="text-sm font-bold text-slate-300 uppercase tracking-wider mb-1">AI Intelligent Advisor</h3>
+      <p class="text-sm leading-relaxed text-slate-100">{{ ai_recommendation }}</p>
+    </div>
+  </div>
+  {% endif %}
 
   <div x-show="open" class="mt-6">
     <div class="rounded-2xl bg-white border border-slate-100 shadow-soft overflow-hidden">

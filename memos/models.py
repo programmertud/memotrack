@@ -18,6 +18,11 @@ class Memo(models.Model):
         DELEGATED = "delegated", "Delegated"
         CONFLICT = "conflict", "Conflict"
 
+    class Category(models.TextChoices):
+        UNIVERSITY = "university", "University-wide"
+        DEPARTMENT = "department", "Departmental"
+        PERSONAL = "personal", "Personal/Individual"
+
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     created_by = models.ForeignKey(
@@ -41,6 +46,7 @@ class Memo(models.Model):
     priority = models.CharField(max_length=10, choices=Priority.choices, default=Priority.MEDIUM)
     required = models.BooleanField(default=False)
 
+    category = models.CharField(max_length=20, choices=Category.choices, default=Category.DEPARTMENT)
     status = models.CharField(max_length=15, choices=Status.choices, default=Status.PENDING)
     delegated_to = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -80,10 +86,17 @@ class Memo(models.Model):
     def suggested_decision(self) -> str:
         if not self.has_conflicts():
             return "approve"
+        
+        # Policy: University-wide events take precedence
+        if self.category == self.Category.UNIVERSITY:
+            return "accept_anyway"
+            
         if self.required and self.priority in {self.Priority.HIGH, self.Priority.MEDIUM}:
             return "accept_anyway"
+            
         if self.priority == self.Priority.LOW and not self.required:
             return "reschedule"
+            
         return "delegate"
 
 

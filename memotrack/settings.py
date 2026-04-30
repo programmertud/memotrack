@@ -136,4 +136,4 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Get your FREE key at: https://aistudio.google.com/apikey
 # Free tier: 1,500 requests/day, 1 million tokens/minute — no billing required
 # Replace below with your actual key (starts with AIza...)
-GEMINI_API_KEY = "AIzaSyBrFHTsG6phTKQpALsiMMq2GndWLBn91zs"
+GEMINI_API_KEY = "AIzaSyCo_nvMZvqvHHjNlCvs5ExVi4-cvuEsb_I"

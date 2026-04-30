@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{% if mode == 'edit' %}Edit Memo{% else %}Create Memo{% endif %} | MemoTrack{% endblock %}
+{% block title %}{% if mode == 'edit' %}Edit Memo{% else %}Create Memo{% endif %} | SkedIt{% endblock %}
 
 {% block content %}
 <div class="flex items-center justify-between gap-4">
@@ -10,8 +10,27 @@
   </div>
 </div>
 
-<form method="post" class="mt-6">
+<form method="post" class="mt-6" x-data="{ parseMode: false, textToParse: '', isParsing: false, parseError: null, parseAI() { this.isParsing=true; this.parseError=null; fetch('/memos/parse-ai/', { method:'POST', headers:{'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/json'}, body: JSON.stringify({text: this.textToParse}) }).then(res => { if(!res.ok) throw new Error('AI failed to parse text'); return res.json(); }).then(data => { document.querySelector('input[name=title]').value = data.title || ''; document.querySelector('textarea[name=description]').value = data.description || ''; document.querySelector('input[name=date]').value = data.date || ''; document.querySelector('input[name=start_time]').value = data.start_time || ''; if(data.end_time) document.querySelector('input[name=end_time]').value = data.end_time; document.querySelector('input[name=venue]').value = data.venue || ''; if(data.priority) document.querySelector('select[name=priority]').value = data.priority; this.parseMode=false; this.textToParse=''; }).catch(e => { this.parseError = e.message; alert(e.message); }).finally(() => { this.isParsing=false; }); } }">
   {% csrf_token %}
+
+  <div class="mb-6">
+    <button type="button" @click="parseMode = !parseMode" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-semibold hover:bg-slate-900 transition">
+      <i class="fa-solid fa-wand-magic-sparkles"></i>
+      <span>AI Smart Parse</span>
+    </button>
+  </div>
+
+  <div x-show="parseMode" x-cloak class="mb-6 p-6 rounded-2xl bg-slate-50 border border-slate-200">
+    <div class="text-sm font-bold text-slate-700 mb-2">Paste Memo Text</div>
+    <textarea x-model="textToParse" rows="4" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-slate-800 focus:outline-none mb-3" placeholder="Paste an email or message here..."></textarea>
+    <div class="flex items-center gap-3">
+      <button type="button" @click="parseAI" :disabled="isParsing || !textToParse.trim()" class="px-5 py-2.5 bg-slate-800 text-white font-semibold rounded-lg text-sm hover:bg-slate-900 transition disabled:opacity-50 flex items-center gap-2">
+        <span x-show="isParsing"><i class="fa-solid fa-spinner fa-spin"></i> Parsing...</span>
+        <span x-show="!isParsing">Auto-Fill Form</span>
+      </button>
+      <button type="button" @click="parseMode = false" class="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900">Cancel</button>
+    </div>
+  </div>
 
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <div class="lg:col-span-2 rounded-2xl bg-white border border-slate-100 shadow-soft p-6">
@@ -37,6 +56,11 @@
         <div>
           <label class="text-sm font-semibold text-slate-700">Priority</label>
           {{ form.priority }}
+        </div>
+        
+        <div>
+          <label class="text-sm font-semibold text-slate-700">Category</label>
+          {{ form.category }}
         </div>
 
         <div>

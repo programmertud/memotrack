@@ -11,6 +11,9 @@ from .models import Memo, MemoDecision
 from .forms import MemoForm
 
 from notifications.models import Notification
+from memotrack.ai_utils import parse_memo_text, get_scheduling_recommendation, get_predictive_analytics
+from django.http import JsonResponse
+import json
 
 
 User = get_user_model()
@@ -53,6 +56,11 @@ def dashboard(request):
     recent_memos = Memo.objects.all()[:5]
     conflicts_count = Memo.objects.filter(status=Memo.Status.CONFLICT).count()
     pending_decisions_count = Memo.objects.filter(status=Memo.Status.PENDING).count()
+    
+    # Predictive Analytics
+    upcoming = Memo.objects.filter(date__gte=timezone.now().date()).order_by("date")[:20]
+    ai_forecast = get_predictive_analytics(upcoming)
+
     return render(
         request,
         "memos/dashboard.html",
@@ -60,6 +68,7 @@ def dashboard(request):
             "recent_memos": recent_memos,
             "conflicts_count": conflicts_count,
             "pending_decisions_count": pending_decisions_count,
+            "ai_forecast": ai_forecast,
         },
     )
 
@@ -197,11 +206,28 @@ def memo_conflict(request, pk: int):
     memo = get_object_or_404(Memo, pk=pk)
     conflicts = memo.conflicts_queryset()
     suggestion = memo.suggested_decision()
+    
+    # AI Recommendation
+    ai_recommendation = get_scheduling_recommendation({
+        'title': memo.title,
+        'date': str(memo.date),
+        'start_time': str(memo.start_time),
+        'end_time': str(memo.end_time),
+        'venue': memo.venue,
+        'priority': memo.priority,
+    }, conflicts)
+
     users = User.objects.all().order_by("username")
     return render(
         request,
         "memos/memo_conflict.html",
-        {"memo": memo, "conflicts": conflicts, "suggestion": suggestion, "users": users},
+        {
+            "memo": memo, 
+            "conflicts": conflicts, 
+            "suggestion": suggestion, 
+            "ai_recommendation": ai_recommendation,
+            "users": users
+        },
     )
 
 
@@ -302,7 +328,30 @@ def decision_reject(request, pk: int):
     return redirect(next_url or "memos:decision_panel")
 
 
+@login_required
+@require_http_methods(["POST"])
+def memo_parse_ai(request):
+    """AJAX endpoint to parse memo text using AI."""
+    if not _is_admin(request.user):
+        return JsonResponse({"error": "Unauthorized"}, status=403)
+    
+    try:
+        data = json.loads(request.body)
+        text = data.get("text", "")
+        if not text:
+            return JsonResponse({"error": "No text provided"}, status=400)
+        
+        parsed_data = parse_memo_text(text)
+        if parsed_data:
+            return JsonResponse(parsed_data)
+        else:
+            return JsonResponse({"error": "AI failed to parse text"}, status=500)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+
 def _notify_conflict(request, memo: Memo) -> None:
+    # ... (existing code)
     Notification.objects.create(
         user=memo.assigned_user,
         title="Conflict Detected",
