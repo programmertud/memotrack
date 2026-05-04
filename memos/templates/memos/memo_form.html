@@ -5,7 +5,7 @@
 {% block content %}
 <div class="flex items-center justify-between gap-4">
   <div>
-    <h1 class="text-2xl font-bold tracking-tight">{% if mode == 'edit' %}Edit Memorandum{% else %}Create Memorandum{% endif %}</h1>
+    <h1 class="text-2xl font-bold tracking-tight">{% if mode == "edit" %}Edit Memorandum{% else %}Create Memorandum{% endif %}</h1>
     <p class="text-sm text-slate-500 mt-1">Enter schedule details. Conflicts are detected automatically.</p>
   </div>
 </div>
@@ -13,6 +13,9 @@
 <script>
   window._PARSE_TEXT_URL = "{% url 'memos:memo_parse_ai' %}";
   window._PARSE_FILE_URL = "{% url 'memos:memo_parse_ai_file' %}";
+  window._CHECK_CONFLICTS_URL = "{% url 'memos:memo_check_conflicts' %}";
+  window._RECOMMENDATIONS_URL = "{% url 'memos:memo_recommendations_new' %}";
+  window._EXCLUDE_ID = "{{ memo.pk|default:'' }}";
   window._CSRF_TOKEN = "{{ csrf_token }}";
 </script>
 
@@ -81,6 +84,77 @@
     .then(data => { if (data.error) throw new Error(data.error); this.fillForm(data); })
     .catch(e => { this.parseError = e.message; })
     .finally(() => { this.isParsing = false; });
+  },
+  
+  conflicts: [],
+  isCheckingConflicts: false,
+  checkConflicts() {
+    const data = {
+      date: document.querySelector('input[name=date]').value,
+      start_time: document.querySelector('input[name=start_time]').value,
+      end_time: document.querySelector('input[name=end_time]').value,
+      assigned_user: document.querySelector('select[name=assigned_user]').value,
+      venue: document.querySelector('input[name=venue]').value,
+      resources: Array.from(document.querySelectorAll('input[name=resources]:checked')).map(el => el.value),
+      exclude_memo_id: window._EXCLUDE_ID || null
+    };
+
+    if (!data.date || !data.start_time || !data.end_time) {
+      this.conflicts = [];
+      return;
+    }
+
+    this.isCheckingConflicts = true;
+    fetch(window._CHECK_CONFLICTS_URL, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': this.csrfToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    })
+    .then(res => res.json())
+    .then(data => {
+      this.conflicts = data.conflicts || [];
+    })
+    .catch(err => console.error('Conflict check error:', err))
+    .finally(() => { this.isCheckingConflicts = false; });
+  },
+  
+  recommendations: null,
+  isGettingRecommendations: false,
+  getRecommendations() {
+    this.isGettingRecommendations = true;
+    const data = {
+      title: document.querySelector('input[name=title]').value,
+      date: document.querySelector('input[name=date]').value,
+      start_time: document.querySelector('input[name=start_time]').value,
+      end_time: document.querySelector('input[name=end_time]').value,
+      assigned_user: document.querySelector('select[name=assigned_user]').value,
+      venue: document.querySelector('input[name=venue]').value,
+      priority: document.querySelector('select[name=priority]').value,
+      category: document.querySelector('select[name=category]').value,
+    };
+
+    fetch(window._RECOMMENDATIONS_URL, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': this.csrfToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    })
+    .then(res => res.json())
+    .then(data => { this.recommendations = data; })
+    .catch(err => console.error('Recommendation error:', err))
+    .finally(() => { this.isGettingRecommendations = false; });
+  },
+  init() {
+    this.$watch('textToParse', () => {}); // placeholder if needed
+    // Monitor inputs for conflict check
+    const inputs = ['date', 'start_time', 'end_time', 'assigned_user', 'venue'];
+    inputs.forEach(name => {
+      const el = document.querySelector(`[name=${name}]`);
+      if (el) el.addEventListener('change', () => this.checkConflicts());
+    });
+    // For resources (checkboxes)
+    document.addEventListener('change', (e) => {
+      if (e.target.name === 'resources') this.checkConflicts();
+    });
   }
 }">
   {% csrf_token %}
@@ -191,6 +265,56 @@
       to assign the memo.</p>
   </div>
 
+  <template x-if="conflicts.length > 0">
+    <div class="mb-6 p-5 rounded-2xl border border-red-200 bg-red-50 animate-pulse-subtle">
+      <div class="flex items-center gap-2 mb-3">
+        <i class="fa-solid fa-triangle-exclamation text-red-500"></i>
+        <span class="text-sm font-bold text-red-700">Conflict Detection Alert</span>
+      </div>
+      <ul class="space-y-2">
+        <template x-for="c in conflicts" :key="c.message">
+          <li class="flex items-start gap-2 text-sm text-red-600">
+            <span class="mt-1.5 w-1.5 h-1.5 rounded-full bg-red-400 shrink-0"></span>
+            <span x-text="c.message"></span>
+          </li>
+        </template>
+      </ul>
+      <p class="text-xs text-red-400 mt-3 italic">Proceeding with these conflicts will flag this memo for
+        administrative review.</p>
+
+      <!-- AI Recommendation Engine Preview -->
+      <div class="mt-4 pt-4 border-t border-red-100">
+        <button type="button" @click="getRecommendations()" :disabled="isGettingRecommendations"
+          class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-red-200 text-red-700 rounded-lg text-xs font-bold hover:bg-red-50 transition shadow-sm">
+          <i class="fa-solid fa-wand-magic-sparkles" :class="isGettingRecommendations ? 'fa-spin' : ''"></i>
+          <span x-text="isGettingRecommendations ? 'Optimizing...' : 'Get AI Recommendations'"></span>
+        </button>
+
+        <div x-show="recommendations" x-cloak class="mt-4 p-4 rounded-xl bg-white border border-red-100 shadow-sm">
+          <div class="flex items-center gap-2 mb-3">
+            <i class="fa-solid fa-sparkles text-uniGreen text-xs"></i>
+            <span class="text-xs font-black text-slate-800 uppercase tracking-wider">Suggested Alternatives</span>
+          </div>
+          <p class="text-xs text-slate-600 mb-4 italic" x-text="recommendations ? recommendations.summary : ''"></p>
+          <div class="grid grid-cols-1 gap-2">
+            <template x-for="slot in (recommendations ? recommendations.slots : [])" :key="slot.date + slot.start_time">
+              <div class="flex items-center justify-between p-3 rounded-lg bg-slate-50 border border-slate-100">
+                <div class="text-xs font-semibold text-slate-700">
+                  <span
+                    x-text="new Date(slot.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })"></span>
+                  •
+                  <span x-text="slot.start_time"></span> - <span x-text="slot.end_time"></span>
+                </div>
+                <div class="px-2 py-0.5 rounded bg-uniGreen/10 text-uniGreen text-[10px] font-bold"
+                  x-text="'Score: ' + slot.score"></div>
+              </div>
+            </template>
+          </div>
+        </div>
+      </div>
+    </div>
+  </template>
+
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <div class="lg:col-span-2 rounded-2xl bg-white border border-slate-100 shadow-soft p-6">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -268,6 +392,19 @@
       <div class="mt-6">
         <label class="text-sm font-semibold text-slate-700">Delegate To (optional)</label>
         {{ form.delegated_to }}
+      </div>
+
+      <div class="mt-6">
+        <label class="text-sm font-semibold text-slate-700">Book Resources</label>
+        <div class="mt-2 text-xs text-slate-500 mb-2">Select venues or equipment.</div>
+        <div class="space-y-2 max-h-40 overflow-y-auto p-2 border border-slate-100 rounded-xl bg-slate-50">
+          {% for checkbox in form.resources %}
+          <label class="flex items-center gap-3 cursor-pointer hover:bg-white p-1 rounded-lg transition">
+            {{ checkbox.tag }}
+            <span class="text-sm text-slate-700">{{ checkbox.choice_label }}</span>
+          </label>
+          {% endfor %}
+        </div>
       </div>
 
       <div class="mt-8 flex flex-col gap-3">

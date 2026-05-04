@@ -1,6 +1,7 @@
 from django.shortcuts import render
 
 from django.contrib import messages
+from django.utils import timezone
 from django.contrib.auth import get_user_model
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
@@ -9,13 +10,19 @@ from django.views.decorators.http import require_http_methods
 
 from .models import Memo, MemoDecision
 from .forms import MemoForm
+from .conflicts import check_conflicts
 
 from notifications.models import Notification
 from memotrack.ai_utils import parse_memo_text, get_scheduling_recommendation, get_predictive_analytics, parse_memo_image, extract_text_from_file
+from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 import json
 
 
+
+from django.db.models import Count, Q
+from django.db.models.functions import TruncDay
+from accounts.models import Campus, Department
 
 
 User = get_user_model()
@@ -423,3 +430,99 @@ def _notify_decision(request, memo: Memo, approved: bool) -> None:
         message=message,
         severity=severity,
     )
+
+
+@login_required
+@require_http_methods(["POST"])
+def memo_check_conflicts(request):
+    """AJAX endpoint to perform real-time conflict detection."""
+    try:
+        data = json.loads(request.body)
+        date = data.get("date")
+        start_time = data.get("start_time")
+        end_time = data.get("end_time")
+        user_id = data.get("assigned_user")
+        venue = data.get("venue")
+        resource_ids = data.get("resources", [])
+        exclude_memo_id = data.get("exclude_memo_id")
+
+        if not all([date, start_time, end_time]):
+            return JsonResponse({"conflicts": []})
+
+        user = None
+        if user_id:
+            user = User.objects.filter(pk=user_id).first()
+
+        conflicts = check_conflicts(
+            date=date,
+            start_time=start_time,
+            end_time=end_time,
+            user=user,
+            venue=venue,
+            resources=resource_ids,
+            exclude_memo_id=exclude_memo_id
+        )
+
+        return JsonResponse({"conflicts": conflicts})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+@csrf_exempt
+def memo_recommendations(request, pk=None):
+    """
+    AJAX endpoint to get AI-based scheduling recommendations.
+    Accepts GET (for existing) or POST (for new/preview).
+    """
+    from .models import Memo
+    from .recommendations import get_recommendation_summary
+    from django.shortcuts import get_object_or_404
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            # Create a transient Memo instance for the recommendation engine
+            memo = Memo(
+                title=data.get('title', 'Untitled'),
+                date=data.get('date'),
+                start_time=data.get('start_time'),
+                end_time=data.get('end_time'),
+                venue=data.get('venue', ''),
+                priority=data.get('priority', 'medium'),
+                category=data.get('category', 'department')
+            )
+            # Try to attach assigned user
+            user_id = data.get('assigned_user')
+            if user_id:
+                try:
+                    memo.assigned_user = User.objects.get(pk=user_id)
+                except User.DoesNotExist:
+                    pass
+            
+            # Since it's a mock, it has no PK. We'll handle resource_bookings mock in find_candidate_slots if needed.
+        except Exception as e:
+            return JsonResponse({"error": f"Invalid data: {str(e)}"}, status=400)
+    else:
+        memo = get_object_or_404(Memo, pk=pk)
+    
+    # Permission check (simplified for now)
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "Unauthorized"}, status=403)
+
+    result = get_recommendation_summary(memo)
+    
+    formatted_slots = []
+    for slot in result['slots']:
+        formatted_slots.append({
+            'date': slot['date'].strftime('%Y-%m-%d'),
+            'start_time': slot['start_time'].strftime('%H:%M'),
+            'end_time': slot['end_time'].strftime('%H:%M'),
+            'score': round(slot['score'], 1)
+        })
+    
+    return JsonResponse({
+        "summary": result['summary'],
+        "slots": formatted_slots
+    })

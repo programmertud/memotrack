@@ -8,11 +8,23 @@ from django.utils import timezone
 User = get_user_model()
 
 
-class Department(models.Model):
-    name = models.CharField(max_length=120, unique=True)
+class Campus(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    location = models.CharField(max_length=255, blank=True)
 
     def __str__(self) -> str:
         return self.name
+
+
+class Department(models.Model):
+    name = models.CharField(max_length=120, unique=True)
+    campus = models.ForeignKey(
+        Campus, on_delete=models.SET_NULL, null=True, blank=True, related_name="departments"
+    )
+    is_college = models.BooleanField(default=False, help_text="Determine if this is an academic college.")
+
+    def __str__(self) -> str:
+        return f"{self.name} ({self.campus.name if self.campus else 'No Campus'})"
 
 
 class Profile(models.Model):
@@ -23,7 +35,7 @@ class Profile(models.Model):
         APPROVER = "approver", "Department Head/Approver"
         TRANSPORTATION = "transportation", "Transportation"
         STAFF = "staff", "Staff"
-        STUDENT = "student", "Student"
+
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
     first_name = models.CharField(max_length=150, blank=True)
@@ -31,7 +43,8 @@ class Profile(models.Model):
     last_name = models.CharField(max_length=150, blank=True)
     school_id = models.CharField(max_length=50, unique=True, null=True, blank=True)
     mobile_number = models.CharField(max_length=30, blank=True)
-    role = models.CharField(max_length=20, choices=Role.choices, default=Role.STUDENT)
+    role = models.CharField(max_length=20, choices=Role.choices, default=Role.STAFF)
+
     department = models.ForeignKey(
         Department, on_delete=models.SET_NULL, null=True, blank=True, related_name="profiles"
     )

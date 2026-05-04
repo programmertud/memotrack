@@ -22,4 +22,8 @@ urlpatterns = [
     path("decisions/<int:pk>/reject/", views.decision_reject, name="decision_reject"),
     path("memos/parse-ai/", views.memo_parse_ai, name="memo_parse_ai"),
     path("memos/parse-ai-file/", views.memo_parse_ai_file, name="memo_parse_ai_file"),
+    path("check-conflicts/", views.memo_check_conflicts, name="memo_check_conflicts"),
+    path("recommend-slots/", views.memo_recommendations, name="memo_recommendations_new"),
+    path("recommend-slots/<int:pk>/", views.memo_recommendations, name="memo_recommendations"),
 ]
+

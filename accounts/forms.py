@@ -141,8 +141,8 @@ class UserRegisterForm(UserCreationForm):
     role = forms.ChoiceField(
         choices=[
             ("admin", "Admin"),
-            ("student", "Student"),
             ("instructor", "Faculty"),
+
         ],
         widget=_SELECT,
     )

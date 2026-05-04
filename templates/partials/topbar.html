@@ -115,8 +115,9 @@
           <i class="fa-solid fa-bell text-slate-700"></i>
           {% if unread_notifications_count and unread_notifications_count > 0 %}
           <span id="notifBadge"
-            class="absolute -top-1 -right-1 h-5 min-w-5 px-1 rounded-full bg-uniGold text-uniGreen text-xs font-bold flex items-center justify-center">{{
-            unread_notifications_count }}</span>
+            class="absolute -top-1 -right-1 h-5 min-w-5 px-1 rounded-full bg-uniGold text-uniGreen text-xs font-bold flex items-center justify-center">
+            {{ unread_notifications_count }}
+          </span>
           {% endif %}
         </button>
 
@@ -198,11 +199,18 @@
           <div class="leading-tight text-left hidden sm:block">
             {% if request.user.is_authenticated %}
             <div class="text-sm font-semibold" id="topbarName">
-              {% if request.user.profile.first_name %}{{ request.user.profile.first_name }} {{
-              request.user.profile.last_name }}{% else %}{{ request.user.username }}{% endif %}
+              {% if request.user.profile.first_name %}
+              {{ request.user.profile.first_name }} {{ request.user.profile.last_name }}
+              {% else %}
+              {{ request.user.username }}
+              {% endif %}
             </div>
             <div class="text-xs text-slate-500">
-              {% if request.user.is_staff %}Admin{% else %}{{ request.user.profile.get_role_display|default:"User" }}{% endif %}
+              {% if request.user.is_staff %}
+              Admin
+              {% else %}
+              {{ request.user.profile.get_role_display|default:"User" }}
+              {% endif %}
             </div>
             {% else %}
             <div class="text-sm font-semibold">Guest</div>

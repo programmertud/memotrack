@@ -57,6 +57,14 @@ class Memo(models.Model):
         related_name="delegated_memos",
     )
 
+    # Centralized tracking
+    campus = models.ForeignKey(
+        "accounts.Campus", on_delete=models.SET_NULL, null=True, blank=True, related_name="memos"
+    )
+    department = models.ForeignKey(
+        "accounts.Department", on_delete=models.SET_NULL, null=True, blank=True, related_name="memos"
+    )
+
     created_at = models.DateTimeField(default=timezone.now, editable=False)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -68,6 +76,15 @@ class Memo(models.Model):
 
     def __str__(self) -> str:
         return f"{self.title} ({self.assigned_user})"
+
+    def save(self, *args, **kwargs):
+        if not self.department and self.assigned_user and hasattr(self.assigned_user, 'profile'):
+            self.department = self.assigned_user.profile.department
+        
+        if self.department and not self.campus:
+            self.campus = self.department.campus
+            
+        super().save(*args, **kwargs)
 
     def clean(self):
         from django.core.exceptions import ValidationError

@@ -64,3 +64,56 @@ class VehicleBooking(models.Model):
 
     def has_conflicts(self) -> bool:
         return self.overlaps_queryset().exists()
+    def shared_trip_suggestions(self):
+        dest = (self.memo.destination or "").strip()
+        if not dest:
+            return self.memo.__class__.objects.none()
+
+        return (
+            self.memo.__class__.objects.filter(date=self.memo.date, destination__iexact=dest)
+            .exclude(pk=self.memo.pk)
+            .order_by("start_time")
+        )
+
+
+class Resource(models.Model):
+    class Type(models.TextChoices):
+        VENUE = "venue", "Venue"
+        EQUIPMENT = "equipment", "Equipment"
+        OTHER = "other", "Other"
+
+    name = models.CharField(max_length=100)
+    resource_type = models.CharField(
+        max_length=20, choices=Type.choices, default=Type.VENUE
+    )
+    description = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self) -> str:
+        return f"{self.name} ({self.get_resource_type_display()})"
+
+
+class ResourceBooking(models.Model):
+    resource = models.ForeignKey(Resource, on_delete=models.CASCADE, related_name="bookings")
+    memo = models.ForeignKey("memos.Memo", on_delete=models.CASCADE, related_name="resource_bookings")
+    
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["resource", "memo"]),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.resource} for {self.memo}"
+
+    def overlaps_queryset(self):
+        qs = ResourceBooking.objects.filter(resource=self.resource, memo__date=self.memo.date)
+        if self.pk:
+            qs = qs.exclude(pk=self.pk)
+        return qs.filter(
+            Q(memo__start_time__lt=self.memo.end_time) & Q(memo__end_time__gt=self.memo.start_time)
+        )
+
+    def has_conflicts(self) -> bool:
+        return self.overlaps_queryset().exists()

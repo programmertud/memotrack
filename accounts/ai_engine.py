@@ -57,17 +57,17 @@ KB = [
      "The **notification bell** 🔔 is in the top bar:\n- Shows a badge with unread count\n- Click it to see recent notifications\n- You get notified for: memo assigned, approved, rejected, conflict detected\n- Clicking a notification marks it as read\n\nNotifications update each time you navigate to a new page.", 1.0),
 
     # ── USERS & ROLES ──────────────────────────────────────────
-    (["user role","roles","what is admin","what is hr","what is instructor","what is approver","what is staff","what is student","what is transportation"],
-     "SkedIt has **7 user roles**:\n\n| Role | Access |\n|------|--------|\n| **Admin** | Full access — everything |\n| **HR** | Employee records, leave, attendance |\n| **Instructor** | Submit requests, view own memos |\n| **Approver** | Approve/reject dept requests |\n| **Transportation** | Manage vehicles & trips |\n| **Staff** | View memos, limited actions |\n| **Student** | Read-only memo access |", 1.2),
+    (["user role","roles","what is admin","what is hr","what is instructor","what is approver","what is staff","what is transportation"],
+     "SkedIt has **6 user roles**:\n\n| Role | Access |\n|------|--------|\n| **Admin** | Full access — everything |\n| **HR** | Employee records, leave, attendance |\n| **Instructor** | Submit requests, view own memos |\n| **Approver** | Approve/reject dept requests |\n| **Transportation** | Manage vehicles & trips |\n| **Staff** | View memos, limited actions |", 1.2),
 
     (["manage user","add user","create user","new user","register user","user management"],
-     "To **manage users** (Admin only):\n1. Sidebar → **People** section\n2. Choose: **Instructors**, **Staff**, or **Students**\n3. Click **Add New** to create a user\n4. Fill in: name, school ID, email, mobile, role\n5. The user can then log in with their school ID or email", 1.2),
+     "To **manage users** (Admin only):\n1. Sidebar → **People** section\n2. Choose: **Instructors** or **Staff**\n3. Click **Add New** to create a user\n4. Fill in: name, school ID, email, mobile, role\n5. The user can then log in with their school ID or email", 1.2),
 
     (["edit user","update user","change user","modify user"],
      "To **edit a user**:\n1. Sidebar → People → choose the role category\n2. Find the user in the list\n3. Click **Edit** next to their name\n4. Update the fields and save\n\nYou can change their name, contact info, department, and role.", 1.1),
 
     (["delete user","remove user","deactivate user"],
-     "To **delete a user**:\n1. Sidebar → People → find the user\n2. Click **Delete** next to their name\n3. Confirm the deletion\n\n⚠️ This permanently removes the user and all their data. Consider editing their role to 'Student' to deactivate instead.", 1.1),
+     "To **delete a user**:\n1. Sidebar → People → find the user\n2. Click **Delete** next to their name\n3. Confirm the deletion\n\n⚠️ This permanently removes the user and all their data.", 1.1),
 
     # ── VEHICLES ───────────────────────────────────────────────
     (["vehicle","transport","trip","van","car","bus","booking","vehicle booking"],
@@ -93,7 +93,7 @@ KB = [
 
     # ── SIDEBAR NAVIGATION ─────────────────────────────────────
     (["sidebar","navigation","menu","where is","how to navigate","find section"],
-     "**Sidebar navigation** (Admin view):\n\n📊 **Overview**\n- Admin Dashboard\n\n👥 **People**\n- Instructors | Staff | Students\n\n📋 **Memos**\n- All Memos | Create Memo | Decision Panel\n\n🚗 **Resources**\n- Vehicles | Grouped Trips\n\nThe active page is highlighted in green.", 1.1),
+     "**Sidebar navigation** (Admin view):\n\n📊 **Overview**\n- Admin Dashboard\n\n👥 **People**\n- Instructors | Staff\n\n📋 **Memos**\n- All Memos | Create Memo | Decision Panel\n\n🚗 **Resources**\n- Vehicles | Grouped Trips\n\nThe active page is highlighted in green.", 1.1),
 
     # ── SYSTEM / TECHNICAL ─────────────────────────────────────
     (["philippines time","timezone","philippine standard time","pst","asia manila"],

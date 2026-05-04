@@ -189,8 +189,8 @@ def admin_dashboard(request):
 
     # ── User counts ──
     total_instructors = Profile.objects.filter(role=Profile.Role.INSTRUCTOR).count()
-    total_students    = Profile.objects.filter(role=Profile.Role.STUDENT).count()
     total_staff       = Profile.objects.filter(role=Profile.Role.STAFF).count()
+
     total_vehicles    = Vehicle.objects.count()
     available_vehicles = Vehicle.objects.filter(status="available").count()
 
@@ -267,8 +267,8 @@ def admin_dashboard(request):
         "accounts/dashboards/admin_dashboard.html",
         {
             "total_instructors":  total_instructors,
-            "total_students":     total_students,
             "total_staff":        total_staff,
+
             "total_vehicles":     total_vehicles,
             "available_vehicles": available_vehicles,
             "pending_requests":   pending_requests,
@@ -293,7 +293,8 @@ def admin_dashboard(request):
 
 def _normalize_admin_role(role: str) -> str:
     role = (role or "").strip().lower()
-    if role not in {Profile.Role.STAFF, Profile.Role.INSTRUCTOR, Profile.Role.STUDENT}:
+    if role not in {Profile.Role.STAFF, Profile.Role.INSTRUCTOR}:
+
         return ""
     return role
 
@@ -396,7 +397,8 @@ def hr_dashboard(request):
 
     today = timezone.localdate()
 
-    employee_records = Profile.objects.exclude(role=Profile.Role.STUDENT).count()
+    employee_records = Profile.objects.all().count()
+
     attendance = Attendance.objects.filter(date=today)
     attendance_present = attendance.filter(is_present=True).count()
     attendance_absent = attendance.filter(is_present=False).count()
@@ -407,13 +409,15 @@ def hr_dashboard(request):
         Memo.objects.filter(date=today).values_list("assigned_user_id", flat=True).distinct()
     )
     available_staff = (
-        Profile.objects.exclude(role=Profile.Role.STUDENT)
+        Profile.objects.all()
         .exclude(user_id__in=busy_today)
+
         .count()
     )
     unavailable_staff = (
-        Profile.objects.exclude(role=Profile.Role.STUDENT)
+        Profile.objects.all()
         .filter(user_id__in=busy_today)
+
         .count()
     )
 
