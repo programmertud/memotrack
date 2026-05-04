@@ -21,4 +21,5 @@ urlpatterns = [
     path("decisions/<int:pk>/approve/", views.decision_approve, name="decision_approve"),
     path("decisions/<int:pk>/reject/", views.decision_reject, name="decision_reject"),
     path("memos/parse-ai/", views.memo_parse_ai, name="memo_parse_ai"),
+    path("memos/parse-ai-file/", views.memo_parse_ai_file, name="memo_parse_ai_file"),
 ]

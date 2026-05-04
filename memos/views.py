@@ -11,9 +11,11 @@ from .models import Memo, MemoDecision
 from .forms import MemoForm
 
 from notifications.models import Notification
-from memotrack.ai_utils import parse_memo_text, get_scheduling_recommendation, get_predictive_analytics
+from memotrack.ai_utils import parse_memo_text, get_scheduling_recommendation, get_predictive_analytics, parse_memo_image, extract_text_from_file
 from django.http import JsonResponse
 import json
+
+
 
 
 User = get_user_model()
@@ -348,6 +350,51 @@ def memo_parse_ai(request):
             return JsonResponse({"error": "AI failed to parse text"}, status=500)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
+
+@login_required
+@require_http_methods(["POST"])
+def memo_parse_ai_file(request):
+    """AJAX endpoint to parse an uploaded file (image, PDF, DOCX, TXT) using AI."""
+    if not _is_admin(request.user):
+        return JsonResponse({"error": "Unauthorized"}, status=403)
+
+    uploaded = request.FILES.get("file")
+    if not uploaded:
+        return JsonResponse({"error": "No file provided"}, status=400)
+
+    file_name = uploaded.name.lower()
+    IMAGE_TYPES = (".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp", ".tiff")
+
+    try:
+        if any(file_name.endswith(ext) for ext in IMAGE_TYPES):
+            # Route images to Gemini Vision
+            mime_map = {
+                ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+                ".png": "image/png", ".webp": "image/webp",
+                ".gif": "image/gif", ".bmp": "image/bmp",
+                ".tiff": "image/tiff",
+            }
+            ext = next(ext for ext in IMAGE_TYPES if file_name.endswith(ext))
+            mime_type = mime_map.get(ext, "image/jpeg")
+            image_bytes = uploaded.read()
+            parsed_data = parse_memo_image(image_bytes, mime_type)
+        else:
+            # Extract text from PDF/DOCX/TXT then parse
+            text = extract_text_from_file(uploaded, uploaded.name)
+            if not text:
+                return JsonResponse({"error": "Could not extract any text from the file."}, status=400)
+            parsed_data = parse_memo_text(text)
+
+        if parsed_data:
+            return JsonResponse(parsed_data)
+        else:
+            return JsonResponse({"error": "AI failed to parse the file."}, status=500)
+    except ValueError as e:
+        return JsonResponse({"error": str(e)}, status=400)
+    except Exception as e:
+        return JsonResponse({"error": f"Unexpected error: {e}"}, status=500)
+
 
 
 def _notify_conflict(request, memo: Memo) -> None:

@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Login | SkedIt System</title>
+  <title>Login | SkedIt.AI</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -311,7 +311,7 @@
         <img src="{% static 'img/logo.png' %}" alt="University Logo" />
       </div>
       <div class="branding-text">
-        <h1>SkedIt System</h1>
+        <h1>SkedIt.AI</h1>
         <p>Official School Resource & Scheduling Portal</p>
       </div>
     </div>
@@ -331,18 +331,18 @@
           <label for="login_type">Login as</label>
           <select id="login_type" name="login_type" class="form-control">
             {% if login_type != 'admin' %}
-              <option value="user" selected>User</option>
-              <option value="admin">Admin</option>
+            <option value="user" selected>User</option>
+            <option value="admin">Admin</option>
             {% else %}
-              <option value="user">User</option>
-              <option value="admin" selected>Admin</option>
+            <option value="user">User</option>
+            <option value="admin" selected>Admin</option>
             {% endif %}
           </select>
         </div>
         <div class="form-group">
           <label for="username">School ID / Email / Mobile Number</label>
-          <input type="text" id="username" name="username" autofocus required placeholder="School ID, Email, or Mobile Number"
-            class="form-control" />
+          <input type="text" id="username" name="username" autofocus required
+            placeholder="School ID, Email, or Mobile Number" class="form-control" />
         </div>
         <div class="form-group">
           <label for="password">Password</label>
@@ -357,14 +357,16 @@
         </button>
 
         {% if login_type != 'admin' %}
-          <div style="margin-top: 1.5rem; text-align: center; font-size: 0.875rem; color: var(--text-muted);">
-            No account yet?
-            <a href="{% url 'accounts:register' %}" style="color: var(--primary); font-weight: 600; text-decoration: none;">Create one</a>
-          </div>
+        <div style="margin-top: 1.5rem; text-align: center; font-size: 0.875rem; color: var(--text-muted);">
+          No account yet?
+          <a href="{% url 'accounts:register' %}"
+            style="color: var(--primary); font-weight: 600; text-decoration: none;">Create one</a>
+        </div>
         {% endif %}
       </form>
     </div>
   </div>
 </body>
 {% include "partials/toast_engine.html" %}
+
 </html>

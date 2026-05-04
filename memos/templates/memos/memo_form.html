@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{% if mode == 'edit' %}Edit Memo{% else %}Create Memo{% endif %} | SkedIt{% endblock %}
+{% block title %}{% if mode == 'edit' %}Edit Memo{% else %}Create Memo{% endif %} | SkedIt.AI{% endblock %}
 
 {% block content %}
 <div class="flex items-center justify-between gap-4">
@@ -10,26 +10,182 @@
   </div>
 </div>
 
-<form method="post" class="mt-6" x-data="{ parseMode: false, textToParse: '', isParsing: false, parseError: null, parseAI() { this.isParsing=true; this.parseError=null; fetch('/memos/parse-ai/', { method:'POST', headers:{'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/json'}, body: JSON.stringify({text: this.textToParse}) }).then(res => { if(!res.ok) throw new Error('AI failed to parse text'); return res.json(); }).then(data => { document.querySelector('input[name=title]').value = data.title || ''; document.querySelector('textarea[name=description]').value = data.description || ''; document.querySelector('input[name=date]').value = data.date || ''; document.querySelector('input[name=start_time]').value = data.start_time || ''; if(data.end_time) document.querySelector('input[name=end_time]').value = data.end_time; document.querySelector('input[name=venue]').value = data.venue || ''; if(data.priority) document.querySelector('select[name=priority]').value = data.priority; this.parseMode=false; this.textToParse=''; }).catch(e => { this.parseError = e.message; alert(e.message); }).finally(() => { this.isParsing=false; }); } }">
+<script>
+  window._PARSE_TEXT_URL = "{% url 'memos:memo_parse_ai' %}";
+  window._PARSE_FILE_URL = "{% url 'memos:memo_parse_ai_file' %}";
+  window._CSRF_TOKEN = "{{ csrf_token }}";
+</script>
+
+<form method="post" class="mt-6" x-data="{
+  parseMode: false,
+  parseTab: 'text',
+  textToParse: '',
+  isParsing: false,
+  parseError: null,
+  parsedParticipants: '',
+  parsedActivityType: '',
+  showExtracted: false,
+  droppedFile: null,
+  isDragging: false,
+  fileParseUrl: window._PARSE_FILE_URL,
+  textParseUrl: window._PARSE_TEXT_URL,
+  csrfToken: window._CSRF_TOKEN,
+
+  handleDrop(e) {
+    e.preventDefault(); this.isDragging = false;
+    const file = e.dataTransfer.files[0];
+    if (file) { this.droppedFile = file; this.parseError = null; }
+  },
+  handleFileInput(e) {
+    const file = e.target.files[0];
+    if (file) { this.droppedFile = file; this.parseError = null; }
+  },
+  fillForm(data) {
+    document.querySelector('input[name=title]').value = data.title || '';
+    document.querySelector('textarea[name=description]').value = data.description || '';
+    document.querySelector('input[name=date]').value = data.date || '';
+    document.querySelector('input[name=start_time]').value = data.start_time || '';
+    if (data.end_time) document.querySelector('input[name=end_time]').value = data.end_time;
+    document.querySelector('input[name=venue]').value = data.venue || '';
+    if (data.destination) document.querySelector('input[name=destination]').value = data.destination;
+    if (data.priority) document.querySelector('select[name=priority]').value = data.priority;
+    if (data.category) document.querySelector('select[name=category]').value = data.category;
+    this.parsedParticipants = data.participants || '';
+    this.parsedActivityType = data.activity_type || '';
+    this.showExtracted = !!(this.parsedParticipants || this.parsedActivityType);
+    this.parseMode = false; this.textToParse = ''; this.droppedFile = null;
+  },
+  parseAI() {
+    if (this.parseTab === 'file') { this.parseFile(); return; }
+    this.isParsing = true; this.parseError = null; this.showExtracted = false;
+    fetch(this.textParseUrl, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': this.csrfToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: this.textToParse })
+    })
+    .then(res => { if (!res.ok) throw new Error('AI failed to parse the text.'); return res.json(); })
+    .then(data => { if (data.error) throw new Error(data.error); this.fillForm(data); })
+    .catch(e => { this.parseError = e.message; })
+    .finally(() => { this.isParsing = false; });
+  },
+  parseFile() {
+    if (!this.droppedFile) { this.parseError = 'Please select or drop a file first.'; return; }
+    this.isParsing = true; this.parseError = null; this.showExtracted = false;
+    const fd = new FormData();
+    fd.append('file', this.droppedFile);
+    fetch(this.fileParseUrl, { method: 'POST', headers: { 'X-CSRFToken': this.csrfToken }, body: fd })
+    .then(res => { if (!res.ok) return res.json().then(d => { throw new Error(d.error || 'Server error'); }); return res.json(); })
+    .then(data => { if (data.error) throw new Error(data.error); this.fillForm(data); })
+    .catch(e => { this.parseError = e.message; })
+    .finally(() => { this.isParsing = false; });
+  }
+}">
   {% csrf_token %}
 
   <div class="mb-6">
-    <button type="button" @click="parseMode = !parseMode" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-semibold hover:bg-slate-900 transition">
+    <button type="button" @click="parseMode = !parseMode; parseError = null;"
+      class="inline-flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-semibold hover:bg-slate-900 transition">
       <i class="fa-solid fa-wand-magic-sparkles"></i>
       <span>AI Smart Parse</span>
     </button>
   </div>
 
-  <div x-show="parseMode" x-cloak class="mb-6 p-6 rounded-2xl bg-slate-50 border border-slate-200">
-    <div class="text-sm font-bold text-slate-700 mb-2">Paste Memo Text</div>
-    <textarea x-model="textToParse" rows="4" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-slate-800 focus:outline-none mb-3" placeholder="Paste an email or message here..."></textarea>
-    <div class="flex items-center gap-3">
-      <button type="button" @click="parseAI" :disabled="isParsing || !textToParse.trim()" class="px-5 py-2.5 bg-slate-800 text-white font-semibold rounded-lg text-sm hover:bg-slate-900 transition disabled:opacity-50 flex items-center gap-2">
-        <span x-show="isParsing"><i class="fa-solid fa-spinner fa-spin"></i> Parsing...</span>
-        <span x-show="!isParsing">Auto-Fill Form</span>
+  <div x-show="parseMode" x-cloak class="mb-6 rounded-2xl bg-slate-50 border border-slate-200 overflow-hidden">
+    <div class="flex border-b border-slate-200">
+      <button type="button" @click="parseTab = 'text'"
+        :class="parseTab === 'text' ? 'bg-white border-b-2 border-slate-800 text-slate-800 font-semibold' : 'text-slate-500 hover:text-slate-700'"
+        class="flex-1 px-5 py-3 text-sm transition flex items-center justify-center gap-2">
+        <i class="fa-solid fa-align-left text-xs"></i> Paste Text
       </button>
-      <button type="button" @click="parseMode = false" class="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900">Cancel</button>
+      <button type="button" @click="parseTab = 'file'"
+        :class="parseTab === 'file' ? 'bg-white border-b-2 border-slate-800 text-slate-800 font-semibold' : 'text-slate-500 hover:text-slate-700'"
+        class="flex-1 px-5 py-3 text-sm transition flex items-center justify-center gap-2">
+        <i class="fa-solid fa-file-arrow-up text-xs"></i> Upload File
+      </button>
     </div>
+
+    <div class="p-6">
+      <div x-show="parseTab === 'text'">
+        <p class="text-xs text-slate-500 mb-3">Paste any memo, email, or travel order text below.</p>
+        <textarea x-model="textToParse" rows="5"
+          class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-slate-800 focus:outline-none mb-3 text-sm bg-white"
+          placeholder="Paste an email or memo here..."></textarea>
+      </div>
+
+      <div x-show="parseTab === 'file'">
+        <p class="text-xs text-slate-500 mb-3">Supports <strong>PDF, DOCX, TXT</strong> and images (<strong>JPG, PNG,
+            WEBP</strong>). Scanned documents are processed with AI Vision.</p>
+        <div @dragover.prevent="isDragging = true" @dragleave.prevent="isDragging = false" @drop="handleDrop($event)"
+          :class="isDragging ? 'border-indigo-400 bg-indigo-50 scale-[1.01]' : 'border-slate-300 bg-white hover:border-indigo-300 hover:bg-slate-50'"
+          class="relative border-2 border-dashed rounded-2xl p-8 mb-3 text-center transition-all duration-200 cursor-pointer"
+          @click="$refs.fileInput.click()">
+          <input type="file" x-ref="fileInput" class="hidden"
+            accept=".pdf,.docx,.doc,.txt,.jpg,.jpeg,.png,.webp,.gif,.bmp,.tiff" @change="handleFileInput($event)">
+          <div x-show="!droppedFile">
+            <i class="fa-solid fa-cloud-arrow-up text-3xl text-slate-300 mb-3"></i>
+            <p class="text-sm font-semibold text-slate-600">Drag &amp; drop your file here</p>
+            <p class="text-xs text-slate-400 mt-1">or click to browse</p>
+            <div class="mt-3 flex flex-wrap justify-center gap-1.5 text-xs">
+              <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">PDF</span>
+              <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">DOCX</span>
+              <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">TXT</span>
+              <span class="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-500">JPG</span>
+              <span class="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-500">PNG</span>
+              <span class="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-500">WEBP</span>
+            </div>
+          </div>
+          <div x-show="droppedFile" class="flex items-center justify-center gap-3">
+            <i class="fa-solid fa-file-circle-check text-2xl text-indigo-500"></i>
+            <div class="text-left">
+              <p class="text-sm font-semibold text-slate-700" x-text="droppedFile ? droppedFile.name : ''"></p>
+              <p class="text-xs text-slate-400"
+                x-text="droppedFile ? (droppedFile.size / 1024).toFixed(1) + ' KB' : ''"></p>
+            </div>
+            <button type="button" @click.stop="droppedFile = null"
+              class="ml-2 text-slate-400 hover:text-red-500 transition">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div x-show="parseError" class="mb-3 px-4 py-2 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700"
+        x-text="parseError"></div>
+
+      <div class="flex items-center gap-3">
+        <button type="button" @click="parseAI"
+          :disabled="isParsing || (parseTab === 'text' && !textToParse.trim()) || (parseTab === 'file' && !droppedFile)"
+          class="px-5 py-2.5 bg-slate-800 text-white font-semibold rounded-lg text-sm hover:bg-slate-900 transition disabled:opacity-50 flex items-center gap-2">
+          <span x-show="isParsing"><i class="fa-solid fa-spinner fa-spin"></i> Parsing...</span>
+          <span x-show="!isParsing"><i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Fill Form</span>
+        </button>
+        <button type="button" @click="parseMode = false; parseError = null; droppedFile = null;"
+          class="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div x-show="showExtracted" x-cloak class="mb-6 p-5 rounded-2xl border border-indigo-200 bg-indigo-50">
+    <div class="flex items-center gap-2 mb-3">
+      <i class="fa-solid fa-circle-check text-indigo-500"></i>
+      <span class="text-sm font-bold text-indigo-700">AI Extracted Details</span>
+      <span class="ml-auto text-xs text-indigo-400 cursor-pointer hover:text-indigo-600"
+        @click="showExtracted = false">&#x2715; Dismiss</span>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+      <div x-show="parsedActivityType">
+        <div class="text-xs font-semibold text-indigo-500 uppercase tracking-wide mb-1">Activity Type</div>
+        <div class="px-3 py-2 rounded-lg bg-white border border-indigo-100 text-slate-700 font-medium"
+          x-text="parsedActivityType"></div>
+      </div>
+      <div x-show="parsedParticipants">
+        <div class="text-xs font-semibold text-indigo-500 uppercase tracking-wide mb-1">Detected Participants</div>
+        <div class="px-3 py-2 rounded-lg bg-white border border-indigo-100 text-slate-600 text-xs leading-relaxed"
+          x-text="parsedParticipants"></div>
+      </div>
+    </div>
+    <p class="text-xs text-indigo-400 mt-3 italic">Participants are shown for reference. Use the "Assigned User" field
+      to assign the memo.</p>
   </div>
 
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -57,7 +213,7 @@
           <label class="text-sm font-semibold text-slate-700">Priority</label>
           {{ form.priority }}
         </div>
-        
+
         <div>
           <label class="text-sm font-semibold text-slate-700">Category</label>
           {{ form.category }}
@@ -112,11 +268,14 @@
       </div>
 
       <div class="mt-8 flex flex-col gap-3">
-        <button class="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-uniGreen text-white shadow-soft hover:opacity-95 transition" type="submit">
+        <button
+          class="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-uniGreen text-white shadow-soft hover:opacity-95 transition"
+          type="submit">
           <i class="fa-solid fa-floppy-disk"></i>
           <span class="font-semibold">Save</span>
         </button>
-        <a href="{% url 'memos:memo_list' %}" class="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-white border border-slate-200 hover:border-uniGold transition">
+        <a href="{% url 'memos:memo_list' %}"
+          class="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-white border border-slate-200 hover:border-uniGold transition">
           <i class="fa-solid fa-arrow-left"></i>
           <span class="font-semibold">Back</span>
         </a>
@@ -126,15 +285,15 @@
 </form>
 
 <script>
-  (function() {
-    const inputs = document.querySelectorAll('input, select, textarea');
+  (function () {
+    const inputs = document.querySelectorAll('input:not([type=file]), select, textarea');
     inputs.forEach((el) => {
-      el.classList.add('mt-2','w-full','px-4','py-3','rounded-2xl','border','border-slate-200','bg-white','focus:outline-none','focus:ring-2','focus:ring-uniGold/50','focus:border-uniGold','transition');
+      el.classList.add('mt-2', 'w-full', 'px-4', 'py-3', 'rounded-2xl', 'border', 'border-slate-200', 'bg-white', 'focus:outline-none', 'focus:ring-2', 'focus:ring-uniGold/50', 'focus:border-uniGold', 'transition');
     });
     const checkbox = document.querySelector('input[type="checkbox"]');
     if (checkbox) {
-      checkbox.classList.remove('w-full','px-4','py-3');
-      checkbox.classList.add('h-5','w-5','rounded','border-slate-300','text-uniGreen','focus:ring-uniGold/50');
+      checkbox.classList.remove('w-full', 'px-4', 'py-3');
+      checkbox.classList.add('h-5', 'w-5', 'rounded', 'border-slate-300', 'text-uniGreen', 'focus:ring-uniGold/50');
     }
   })();
 </script>
