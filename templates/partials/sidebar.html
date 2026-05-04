@@ -70,6 +70,33 @@
           <span>Decision Panel</span>
         </a>
 
+        <div class="sidebar-section-label mt-3">Intelligence & Governance</div>
+        
+        <a href="{% url 'governance:policy_list' %}"
+           class="sidebar-link {% if request.resolver_match.app_name == 'governance' %}active{% endif %}">
+          <i class="fa-solid fa-scale-balanced sidebar-icon"></i>
+          <span>Policies & Rules</span>
+        </a>
+
+        <a href="{% url 'analytics:dashboard' %}"
+           class="sidebar-link {% if request.resolver_match.app_name == 'analytics' %}active{% endif %}">
+          <i class="fa-solid fa-chart-line sidebar-icon"></i>
+          <span>Analytics Dashboard</span>
+        </a>
+
+        <a href="{% url 'notifications:preferences' %}"
+           class="sidebar-link {% if request.resolver_match.url_name == 'preferences' %}active{% endif %}">
+          <i class="fa-solid fa-bell sidebar-icon"></i>
+          <span>Alert Settings</span>
+        </a>
+
+        <a href="{% url 'governance:audit_logs' %}"
+           class="sidebar-link {% if request.resolver_match.url_name == 'audit_logs' %}active{% endif %}">
+          <i class="fa-solid fa-shield-halved sidebar-icon"></i>
+          <span>Audit Logs</span>
+        </a>
+
+
         <div class="sidebar-section-label mt-3">Resources</div>
 
         <a href="{% url 'resources:vehicle_admin_list' %}"

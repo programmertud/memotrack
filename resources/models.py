@@ -3,6 +3,28 @@ from django.db.models import Q
 from django.utils import timezone
 
 
+class Venue(models.Model):
+    class Type(models.TextChoices):
+        AUDITORIUM = "auditorium", "Auditorium"
+        CONFERENCE = "conference", "Conference Room"
+        CLASSROOM = "classroom", "Classroom"
+        LABORATORY = "laboratory", "Laboratory"
+        OUTDOOR = "outdoor", "Outdoor Space"
+
+    name = models.CharField(max_length=100)
+    location = models.CharField(max_length=200, blank=True)
+    capacity = models.PositiveIntegerField(default=50)
+    venue_type = models.CharField(max_length=20, choices=Type.choices, default=Type.CLASSROOM)
+    is_active = models.BooleanField(default=True)
+    department_exclusive = models.ForeignKey(
+        "accounts.Department", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="exclusive_venues", help_text="If set, only this department can book this venue."
+    )
+
+    def __str__(self) -> str:
+        return f"{self.name} ({self.get_venue_type_display()})"
+
+
 class Vehicle(models.Model):
     class Status(models.TextChoices):
         AVAILABLE = "available", "Available"
@@ -42,14 +64,3 @@ class VehicleBooking(models.Model):
 
     def has_conflicts(self) -> bool:
         return self.overlaps_queryset().exists()
-
-    def shared_trip_suggestions(self):
-        dest = (self.memo.destination or "").strip()
-        if not dest:
-            return self.memo.__class__.objects.none()
-
-        return (
-            self.memo.__class__.objects.filter(date=self.memo.date, destination__iexact=dest)
-            .exclude(pk=self.memo.pk)
-            .order_by("start_time")
-        )

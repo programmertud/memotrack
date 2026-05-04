@@ -6,9 +6,10 @@ from django.utils import timezone
 
 class Memo(models.Model):
     class Priority(models.TextChoices):
-        LOW = "low", "Low"
-        MEDIUM = "medium", "Medium"
+        CRITICAL = "critical", "Critical"
         HIGH = "high", "High"
+        MEDIUM = "medium", "Medium"
+        LOW = "low", "Low"
 
     class Status(models.TextChoices):
         DRAFT = "draft", "Draft"
@@ -19,7 +20,7 @@ class Memo(models.Model):
         CONFLICT = "conflict", "Conflict"
 
     class Category(models.TextChoices):
-        UNIVERSITY = "university", "University-wide"
+        INSTITUTIONAL = "institutional", "Institutional-wide"
         DEPARTMENT = "department", "Departmental"
         PERSONAL = "personal", "Personal/Individual"
 
@@ -87,8 +88,8 @@ class Memo(models.Model):
         if not self.has_conflicts():
             return "approve"
         
-        # Policy: University-wide events take precedence
-        if self.category == self.Category.UNIVERSITY:
+        # Policy: Critical priority and Institutional-wide events take absolute precedence
+        if self.priority == self.Priority.CRITICAL or self.category == self.Category.INSTITUTIONAL:
             return "accept_anyway"
             
         if self.required and self.priority in {self.Priority.HIGH, self.Priority.MEDIUM}:

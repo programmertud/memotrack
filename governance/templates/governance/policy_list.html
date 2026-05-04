@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block title %}Policies & Rules | SkedIt{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-2xl font-bold text-slate-800">Governance Policies</h1>
+    <p class="text-slate-500 mt-1">Manage institutional scheduling rules and priority hierarchies.</p>
+</div>
+
+<div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <div class="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50/50">
+        <h2 class="text-lg font-semibold text-slate-800">Active Policies</h2>
+        <a href="{% url 'governance:policy_create' %}" class="px-4 py-2 bg-uniGreen text-white rounded-xl hover:bg-green-700 transition text-sm font-bold flex items-center gap-2 shadow-soft">
+            <i class="fa-solid fa-plus"></i>
+            Create Policy
+        </a>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-slate-50 text-slate-500 text-[10px] uppercase tracking-widest font-bold">
+                    <th class="px-6 py-4">Policy Name</th>
+                    <th class="px-6 py-4">Type</th>
+                    <th class="px-6 py-4 text-center">Priority</th>
+                    <th class="px-6 py-4 text-center">Status</th>
+                    <th class="px-6 py-4 text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                {% for policy in policies %}
+                <tr class="hover:bg-slate-50/50 transition">
+                    <td class="px-6 py-4">
+                        <div class="font-bold text-slate-800">{{ policy.name }}</div>
+                        <div class="text-xs text-slate-500 mt-1 truncate max-w-xs">{{ policy.description }}</div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-blue-50 text-blue-700">
+                            {{ policy.get_policy_type_display }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        <span class="text-sm font-bold text-slate-700">{{ policy.priority_weight }}</span>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        {% if policy.is_active %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-green-50 text-green-700">Active</span>
+                        {% else %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-600">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <a href="{% url 'governance:policy_edit' policy.pk %}" class="text-uniGreen hover:text-green-800 text-sm font-bold">Edit</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="px-6 py-12 text-center text-slate-500">
+                        <div class="flex flex-col items-center justify-center">
+                            <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
+                                <i class="fa-solid fa-scale-balanced text-2xl text-slate-300"></i>
+                            </div>
+                            <p class="font-bold text-slate-800">No policies defined yet.</p>
+                            <p class="text-sm text-slate-400 mt-1">Start by creating institutional scheduling rules.</p>
+                            <a href="{% url 'governance:policy_create' %}" class="text-uniGreen font-bold hover:underline mt-4 text-sm">Create the first policy</a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

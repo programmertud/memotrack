@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} | SkedIt Governance{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <div class="mb-8">
+        <div class="flex items-center gap-2 text-sm text-slate-400 mb-2">
+            <a href="{% url 'governance:policy_list' %}" class="hover:text-uniGreen transition">Policies</a>
+            <i class="fa-solid fa-chevron-right text-[10px]"></i>
+            <span class="text-slate-600 font-medium">{{ title }}</span>
+        </div>
+        <h1 class="text-2xl font-bold text-slate-800">{{ title }}</h1>
+    </div>
+
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-8">
+            <form method="post" class="space-y-6">
+                {% csrf_token %}
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-2">
+                        <label for="{{ form.name.id_for_label }}" class="block text-sm font-bold text-slate-700 uppercase tracking-wide">Policy Name</label>
+                        {{ form.name }}
+                        {% if form.name.errors %}<p class="text-xs text-red-500 font-medium mt-1">{{ form.name.errors.0 }}</p>{% endif %}
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <label for="{{ form.policy_type.id_for_label }}" class="block text-sm font-bold text-slate-700 uppercase tracking-wide">Policy Type</label>
+                        {{ form.policy_type }}
+                        {% if form.policy_type.errors %}<p class="text-xs text-red-500 font-medium mt-1">{{ form.policy_type.errors.0 }}</p>{% endif %}
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <label for="{{ form.description.id_for_label }}" class="block text-sm font-bold text-slate-700 uppercase tracking-wide">Description</label>
+                    {{ form.description }}
+                    {% if form.description.errors %}<p class="text-xs text-red-500 font-medium mt-1">{{ form.description.errors.0 }}</p>{% endif %}
+                </div>
+
+                <div class="space-y-2">
+                    <label for="{{ form.rule_definition.id_for_label }}" class="block text-sm font-bold text-slate-700 uppercase tracking-wide">Rule Definition (JSON)</label>
+                    {{ form.rule_definition }}
+                    <p class="text-[10px] text-slate-400 font-medium italic">Configure the JSON structure defining the scheduling logic.</p>
+                    {% if form.rule_definition.errors %}<p class="text-xs text-red-500 font-medium mt-1">{{ form.rule_definition.errors.0 }}</p>{% endif %}
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-2">
+                        <label for="{{ form.priority_weight.id_for_label }}" class="block text-sm font-bold text-slate-700 uppercase tracking-wide">Priority Weight</label>
+                        {{ form.priority_weight }}
+                        <p class="text-[10px] text-slate-400 font-medium italic">Higher numbers mean higher priority in conflict resolution.</p>
+                        {% if form.priority_weight.errors %}<p class="text-xs text-red-500 font-medium mt-1">{{ form.priority_weight.errors.0 }}</p>{% endif %}
+                    </div>
+                    
+                    <div class="flex items-center mt-8">
+                        <div class="relative inline-flex items-center cursor-pointer">
+                            {{ form.is_active }}
+                            <label for="{{ form.is_active.id_for_label }}" class="ml-3 text-sm font-bold text-slate-700 uppercase tracking-wide">Policy is Active</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-8 border-t border-slate-100 flex justify-end gap-3">
+                    <a href="{% url 'governance:policy_list' %}" class="px-6 py-3 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-sm transition">Cancel</a>
+                    <button type="submit" class="px-8 py-3 rounded-xl bg-uniGreen text-white hover:bg-green-700 font-bold text-sm transition shadow-soft">
+                        Save Policy
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

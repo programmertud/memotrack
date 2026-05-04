@@ -28,4 +28,6 @@ urlpatterns = [
     path('', include('memos.urls')),
     path('resources/', include('resources.urls')),
     path('notifications/', include('notifications.urls')),
+    path('governance/', include('governance.urls')),
+    path('analytics/', include('analytics.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

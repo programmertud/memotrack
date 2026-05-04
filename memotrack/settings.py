@@ -41,6 +41,8 @@ INSTALLED_APPS = [
     'memos',
     'resources',
     'notifications',
+    'governance',
+    'analytics',
 ]
 
 MIDDLEWARE = [
@@ -136,4 +138,4 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Get your FREE key at: https://aistudio.google.com/apikey
 # Free tier: 1,500 requests/day, 1 million tokens/minute — no billing required
 # Replace below with your actual key (starts with AIza...)
-GEMINI_API_KEY = "AIzaSyDXUSG1UMo_cFFxVrmqjXBhKjxTlfmmvy4"
+GEMINI_API_KEY = "AIzaSyDwKqAXXhb_Q6NILABPDTlYL1ublJlgKn0"
