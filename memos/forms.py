@@ -8,8 +8,18 @@ from resources.models import Resource, ResourceBooking
 User = get_user_model()
 
 
+class UserMultipleChoiceField(forms.ModelMultipleChoiceField):
+    def label_from_instance(self, obj):
+        if hasattr(obj, 'profile') and obj.profile.first_name:
+            return f"{obj.profile.first_name} {obj.profile.last_name}"
+        return obj.get_full_name() or obj.username
+
 class MemoForm(forms.ModelForm):
-    assigned_user = forms.ModelChoiceField(queryset=User.objects.all())
+    employees = UserMultipleChoiceField(
+        queryset=User.objects.all(),
+        widget=forms.CheckboxSelectMultiple,
+        label="Employees"
+    )
     delegated_to = forms.ModelChoiceField(queryset=User.objects.all(), required=False)
     resources = forms.ModelMultipleChoiceField(
         queryset=Resource.objects.filter(is_active=True),
@@ -21,10 +31,11 @@ class MemoForm(forms.ModelForm):
     class Meta:
         model = Memo
         fields = [
-            "title",
             "reference_number",
+            "title",
             "description",
-            "assigned_user",
+            "employees",
+            "to_all",
             "date",
             "start_time",
             "end_time",
@@ -35,6 +46,9 @@ class MemoForm(forms.ModelForm):
             "required",
             "delegated_to",
         ]
+        labels = {
+            "to_all": "All Faculty Members and Student",
+        }
         widgets = {
             "date": forms.DateInput(attrs={"type": "date"}),
             "start_time": forms.TimeInput(attrs={"type": "time"}),
