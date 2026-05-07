@@ -37,6 +37,7 @@ class Memo(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="memos"
     )
 
+    reference_number = models.CharField(max_length=50, blank=True)
     date = models.DateField()
     start_time = models.TimeField()
     end_time = models.TimeField()

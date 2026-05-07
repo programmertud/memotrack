@@ -22,6 +22,7 @@ class MemoForm(forms.ModelForm):
         model = Memo
         fields = [
             "title",
+            "reference_number",
             "description",
             "assigned_user",
             "date",

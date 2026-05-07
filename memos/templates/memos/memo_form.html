@@ -33,6 +33,20 @@
   fileParseUrl: window._PARSE_FILE_URL,
   textParseUrl: window._PARSE_TEXT_URL,
   csrfToken: window._CSRF_TOKEN,
+  
+  // Real-time preview fields
+  title: '{{ form.title.value|default_if_none:""|escapejs }}',
+  reference_number: '{{ form.reference_number.value|default_if_none:""|escapejs }}',
+  description: '{{ form.description.value|default_if_none:""|escapejs }}',
+  date: '{{ form.date.value|default_if_none:""|escapejs }}',
+  assigned_user_text: '',
+
+  updateAssignedUserText() {
+    const el = document.querySelector('select[name=assigned_user]');
+    if (el && el.selectedIndex >= 0) {
+      this.assigned_user_text = el.options[el.selectedIndex].text;
+    }
+  },
 
   handleDrop(e) {
     e.preventDefault(); this.isDragging = false;
@@ -45,8 +59,11 @@
   },
   fillForm(data) {
     document.querySelector('input[name=title]').value = data.title || '';
+    this.title = data.title || '';
     document.querySelector('textarea[name=description]').value = data.description || '';
+    this.description = data.description || '';
     document.querySelector('input[name=date]').value = data.date || '';
+    this.date = data.date || '';
     document.querySelector('input[name=start_time]').value = data.start_time || '';
     if (data.end_time) document.querySelector('input[name=end_time]').value = data.end_time;
     document.querySelector('input[name=venue]').value = data.venue || '';
@@ -155,6 +172,11 @@
     document.addEventListener('change', (e) => {
       if (e.target.name === 'resources') this.checkConflicts();
     });
+
+    // Update preview texts on init
+    this.updateAssignedUserText();
+    const selectEl = document.querySelector('select[name=assigned_user]');
+    if (selectEl) selectEl.addEventListener('change', () => this.updateAssignedUserText());
   }
 }">
   {% csrf_token %}
@@ -315,120 +337,261 @@
     </div>
   </template>
 
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <div class="lg:col-span-2 rounded-2xl bg-white border border-slate-100 shadow-soft p-6">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <div class="md:col-span-2">
-          <label class="text-sm font-semibold text-slate-700">Title</label>
-          {{ form.title }}
-          {% for e in form.title.errors %}<div class="text-sm text-red-700 mt-1">{{ e }}</div>{% endfor %}
-        </div>
-
-        <div class="md:col-span-2">
-          <label class="text-sm font-semibold text-slate-700">Description</label>
-          {{ form.description }}
-          {% for e in form.description.errors %}<div class="text-sm text-red-700 mt-1">{{ e }}</div>{% endfor %}
-        </div>
-
-        <div>
-          <label class="text-sm font-semibold text-slate-700">Assigned User</label>
-          {{ form.assigned_user }}
-          {% for e in form.assigned_user.errors %}<div class="text-sm text-red-700 mt-1">{{ e }}</div>{% endfor %}
-        </div>
-
-        <div>
-          <label class="text-sm font-semibold text-slate-700">Priority</label>
-          {{ form.priority }}
-        </div>
-
-        <div>
-          <label class="text-sm font-semibold text-slate-700">Category</label>
-          {{ form.category }}
-        </div>
-
-        <div>
-          <label class="text-sm font-semibold text-slate-700">Date</label>
-          {{ form.date }}
-        </div>
-
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="text-sm font-semibold text-slate-700">Start</label>
-            {{ form.start_time }}
+  <div class="grid grid-cols-1 xl:grid-cols-5 gap-8">
+    <!-- Form Side -->
+    <div class="xl:col-span-3 space-y-6">
+      <div class="rounded-2xl bg-white border border-slate-100 shadow-soft p-6">
+        <h2 class="text-lg font-bold mb-6 text-slate-800 flex items-center gap-2">
+          <i class="fa-solid fa-pen-to-square text-uniGold"></i>
+          Memo Details
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div class="md:col-span-2">
+            <label class="text-sm font-semibold text-slate-700">Reference Number</label>
+            <input type="text" name="reference_number" x-model="reference_number"
+              class="mt-2 w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-uniGold/50 focus:border-uniGold transition">
           </div>
+
+          <div class="md:col-span-2">
+            <label class="text-sm font-semibold text-slate-700">Subject / Title</label>
+            <input type="text" name="title" x-model="title"
+              class="mt-2 w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-uniGold/50 focus:border-uniGold transition">
+          </div>
+
+          <div class="md:col-span-2">
+            <label class="text-sm font-semibold text-slate-700">Description / Body</label>
+            <textarea name="description" x-model="description" rows="5"
+              class="mt-2 w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-uniGold/50 focus:border-uniGold transition"></textarea>
+          </div>
+
           <div>
-            <label class="text-sm font-semibold text-slate-700">End</label>
-            {{ form.end_time }}
+            <label class="text-sm font-semibold text-slate-700">Assigned User (TO)</label>
+            {{ form.assigned_user }}
+          </div>
+
+          <div>
+            <label class="text-sm font-semibold text-slate-700">Date</label>
+            <input type="date" name="date" x-model="date"
+              class="mt-2 w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-uniGold/50 focus:border-uniGold transition">
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="text-sm font-semibold text-slate-700">Start Time</label>
+              {{ form.start_time }}
+            </div>
+            <div>
+              <label class="text-sm font-semibold text-slate-700">End Time</label>
+              {{ form.end_time }}
+            </div>
+          </div>
+
+          <div>
+            <label class="text-sm font-semibold text-slate-700">Venue</label>
+            {{ form.venue }}
+          </div>
+
+          <div>
+            <label class="text-sm font-semibold text-slate-700">Destination</label>
+            {{ form.destination }}
+          </div>
+
+          <div>
+            <label class="text-sm font-semibold text-slate-700">Priority</label>
+            {{ form.priority }}
+          </div>
+
+          <div>
+            <label class="text-sm font-semibold text-slate-700">Category</label>
+            {{ form.category }}
           </div>
         </div>
+      </div>
 
-        <div>
-          <label class="text-sm font-semibold text-slate-700">Venue</label>
-          {{ form.venue }}
+      <div class="rounded-2xl bg-white border border-slate-100 shadow-soft p-6">
+        <h2 class="text-lg font-bold mb-4 text-slate-800">Resources & Delegation</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label class="text-sm font-semibold text-slate-700">Book Resources</label>
+            <div class="mt-2 space-y-2 max-h-40 overflow-y-auto p-3 border border-slate-100 rounded-xl bg-slate-50">
+              {% for checkbox in form.resources %}
+              <label class="flex items-center gap-3 cursor-pointer hover:bg-white p-1 rounded-lg transition">
+                {{ checkbox.tag }}
+                <span class="text-sm text-slate-700">{{ checkbox.choice_label }}</span>
+              </label>
+              {% endfor %}
+            </div>
+          </div>
+          <div class="space-y-4">
+            <div>
+              <label class="text-sm font-semibold text-slate-700">Delegate To (optional)</label>
+              {{ form.delegated_to }}
+            </div>
+            <label
+              class="inline-flex items-center gap-3 cursor-pointer p-2 rounded-xl hover:bg-slate-50 transition w-full">
+              {{ form.required }}
+              <span class="text-sm font-semibold text-slate-700">Mark as Required</span>
+            </label>
+          </div>
         </div>
+      </div>
 
-        <div>
-          <label class="text-sm font-semibold text-slate-700">Destination</label>
-          {{ form.destination }}
-        </div>
+      <div class="flex items-center gap-4">
+        <button
+          class="flex-1 inline-flex items-center justify-center gap-2 px-6 py-4 rounded-2xl bg-uniGreen text-white shadow-lg hover:shadow-uniGreen/20 hover:scale-[1.02] transition-all duration-200"
+          type="submit">
+          <i class="fa-solid fa-floppy-disk"></i>
+          <span class="font-bold text-lg">Save Memorandum</span>
+        </button>
+        <a href="{% url 'memos:memo_list' %}"
+          class="px-6 py-4 rounded-2xl bg-white border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 transition">
+          Cancel
+        </a>
       </div>
     </div>
 
-    <div class="rounded-2xl bg-white border border-slate-100 shadow-soft p-6">
-      <div class="flex items-center justify-between">
-        <div>
-          <div class="text-sm font-semibold">Decision Support</div>
-          <div class="text-xs text-slate-500 mt-1">Required memos can be accepted despite conflicts.</div>
+    <!-- Preview Side -->
+    <div class="xl:col-span-2">
+      <div class="sticky top-6">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-bold text-slate-800">Formal Preview</h2>
+          <button type="button" @click="window.print()"
+            class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-bold text-slate-600 hover:border-uniGreen hover:text-uniGreen transition flex items-center gap-2">
+            <i class="fa-solid fa-print"></i>
+            <span>Print PDF</span>
+          </button>
         </div>
-      </div>
 
-      <div class="mt-4">
-        <label class="inline-flex items-center gap-3">
-          {{ form.required }}
-          <span class="text-sm font-semibold text-slate-700">Required</span>
-        </label>
-      </div>
+        <div class="bg-slate-300 p-4 rounded-3xl shadow-inner overflow-auto max-h-[calc(100vh-200px)]">
+          <!-- The "Paper" -->
+          <div id="memo-paper"
+            class="bg-white shadow-2xl w-full mx-auto aspect-[1/1.414] p-[0.75in] text-[#1a1a1a] font-serif leading-tight print:shadow-none print:p-0 origin-top scale-[0.85] xl:scale-100">
 
-      <div class="mt-6">
-        <label class="text-sm font-semibold text-slate-700">Delegate To (optional)</label>
-        {{ form.delegated_to }}
-      </div>
+            <!-- Header -->
+            <div class="flex items-center justify-between border-b-2 border-uniGreen pb-3 mb-4">
+              <img src="/static/img/logo.png" class="h-14 w-auto object-contain" alt="SNSU Logo">
+              <div class="text-center flex-1 mx-2">
+                <div class="text-[8px] uppercase tracking-widest text-slate-500">Republic of the Philippines</div>
+                <div class="text-[14px] font-bold text-slate-900 leading-tight">SURIGAO DEL NORTE STATE UNIVERSITY</div>
+                <div class="text-[8px] text-slate-600">Narciso Street, Surigao City 8400, Philippines</div>
+              </div>
+              <div
+                class="w-14 h-14 bg-slate-50 border border-slate-100 flex items-center justify-center grayscale opacity-50">
+                <i class="fa-solid fa-university text-slate-200 text-xl"></i>
+              </div>
+            </div>
 
-      <div class="mt-6">
-        <label class="text-sm font-semibold text-slate-700">Book Resources</label>
-        <div class="mt-2 text-xs text-slate-500 mb-2">Select venues or equipment.</div>
-        <div class="space-y-2 max-h-40 overflow-y-auto p-2 border border-slate-100 rounded-xl bg-slate-50">
-          {% for checkbox in form.resources %}
-          <label class="flex items-center gap-3 cursor-pointer hover:bg-white p-1 rounded-lg transition">
-            {{ checkbox.tag }}
-            <span class="text-sm text-slate-700">{{ checkbox.choice_label }}</span>
-          </label>
-          {% endfor %}
+            <!-- Office Title -->
+            <div class="text-center mb-6">
+              <h3 class="text-xs font-bold uppercase tracking-widest border-b border-black inline-block pb-0.5">
+                FACILITIES MANAGEMENT OFFICE</h3>
+            </div>
+
+            <!-- Info Grid -->
+            <div class="grid grid-cols-[100px_1fr] gap-y-0.5 text-[10px] mb-6">
+              <div class="font-bold">OFFICE MEMO</div>
+              <div>:</div>
+              <div class="font-bold uppercase">REFERENCE NO.</div>
+              <div class="flex gap-1" :class="reference_number ? 'text-black' : 'text-slate-300'">
+                : <span x-text="reference_number || 'SNSU-FMO-03-01-S.2026'"></span>
+              </div>
+              <div class="font-bold uppercase">DATE</div>
+              <div class="flex gap-1" :class="date ? 'text-black' : 'text-slate-300'">
+                : <span
+                  x-text="date ? new Date(date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'March 4, 2026'"></span>
+              </div>
+              <div class="font-bold uppercase">TO</div>
+              <div class="flex gap-1" :class="assigned_user_text ? 'text-black' : 'text-slate-300'">
+                : <span class="font-bold" x-text="assigned_user_text || 'All Faculty Members & Students'"></span>
+              </div>
+              <div class="font-bold uppercase">FROM</div>
+              <div class="flex gap-1">: <span class="font-bold">Facilities Management Office</span></div>
+              <div class="font-bold uppercase">SUBJECT</div>
+              <div class="flex gap-1" :class="title ? 'text-black font-bold' : 'text-slate-300'">
+                : <span class="font-bold uppercase" x-text="title || 'PARTICIPATION IN SCHOOL SURVEY'"></span>
+              </div>
+            </div>
+
+            <div class="border-t border-black mb-6"></div>
+
+            <!-- Body -->
+            <div class="text-[10px] space-y-3 text-justify leading-relaxed"
+              :class="description ? 'text-black' : 'text-slate-300'">
+              <div
+                x-html="(description || 'In line with the University\'s commitment to continuous quality improvement, effective facilities management...').replace(/\n/g, '<br>')">
+              </div>
+            </div>
+
+            <!-- Signatures -->
+            <div class="mt-12 grid grid-cols-2 gap-8">
+              <div class="mt-4">
+                <div class="border-b border-black w-32 mb-1"></div>
+                <div class="font-bold text-[10px] uppercase">AR. MARLON C. SOLLOSO</div>
+                <div class="text-[8px] text-slate-600">Head, Facilities Management Office</div>
+              </div>
+              <div class="mt-4 flex flex-col items-end">
+                <div class="text-left">
+                  <div class="text-[8px] italic mb-3">Noted by:</div>
+                  <div class="font-bold text-[10px] uppercase">MAURICIO S. ADLAON, PhD</div>
+                  <div class="text-[8px] text-slate-600">VP for Administration</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Footer -->
+            <div
+              class="mt-16 pt-2 border-t border-slate-100 flex justify-between text-[6px] text-slate-400 uppercase tracking-widest">
+              <div>Tel. Nos: (086) 827-3741 / 3742</div>
+              <div>Email: info@snsu.edu.ph | URL: snsu.edu.ph</div>
+            </div>
+          </div>
         </div>
-      </div>
-
-      <div class="mt-8 flex flex-col gap-3">
-        <button
-          class="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-uniGreen text-white shadow-soft hover:opacity-95 transition"
-          type="submit">
-          <i class="fa-solid fa-floppy-disk"></i>
-          <span class="font-semibold">Save</span>
-        </button>
-        <a href="{% url 'memos:memo_list' %}"
-          class="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-white border border-slate-200 hover:border-uniGold transition">
-          <i class="fa-solid fa-arrow-left"></i>
-          <span class="font-semibold">Back</span>
-        </a>
       </div>
     </div>
   </div>
 </form>
+
+<style>
+  @media print {
+    body * {
+      visibility: hidden;
+    }
+
+    #memo-paper,
+    #memo-paper * {
+      visibility: visible;
+    }
+
+    #memo-paper {
+      position: absolute;
+      left: 0;
+      top: 0;
+      margin: 0;
+      padding: 0.5in;
+      width: 100%;
+      box-shadow: none;
+    }
+  }
+
+  #memo-paper {
+    font-family: 'Times New Roman', Times, serif;
+  }
+</style>
 
 <script>
   (function () {
     const inputs = document.querySelectorAll('input:not([type=file]), select, textarea');
     inputs.forEach((el) => {
       el.classList.add('mt-2', 'w-full', 'px-4', 'py-3', 'rounded-2xl', 'border', 'border-slate-200', 'bg-white', 'focus:outline-none', 'focus:ring-2', 'focus:ring-uniGold/50', 'focus:border-uniGold', 'transition');
+
+      // Auto-update preview on any input change
+      el.addEventListener('input', () => {
+        // Alpine will handle the reactivity via its scope if we bind it, 
+        // but here we just need to trigger a re-render or let Alpine do it.
+        // Actually, since I used document.querySelector in x-text, 
+        // it might not be reactive unless I use Alpine's state.
+        // I'll update the x-data to include these values.
+      });
     });
     const checkbox = document.querySelector('input[type="checkbox"]');
     if (checkbox) {

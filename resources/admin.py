@@ -7,6 +7,12 @@ class VenueAdmin(admin.ModelAdmin):
     list_filter = ("venue_type", "is_active", "department_exclusive")
     search_fields = ("name", "location")
 
+@admin.register(Vehicle)
+class VehicleAdmin(admin.ModelAdmin):
+    list_display = ("name", "plate_number", "capacity", "status")
+    list_filter = ("status",)
+    search_fields = ("name", "plate_number")
+
 @admin.register(Resource)
 class ResourceAdmin(admin.ModelAdmin):
     list_display = ("name", "resource_type", "is_active")
