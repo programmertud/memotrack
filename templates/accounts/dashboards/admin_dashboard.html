@@ -321,8 +321,8 @@
   <div class="kpi" style="border-left:4px solid #2F6B2F;">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;">
       <div>
-        <div class="lbl">Instructors</div>
-        <div class="val" style="color:#2F6B2F;">{{ total_instructors }}</div>
+        <div class="lbl">Employees</div>
+        <div class="val" style="color:#2F6B2F;">{{ total_employees }}</div>
       </div>
       <div class="ico" style="background:#d1fae5;color:#065f46;"><i class="fa-solid fa-chalkboard-user"></i></div>
     </div>
@@ -570,12 +570,8 @@
           <span class="cnt">{{ total_memos }}</span>
         </a>
         <a href="{% url 'accounts:admin_user_list' 'instructor' %}" class="qlink">
-          <i class="fa-solid fa-chalkboard-user" style="color:#60a5fa;width:1rem;text-align:center;"></i> Instructors
-          <span class="cnt">{{ total_instructors }}</span>
-        </a>
-        <a href="{% url 'accounts:admin_user_list' 'staff' %}" class="qlink">
-          <i class="fa-solid fa-users-gear" style="color:#c4b5fd;width:1rem;text-align:center;"></i> Staff
-          <span class="cnt">{{ total_staff }}</span>
+          <i class="fa-solid fa-chalkboard-user" style="color:#60a5fa;width:1rem;text-align:center;"></i> Employees
+          <span class="cnt">{{ total_employees }}</span>
         </a>
         <a href="{% url 'resources:vehicle_admin_list' %}" class="qlink">
           <i class="fa-solid fa-van-shuttle" style="color:#f9a8d4;width:1rem;text-align:center;"></i> Vehicles

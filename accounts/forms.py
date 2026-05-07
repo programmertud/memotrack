@@ -40,8 +40,7 @@ class AdminUserCreateForm(forms.Form):
     password2 = forms.CharField(widget=_PASSWORD_INPUT)
     role = forms.ChoiceField(
         choices=[
-            (Profile.Role.STAFF, Profile.Role.STAFF.label),
-            (Profile.Role.INSTRUCTOR, Profile.Role.INSTRUCTOR.label),
+            (Profile.Role.EMPLOYEE, Profile.Role.EMPLOYEE.label),
         ],
         widget=_SELECT,
     )
@@ -50,6 +49,11 @@ class AdminUserCreateForm(forms.Form):
         required=False,
         widget=_SELECT,
     )
+    first_name = forms.CharField(max_length=150, widget=_TEXT_INPUT)
+    last_name = forms.CharField(max_length=150, widget=_TEXT_INPUT)
+    employee_id = forms.CharField(max_length=50, widget=_TEXT_INPUT, label="Employee ID")
+    mobile_number = forms.CharField(max_length=30, widget=_TEXT_INPUT, required=False)
+    address = forms.CharField(widget=forms.Textarea(attrs={"class": "w-full px-4 py-3 rounded-2xl bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-uniGold/60", "rows": 2}), required=False)
     is_active = forms.BooleanField(required=False, initial=True)
 
     def clean(self):
@@ -73,7 +77,12 @@ class AdminUserCreateForm(forms.Form):
         profile = user.profile
         profile.role = data["role"]
         profile.department = data.get("department")
-        profile.save(update_fields=["role", "department"])
+        profile.first_name = data.get("first_name") or ""
+        profile.last_name = data.get("last_name") or ""
+        profile.employee_id = data.get("employee_id") or ""
+        profile.mobile_number = data.get("mobile_number") or ""
+        profile.address = data.get("address") or ""
+        profile.save()
         return user
 
 
@@ -82,8 +91,7 @@ class AdminUserUpdateForm(forms.Form):
     email = forms.EmailField(required=False, widget=_EMAIL_INPUT)
     role = forms.ChoiceField(
         choices=[
-            (Profile.Role.STAFF, Profile.Role.STAFF.label),
-            (Profile.Role.INSTRUCTOR, Profile.Role.INSTRUCTOR.label),
+            (Profile.Role.EMPLOYEE, Profile.Role.EMPLOYEE.label),
         ],
         widget=_SELECT,
     )
@@ -92,6 +100,11 @@ class AdminUserUpdateForm(forms.Form):
         required=False,
         widget=_SELECT,
     )
+    first_name = forms.CharField(max_length=150, widget=_TEXT_INPUT)
+    last_name = forms.CharField(max_length=150, widget=_TEXT_INPUT)
+    employee_id = forms.CharField(max_length=50, widget=_TEXT_INPUT, label="Employee ID")
+    mobile_number = forms.CharField(max_length=30, widget=_TEXT_INPUT, required=False)
+    address = forms.CharField(widget=forms.Textarea(attrs={"class": "w-full px-4 py-3 rounded-2xl bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-uniGold/60", "rows": 2}), required=False)
     is_active = forms.BooleanField(required=False)
     new_password = forms.CharField(widget=_PASSWORD_INPUT, required=False)
 
@@ -107,6 +120,11 @@ class AdminUserUpdateForm(forms.Form):
         if profile is not None:
             self.initial.setdefault("role", profile.role)
             self.initial.setdefault("department", profile.department_id)
+            self.initial.setdefault("first_name", profile.first_name)
+            self.initial.setdefault("last_name", profile.last_name)
+            self.initial.setdefault("employee_id", profile.employee_id)
+            self.initial.setdefault("mobile_number", profile.mobile_number)
+            self.initial.setdefault("address", profile.address)
 
     def clean_username(self):
         username = self.cleaned_data["username"]
@@ -126,7 +144,12 @@ class AdminUserUpdateForm(forms.Form):
         profile = self.user.profile
         profile.role = data["role"]
         profile.department = data.get("department")
-        profile.save(update_fields=["role", "department"])
+        profile.first_name = data.get("first_name") or ""
+        profile.last_name = data.get("last_name") or ""
+        profile.employee_id = data.get("employee_id") or ""
+        profile.mobile_number = data.get("mobile_number") or ""
+        profile.address = data.get("address") or ""
+        profile.save()
         return self.user
 
 
@@ -134,14 +157,15 @@ class UserRegisterForm(UserCreationForm):
     first_name = forms.CharField(max_length=150, widget=_TEXT_INPUT)
     middle_name = forms.CharField(max_length=150, widget=_TEXT_INPUT, required=False)
     last_name = forms.CharField(max_length=150, widget=_TEXT_INPUT)
-    school_id = forms.CharField(max_length=50, widget=_TEXT_INPUT)
+    employee_id = forms.CharField(max_length=50, widget=_TEXT_INPUT, label="Employee ID")
     mobile_number = forms.CharField(max_length=30, widget=_TEXT_INPUT)
+    address = forms.CharField(widget=forms.Textarea(attrs={"class": "w-full px-4 py-3 rounded-2xl bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-uniGold/60", "rows": 3}), required=False)
     email = forms.EmailField(required=True, widget=_EMAIL_INPUT)
     username = forms.CharField(max_length=150, required=False, widget=forms.HiddenInput())
     role = forms.ChoiceField(
         choices=[
             ("admin", "Admin"),
-            ("instructor", "Faculty"),
+            ("instructor", "Employee"),
 
         ],
         widget=_SELECT,
@@ -153,13 +177,13 @@ class UserRegisterForm(UserCreationForm):
         model = User
         fields = ("username", "email")
 
-    def clean_school_id(self):
-        school_id = (self.cleaned_data.get("school_id") or "").strip()
-        if not school_id:
-            raise forms.ValidationError("School ID is required.")
-        if Profile.objects.filter(school_id=school_id).exists():
-            raise forms.ValidationError("School ID already exists.")
-        return school_id
+    def clean_employee_id(self):
+        employee_id = (self.cleaned_data.get("employee_id") or "").strip()
+        if not employee_id:
+            raise forms.ValidationError("Employee ID is required.")
+        if Profile.objects.filter(employee_id=employee_id).exists():
+            raise forms.ValidationError("Employee ID already exists.")
+        return employee_id
 
     def clean_email(self):
         email = (self.cleaned_data.get("email") or "").strip().lower()
@@ -238,16 +262,18 @@ class UserRegisterForm(UserCreationForm):
             profile.first_name = self.cleaned_data["first_name"]
             profile.middle_name = self.cleaned_data.get("middle_name") or ""
             profile.last_name = self.cleaned_data["last_name"]
-            profile.school_id = self.cleaned_data["school_id"]
+            profile.employee_id = self.cleaned_data["employee_id"]
             profile.mobile_number = self.cleaned_data["mobile_number"]
+            profile.address = self.cleaned_data.get("address") or ""
             profile.save(
                 update_fields=[
                     "role",
                     "first_name",
                     "middle_name",
                     "last_name",
-                    "school_id",
+                    "employee_id",
                     "mobile_number",
+                    "address",
                 ]
             )
         return user

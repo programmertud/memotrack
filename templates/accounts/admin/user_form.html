@@ -56,6 +56,44 @@
       {% endif %}
 
       <div>
+        <label class="text-sm font-semibold">First Name</label>
+        <div class="mt-1">{{ form.first_name }}</div>
+        {% if form.first_name.errors %}
+          <div class="text-xs text-red-700 mt-1">{{ form.first_name.errors }}</div>
+        {% endif %}
+      </div>
+      <div>
+        <label class="text-sm font-semibold">Last Name</label>
+        <div class="mt-1">{{ form.last_name }}</div>
+        {% if form.last_name.errors %}
+          <div class="text-xs text-red-700 mt-1">{{ form.last_name.errors }}</div>
+        {% endif %}
+      </div>
+
+      <div>
+        <label class="text-sm font-semibold">Employee ID</label>
+        <div class="mt-1">{{ form.employee_id }}</div>
+        {% if form.employee_id.errors %}
+          <div class="text-xs text-red-700 mt-1">{{ form.employee_id.errors }}</div>
+        {% endif %}
+      </div>
+      <div>
+        <label class="text-sm font-semibold">Mobile Number</label>
+        <div class="mt-1">{{ form.mobile_number }}</div>
+        {% if form.mobile_number.errors %}
+          <div class="text-xs text-red-700 mt-1">{{ form.mobile_number.errors }}</div>
+        {% endif %}
+      </div>
+
+      <div class="md:col-span-2">
+        <label class="text-sm font-semibold">Address</label>
+        <div class="mt-1">{{ form.address }}</div>
+        {% if form.address.errors %}
+          <div class="text-xs text-red-700 mt-1">{{ form.address.errors }}</div>
+        {% endif %}
+      </div>
+
+      <div>
         <label class="text-sm font-semibold">Role</label>
         <div class="mt-1">{{ form.role }}</div>
         {% if form.role.errors %}

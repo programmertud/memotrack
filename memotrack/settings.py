@@ -25,7 +25,8 @@ SECRET_KEY = 'django-insecure-k71ap9+_vq$#k31!muwr@+*21r2eh=a7@^nsgn8f)@)x7&e@#b
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
+CSRF_TRUSTED_ORIGINS = ['https://*.trycloudflare.com']
 
 
 # Application definition

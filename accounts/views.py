@@ -60,13 +60,13 @@ def login_view(request):
         resolved_username = identifier
 
         if identifier:
-            # Resolve school_id / email / mobile → actual Django username
+            # Resolve employee_id / email / mobile → actual Django username
             matched_user = (
                 User.objects.select_related("profile")
                 .filter(
                     Q(username__iexact=identifier)
                     | Q(email__iexact=identifier)
-                    | Q(profile__school_id__iexact=identifier)
+                    | Q(profile__employee_id__iexact=identifier)
                     | Q(profile__mobile_number=identifier)
                 )
                 .first()
@@ -134,7 +134,7 @@ def post_login(request):
         return redirect("accounts:admin_dashboard")
     if role == Profile.Role.HR:
         return redirect("accounts:hr_dashboard")
-    if role == Profile.Role.INSTRUCTOR:
+    if role == Profile.Role.EMPLOYEE:
         return redirect("accounts:instructor_dashboard")
     if role == Profile.Role.APPROVER:
         return redirect("accounts:approver_dashboard")
@@ -188,8 +188,7 @@ def admin_dashboard(request):
     week_start = today - timedelta(days=6)
 
     # ── User counts ──
-    total_instructors = Profile.objects.filter(role=Profile.Role.INSTRUCTOR).count()
-    total_staff       = Profile.objects.filter(role=Profile.Role.STAFF).count()
+    total_employees = Profile.objects.filter(role=Profile.Role.EMPLOYEE).count()
 
     total_vehicles    = Vehicle.objects.count()
     available_vehicles = Vehicle.objects.filter(status="available").count()
@@ -266,8 +265,7 @@ def admin_dashboard(request):
         request,
         "accounts/dashboards/admin_dashboard.html",
         {
-            "total_instructors":  total_instructors,
-            "total_staff":        total_staff,
+            "total_employees":    total_employees,
 
             "total_vehicles":     total_vehicles,
             "available_vehicles": available_vehicles,
@@ -293,7 +291,7 @@ def admin_dashboard(request):
 
 def _normalize_admin_role(role: str) -> str:
     role = (role or "").strip().lower()
-    if role not in {Profile.Role.STAFF, Profile.Role.INSTRUCTOR}:
+    if role not in {Profile.Role.STAFF, Profile.Role.EMPLOYEE}:
 
         return ""
     return role
@@ -449,7 +447,7 @@ def hr_dashboard(request):
 @login_required
 def instructor_dashboard(request):
     role = getattr(request.user.profile, "role", None)
-    if role != Profile.Role.INSTRUCTOR and not request.user.is_staff:
+    if role != Profile.Role.EMPLOYEE and not request.user.is_staff:
         return redirect("accounts:post_login")
 
     today = timezone.localdate()
@@ -602,7 +600,7 @@ def profile_update(request):
             "middle_name": profile.middle_name,
             "last_name": profile.last_name,
             "full_name": full_name,
-            "school_id": profile.school_id or "",
+            "employee_id": profile.employee_id or "",
             "mobile_number": profile.mobile_number,
             "role": profile.get_role_display(),
             "department": str(profile.department) if profile.department else "",

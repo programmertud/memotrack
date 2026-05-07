@@ -31,7 +31,7 @@ class Profile(models.Model):
     class Role(models.TextChoices):
         ADMIN = "admin", "Admin"
         HR = "hr", "HR"
-        INSTRUCTOR = "instructor", "Instructor"
+        EMPLOYEE = "instructor", "Employee"
         APPROVER = "approver", "Department Head/Approver"
         TRANSPORTATION = "transportation", "Transportation"
         STAFF = "staff", "Staff"
@@ -41,9 +41,10 @@ class Profile(models.Model):
     first_name = models.CharField(max_length=150, blank=True)
     middle_name = models.CharField(max_length=150, blank=True)
     last_name = models.CharField(max_length=150, blank=True)
-    school_id = models.CharField(max_length=50, unique=True, null=True, blank=True)
+    employee_id = models.CharField(max_length=50, unique=True, null=True, blank=True)
     mobile_number = models.CharField(max_length=30, blank=True)
-    role = models.CharField(max_length=20, choices=Role.choices, default=Role.STAFF)
+    address = models.TextField(blank=True)
+    role = models.CharField(max_length=20, choices=Role.choices, default=Role.EMPLOYEE)
 
     department = models.ForeignKey(
         Department, on_delete=models.SET_NULL, null=True, blank=True, related_name="profiles"

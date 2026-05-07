@@ -35,20 +35,12 @@
         <a href="{% url 'accounts:admin_user_list' 'instructor' %}"
            class="sidebar-link {% if request.resolver_match.url_name == 'admin_user_list' and request.resolver_match.kwargs.role == 'instructor' %}active{% endif %}">
           <i class="fa-solid fa-chalkboard-user sidebar-icon"></i>
-          <span>Instructors</span>
+          <span>Employees</span>
         </a>
 
-        <a href="{% url 'accounts:admin_user_list' 'staff' %}"
-           class="sidebar-link {% if request.resolver_match.url_name == 'admin_user_list' and request.resolver_match.kwargs.role == 'staff' %}active{% endif %}">
-          <i class="fa-solid fa-users-gear sidebar-icon"></i>
-          <span>Staff</span>
-        </a>
 
-        <a href="{% url 'accounts:admin_user_list' 'student' %}"
-           class="sidebar-link {% if request.resolver_match.url_name == 'admin_user_list' and request.resolver_match.kwargs.role == 'student' %}active{% endif %}">
-          <i class="fa-solid fa-user-graduate sidebar-icon"></i>
-          <span>Students</span>
-        </a>
+
+
 
         <div class="sidebar-section-label mt-3">Memos</div>
 

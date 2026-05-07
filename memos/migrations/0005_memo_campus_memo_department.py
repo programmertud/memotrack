@@ -8,7 +8,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('accounts', '0005_campus_department_is_college_department_campus'),
-        ('memos', '0004_memo_category'),
+        ('memos', '0001_initial'),
     ]
 
     operations = [

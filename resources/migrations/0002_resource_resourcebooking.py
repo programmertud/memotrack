@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('memos', '0004_memo_category'),
+        ('memos', '0001_initial'),
         ('resources', '0001_initial'),
     ]
 
