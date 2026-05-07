@@ -84,7 +84,7 @@ def dashboard(request):
 
 def memo_list(request):
     if request.user.is_authenticated and not request.user.is_staff:
-        memos = Memo.objects.filter(assigned_user=request.user).select_related("created_by")
+        memos = Memo.objects.filter(employees=request.user).select_related("created_by")
     else:
         memos = Memo.objects.all().select_related("created_by")
     return render(request, "memos/memo_list.html", {"memos": memos})
@@ -95,7 +95,7 @@ def memo_admin_list(request):
     if not _is_admin(request.user):
         messages.error(request, "You do not have permission to view this page.")
         return redirect("accounts:post_login")
-    memos = Memo.objects.all().select_related("assigned_user", "created_by").order_by("-date", "start_time")
+    memos = Memo.objects.all().prefetch_related("employees", "created_by").order_by("-date", "start_time")
     return render(request, "memos/memo_admin_list.html", {"memos": memos})
 
 
@@ -179,7 +179,7 @@ def memo_delete(request, pk: int):
 @require_http_methods(["POST"])
 def memo_user_approve(request, pk: int):
     memo = get_object_or_404(Memo, pk=pk)
-    if memo.assigned_user_id != request.user.id or request.user.is_staff:
+    if not memo.employees.filter(id=request.user.id).exists() or request.user.is_staff:
         messages.error(request, "You cannot perform this action.")
         return redirect("accounts:post_login")
 
@@ -197,7 +197,7 @@ def memo_user_approve(request, pk: int):
 @require_http_methods(["POST"])
 def memo_user_mark_conflict(request, pk: int):
     memo = get_object_or_404(Memo, pk=pk)
-    if memo.assigned_user_id != request.user.id or request.user.is_staff:
+    if not memo.employees.filter(id=request.user.id).exists() or request.user.is_staff:
         messages.error(request, "You cannot perform this action.")
         return redirect("accounts:post_login")
 
@@ -405,13 +405,13 @@ def memo_parse_ai_file(request):
 
 
 def _notify_conflict(request, memo: Memo) -> None:
-    # ... (existing code)
-    Notification.objects.create(
-        user=memo.assigned_user,
-        title="Conflict Detected",
-        message=f"Your memo '{memo.title}' overlaps with another schedule.",
-        severity=Notification.Severity.WARNING,
-    )
+    for employee in memo.employees.all():
+        Notification.objects.create(
+            user=employee,
+            title="Conflict Detected",
+            message=f"Your memo '{memo.title}' overlaps with another schedule.",
+            severity=Notification.Severity.WARNING,
+        )
 
 
 def _notify_decision(request, memo: Memo, approved: bool) -> None:
@@ -424,12 +424,13 @@ def _notify_decision(request, memo: Memo, approved: bool) -> None:
         severity = Notification.Severity.DANGER
         message = f"Your memo '{memo.title}' has been rejected."
 
-    Notification.objects.create(
-        user=memo.assigned_user,
-        title=title,
-        message=message,
-        severity=severity,
-    )
+    for employee in memo.employees.all():
+        Notification.objects.create(
+            user=employee,
+            title=title,
+            message=message,
+            severity=severity,
+        )
 
 
 @login_required
@@ -494,10 +495,10 @@ def memo_recommendations(request, pk=None):
                 category=data.get('category', 'department')
             )
             # Try to attach assigned user
-            user_id = data.get('assigned_user')
+            user_id = data.get('assigned_user') # Keep key for compatibility with JS for now
             if user_id:
                 try:
-                    memo.assigned_user = User.objects.get(pk=user_id)
+                    memo.employees.add(User.objects.get(pk=user_id))
                 except User.DoesNotExist:
                     pass
             

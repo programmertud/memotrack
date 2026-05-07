@@ -16,7 +16,7 @@ def check_conflicts(date, start_time, end_time, user=None, venue=None, resources
     # 1. Temporal Overlaps for Personnel (Assigned User)
     if user:
         from memos.models import Memo
-        user_memos = Memo.objects.filter(assigned_user=user, date=date)
+        user_memos = Memo.objects.filter(employees=user, date=date)
         if exclude_memo_id:
             user_memos = user_memos.exclude(pk=exclude_memo_id)
         
@@ -25,9 +25,10 @@ def check_conflicts(date, start_time, end_time, user=None, venue=None, resources
         )
         
         for m in overlapping_memos:
+            full_name = f"{user.profile.first_name} {user.profile.last_name}" if hasattr(user, 'profile') and user.profile.first_name else user.username
             conflicts.append({
                 "type": "personnel",
-                "message": f"User {user.username} has an overlapping memo: {m.title} ({m.start_time} - {m.end_time})",
+                "message": f"Employee {full_name} has an overlapping memo: {m.title} ({m.start_time} - {m.end_time})",
                 "severity": "warning"
             })
 
@@ -40,9 +41,10 @@ def check_conflicts(date, start_time, end_time, user=None, venue=None, resources
         )
         
         for l in leave_overlaps:
+            full_name = f"{user.profile.first_name} {user.profile.last_name}" if hasattr(user, 'profile') and user.profile.first_name else user.username
             conflicts.append({
                 "type": "leave",
-                "message": f"User {user.username} is on approved leave ({l.start_date} to {l.end_date})",
+                "message": f"Employee {full_name} is on approved leave ({l.start_date} to {l.end_date})",
                 "severity": "danger"
             })
 
