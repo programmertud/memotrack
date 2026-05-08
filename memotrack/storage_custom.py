@@ -23,8 +23,9 @@ class UnsignedCloudinaryStorage(Storage):
         return response['public_id']
 
     def url(self, name):
-        # Generates the public URL for the image
-        return cloudinary.CloudinaryImage(name).build_url(secure=True)
+        # This generates the FULL web address (https://res.cloudinary.com/...)
+        url, options = cloudinary.utils.cloudinary_url(name, secure=True)
+        return url
 
     def exists(self, name):
         return False

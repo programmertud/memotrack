@@ -46,7 +46,6 @@ INSTALLED_APPS = [
     'notifications',
     'governance',
     'analytics',
-    'cloudinary_storage',
     'cloudinary',
 ]
 
