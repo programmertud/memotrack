@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Memo Requests | SkedIt.AI{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between gap-4">
+  <div>
+    <h1 class="text-2xl font-bold tracking-tight text-slate-800">
+      {% if user.profile.role == 'admin' or user.is_staff %}
+      Incoming Requests
+      {% else %}
+      My Requests
+      {% endif %}
+    </h1>
+    <p class="text-sm text-slate-500 mt-1">
+      {% if user.profile.role == 'admin' or user.is_staff %}
+      Review and convert employee submissions into formal memos.
+      {% else %}
+      Track the status of your submitted documents and evidence.
+      {% endif %}
+    </p>
+  </div>
+</div>
+
+<div class="mt-8 grid grid-cols-1 gap-4">
+  {% for req in requests %}
+  <div class="bg-white rounded-3xl border border-slate-100 shadow-soft overflow-hidden hover:border-uniGold/30 transition-all group flex items-center p-4 gap-6">
+    <!-- User Info -->
+    <div class="flex items-center gap-4 w-1/4">
+      <div class="h-12 w-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-uniGold/10 group-hover:text-uniGold transition">
+        <i class="fa-solid fa-user"></i>
+      </div>
+      <div class="overflow-hidden">
+        <p class="text-sm font-bold text-slate-800 truncate">{{ req.requester.get_full_name|default:req.requester.username }}</p>
+        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{{ req.created_at|date:"M d, Y" }}</p>
+      </div>
+    </div>
+
+    <!-- Note -->
+    <div class="flex-1">
+      <p class="text-sm text-slate-600 line-clamp-1 italic font-medium">
+        "{{ req.note|default:'No note provided' }}"
+      </p>
+    </div>
+
+    <!-- Status & File -->
+    <div class="flex items-center gap-6">
+      <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest
+        {% if req.status == 'pending' %}bg-amber-100 text-amber-600
+        {% elif req.status == 'converted' %}bg-green-100 text-green-600
+        {% else %}bg-slate-100 text-slate-600{% endif %}">
+        {{ req.get_status_display }}
+      </span>
+
+      <div class="h-10 w-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400">
+        {% if req.attachment.name|lower|slice:"-4:" == ".jpg" or req.attachment.name|lower|slice:"-5:" == ".jpeg" or req.attachment.name|lower|slice:"-4:" == ".png" %}
+        <i class="fa-solid fa-image"></i>
+        {% else %}
+        <i class="fa-solid fa-file-lines"></i>
+        {% endif %}
+      </div>
+
+      <a href="{% url 'memos:memo_request_detail' req.pk %}" class="px-5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-50 hover:border-uniGold transition shadow-sm">
+        {% if user.profile.role == 'admin' or user.is_staff %}
+        Review Request
+        {% else %}
+        View Details
+        {% endif %}
+      </a>
+    </div>
+  </div>
+  {% empty %}
+  <div class="py-20 text-center bg-white rounded-3xl border border-dashed border-slate-200">
+    <i class="fa-solid fa-inbox text-4xl text-slate-200 mb-4"></i>
+    <p class="text-slate-500 font-bold">No memo requests found.</p>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

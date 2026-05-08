@@ -151,8 +151,8 @@ class Memo(models.Model):
         if not self.has_conflicts():
             return "approve"
         
-        # Policy: Critical priority and Institutional-wide events take absolute precedence
-        if self.priority == self.Priority.CRITICAL or self.category == self.Category.INSTITUTIONAL:
+        # Policy: Critical priority and Institutional-wide (to_all) events take absolute precedence
+        if self.priority == self.Priority.CRITICAL or self.to_all:
             return "accept_anyway"
             
         if self.required and self.priority in {self.Priority.HIGH, self.Priority.MEDIUM}:
@@ -183,3 +183,32 @@ class MemoDecision(models.Model):
             models.Index(fields=["memo", "created_at"]),
             models.Index(fields=["action", "created_at"]),
         ]
+
+
+class MemoRequest(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        APPROVED = "approved", "Approved"
+        REJECTED = "rejected", "Rejected"
+        CONVERTED = "converted", "Converted"
+
+    requester = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="memo_requests"
+    )
+    attachment = models.FileField(upload_to="memo_requests/")
+    note = models.TextField(blank=True, help_text="Optional note from the requester")
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+
+    # Link to the resulting memo if converted
+    memo = models.OneToOneField(
+        "Memo", on_delete=models.SET_NULL, null=True, blank=True, related_name="origin_request"
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Request from {self.requester.username} ({self.created_at.strftime('%Y-%m-%d')})"

@@ -7,6 +7,31 @@
   [x-cloak] { display: none !important; }
   .animate-pulse-subtle { animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
   @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .85; } }
+  #memo-paper { font-family: 'Times New Roman', Times, serif; }
+  
+  @media print {
+    body * { visibility: hidden; }
+    #memo-paper, #memo-paper * { visibility: visible; }
+    #memo-paper {
+      position: absolute; left: 0; top: 0; margin: 0; padding: 0.5in;
+      width: 100%; box-shadow: none;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .fixed-preview {
+      position: fixed !important;
+      top: 4rem !important;
+      right: 0 !important;
+      width: 40% !important;
+      max-width: 550px !important;
+      height: calc(100vh - 4rem) !important;
+      overflow-y: auto !important;
+      z-index: 50 !important;
+      padding: 1.5rem !important;
+      background: rgba(255,255,255,0.95);
+    }
+  }
 </style>
 
 <div class="flex items-center justify-between gap-4">
@@ -16,6 +41,24 @@
   </div>
 </div>
 
+{% if memo_req %}
+<div class="mt-6 p-4 rounded-2xl bg-uniGold/10 border border-uniGold/20 flex items-center justify-between">
+  <div class="flex items-center gap-4">
+    <div class="h-10 w-10 rounded-xl bg-uniGold/20 flex items-center justify-center text-uniGold">
+      <i class="fa-solid fa-file-signature"></i>
+    </div>
+    <div>
+      <p class="text-xs font-bold text-uniGold uppercase tracking-wider">Converting Request</p>
+      <p class="text-sm font-bold text-slate-800">Submitted by {{ memo_req.requester.get_full_name|default:memo_req.requester.username }}</p>
+    </div>
+  </div>
+  <a href="{{ memo_req.attachment.url }}" target="_blank" class="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-50 transition shadow-sm flex items-center gap-2">
+    <i class="fa-solid fa-eye"></i>
+    View Evidence
+  </a>
+</div>
+{% endif %}
+
 <script>
   window._PARSE_TEXT_URL = "{% url 'memos:memo_parse_ai' %}";
   window._PARSE_FILE_URL = "{% url 'memos:memo_parse_ai_file' %}";
@@ -23,296 +66,237 @@
   window._RECOMMENDATIONS_URL = "{% url 'memos:memo_recommendations_new' %}";
   window._EXCLUDE_ID = "{{ memo.pk|default:'' }}";
   window._CSRF_TOKEN = "{{ csrf_token }}";
-</script>
 
-<script>
-document.addEventListener('alpine:init', () => {
-  Alpine.data('memoForm', () => ({
-    parseMode: false,
-    parseTab: 'text',
-    textToParse: '',
-    isParsing: false,
-    parseError: null,
-    parsedParticipants: '',
-    parsedActivityType: '',
-    showExtracted: false,
-    droppedFile: null,
-    isDragging: false,
-    fileParseUrl: window._PARSE_FILE_URL,
-    textParseUrl: window._PARSE_TEXT_URL,
-    csrfToken: window._CSRF_TOKEN,
-    title: '{{ form.title.value|default_if_none:""|escapejs }}',
-    reference_number: '{{ form.reference_number.value|default_if_none:""|escapejs }}',
-    description: '{{ form.description.value|default_if_none:""|escapejs }}',
-    date: '{{ form.date.value|default_if_none:""|escapejs }}',
-    toAll: {{ form.to_all.value|yesno:"true,false" }},
-    search: '',
-    employees_text: '',
-    venue: '{{ form.venue.value|default_if_none:""|escapejs }}',
-    destination: '{{ form.destination.value|default_if_none:""|escapejs }}',
-    memoCategory: '{{ form.category.value|default:"internal" }}',
-    selectedVehicle: '',
-    vehicleStartDate: '{{ form.vehicle_start_date.value|default:"" }}',
-    vehicleEndDate: '{{ form.vehicle_end_date.value|default:"" }}',
-    vehicleDays: {{ form.vehicle_days.value|default:1 }},
-    needVehicle: false,
-    needResources: false,
-    allUsers: [
-      {% for u in form.employees.field.queryset %}
-      { id: {{ u.pk }}, name: '{% if u.profile.first_name %}{{ u.profile.first_name|escapejs }} {{ u.profile.last_name|escapejs }}{% else %}{{ u.username|escapejs }}{% endif %}' },
-      {% endfor %}
-    ],
-    selectedNames: [],
-    addingNames: new Set(),
-    get filteredResults() {
-      if (this.search.length < 1) return [];
-      const seen = new Set();
-      const result = this.allUsers.filter(u => {
-        const normalized = u.name.trim().replace(/\s+/g, ' ');
-        if (seen.has(normalized)) return false;
-        seen.add(normalized);
-        return normalized.toLowerCase().includes(this.search.toLowerCase()) &&
-          !this.selectedNames.map(n => n.trim().replace(/\s+/g, ' ')).includes(normalized);
-      });
-      return result;
-    },
-    get uniqueSelectedEmployees() {
-      return [...new Set(this.selectedNames.map(n => n.trim().replace(/\s+/g, ' ')))];
-    },
-    addEmployee(name, id) {
-      name = String(name).trim().replace(/\s+/g, ' ');
-      if (this.addingNames.has(name) || this.selectedNames.map(n => n.trim().replace(/\s+/g, ' ')).includes(name)) {
+  document.addEventListener('alpine:init', () => {
+    Alpine.data('memoForm', () => ({
+      parseMode: false,
+      parseTab: 'text',
+      textToParse: '',
+      isParsing: false,
+      parseError: null,
+      parsedParticipants: '',
+      parsedActivityType: '',
+      showExtracted: false,
+      droppedFile: null,
+      isDragging: false,
+      
+      // Form fields bound via x-model
+      title: '{{ form.title.value|default_if_none:''|escapejs }}',
+      reference_number: '{{ form.reference_number.value|default_if_none:''|escapejs }}',
+      description: '{{ form.description.value|default_if_none:''|escapejs }}',
+      date: '{{ form.date.value|default_if_none:''|escapejs }}',
+      startTime: '{{ form.start_time.value|default:'' }}',
+      endTime: '{{ form.end_time.value|default:'' }}',
+      venue: '{{ form.venue.value|default_if_none:''|escapejs }}',
+      destination: '{{ form.destination.value|default_if_none:''|escapejs }}',
+      memoCategory: '{{ form.category.value|default:'internal' }}',
+      toAll: {{ form.to_all.value|yesno:'true,false' }},
+      priority: '{{ form.priority.value|default:'normal' }}',
+      
+      // Resource options
+      needVehicle: false,
+      needResources: false,
+      selectedVehicle: '{{ form.vehicle.value|default:'' }}',
+      vehicleStartDate: '{{ form.vehicle_start_date.value|default:'' }}',
+      vehicleEndDate: '{{ form.vehicle_end_date.value|default:'' }}',
+      vehicleDays: {{ form.vehicle_days.value|default:1 }},
+      availableVehicles: [],
+      
+      // Employee selection
+      search: '',
+      employees_text: '',
+      allUsers: [
+        {% for u in form.employees.field.queryset %}
+          { id: '{{ u.id }}', name: '{% if u.profile.first_name %}{{ u.profile.first_name|escapejs }} {{ u.profile.last_name|escapejs }}{% else %}{{ u.username|escapejs }}{% endif %}' },
+        {% endfor %}
+      ],
+      selectedIds: [],
+      selectedNames: [],
+
+      get filteredResults() { 
+        if (this.search.length < 1) return []; 
+        return this.allUsers.filter(u =>
+          u.name.toLowerCase().includes(this.search.toLowerCase()) &&
+          !this.selectedIds.includes(String(u.id))
+        );
+      },
+
+      get uniqueSelectedEmployees() {
+        return [...new Set(this.selectedNames)];
+      },
+
+      addEmployee(name, id) {
+        if (!this.selectedIds.includes(String(id))) {
+          this.selectedIds.push(String(id));
+          this.selectedNames.push(name);
+          this.$nextTick(() => {
+            let cb = document.querySelector(`input[name=employees][value='${id}']`);
+            if (cb) cb.checked = true;
+            this.syncState();
+          });
+        }
         this.search = '';
-        return;
-      }
-      this.addingNames.add(name);
-      this.selectedNames.push(name);
-      this.selectedNames = [...new Set(this.selectedNames.map(n => n.trim().replace(/\s+/g, ' ')))];
-      if (id) {
-        const cb = document.querySelector('input[name="employees"][value="' + id + '"]');
-        if (cb) cb.checked = true;
-      }
-      this.$nextTick(() => {
-        this.addingNames.delete(name);
+      },
+
+      removeEmployee(name) {
+        const user = this.allUsers.find(u => u.name === name);
+        if (user) {
+          this.selectedIds = this.selectedIds.filter(id => id !== String(user.id));
+          let cb = document.querySelector(`input[name=employees][value='${user.id}']`);
+          if (cb) cb.checked = false;
+        }
+        this.selectedNames = this.selectedNames.filter(n => n !== name);
+        this.syncState();
+      },
+
+      syncState() {
+        const checked = Array.from(document.querySelectorAll('input[name=employees]:checked'));
+        this.selectedIds = checked.map(el => el.value);
+        this.selectedNames = checked.map(el => {
+          const user = this.allUsers.find(u => String(u.id) === el.value);
+          return user ? user.name : el.value;
+        });
         this.updateEmployeesText();
         this.checkConflicts();
-      });
-      this.search = '';
-    },
-    removeEmployee(name) {
-      name = String(name).trim().replace(/\s+/g, ' ');
-      const id = this.allUsers.find(u => u.name === name)?.id;
-      if (id) {
-        const cb = document.querySelector('input[name="employees"][value="' + id + '"]');
-        if (cb) cb.checked = false;
-      }
-      this.selectedNames = this.selectedNames.filter(n => n.trim().replace(/\s+/g, ' ') !== name);
-      this.selectedNames = [...new Set(this.selectedNames.map(n => n.trim().replace(/\s+/g, ' ')))];
-      this.$nextTick(() => {
-        this.updateEmployeesText();
-        this.checkConflicts();
-      });
-    },
-    updateEmployeesText() {
-      if (this.toAll) {
-        this.employees_text = 'All Faculty Members & Students';
-      } else {
-        this.employees_text = this.selectedNames.join(', ');
-      }
-    },
-    recalcDays() {
-      if (this.vehicleStartDate && this.vehicleEndDate) {
-        const start = new Date(this.vehicleStartDate);
-        const end = new Date(this.vehicleEndDate);
-        const diff = Math.round((end - start) / (1000 * 60 * 60 * 24));
-        this.vehicleDays = diff >= 1 ? diff + 1 : 1;
-      }
-    },
-    syncEndDate() {
-      if (this.vehicleStartDate && this.vehicleDays >= 1) {
-        const start = new Date(this.vehicleStartDate);
-        start.setDate(start.getDate() + parseInt(this.vehicleDays) - 1);
-        this.vehicleEndDate = start.toISOString().split('T')[0];
-      }
-    },
-    handleDrop(e) {
-      e.preventDefault();
-      this.isDragging = false;
-      const file = e.dataTransfer.files[0];
-      if (file) { this.droppedFile = file; this.parseError = null; }
-    },
-    handleFileInput(e) {
-      const file = e.target.files[0];
-      if (file) { this.droppedFile = file; this.parseError = null; }
-    },
-    fillForm(data) {
-      const titleEl = document.querySelector('input[name=title]');
-      if (titleEl) titleEl.value = data.title || '';
-      this.title = data.title || '';
-      const descEl = document.querySelector('textarea[name=description]');
-      if (descEl) descEl.value = data.description || '';
-      this.description = data.description || '';
-      const dateEl = document.querySelector('input[name=date]');
-      if (dateEl) dateEl.value = data.date || '';
-      this.date = data.date || '';
-      const stEl = document.querySelector('input[name=start_time]');
-      if (stEl) stEl.value = data.start_time || '';
-      if (data.end_time) {
-        const etEl = document.querySelector('input[name=end_time]');
-        if (etEl) etEl.value = data.end_time;
-      }
-      const venueEl = document.querySelector('input[name=venue]');
-      if (venueEl) venueEl.value = data.venue || '';
-      if (data.destination) {
-        const destEl = document.querySelector('input[name=destination]');
-        if (destEl) destEl.value = data.destination;
-      }
-      if (data.priority) {
-        const pEl = document.querySelector('select[name=priority]');
-        if (pEl) pEl.value = data.priority;
-      }
-      if (data.category) {
-        const cEl = document.querySelector('select[name=category]');
-        if (cEl) cEl.value = data.category;
-      }
-      this.parsedParticipants = data.participants || '';
-      this.parsedActivityType = data.activity_type || '';
-      this.showExtracted = !!(this.parsedParticipants || this.parsedActivityType);
-      this.parseMode = false; this.textToParse = ''; this.droppedFile = null;
-      this.updateEmployeesText();
-    },
-    parseAI() {
-      if (this.parseTab === 'file') { this.parseFile(); return; }
-      this.isParsing = true; this.parseError = null; this.showExtracted = false;
-      fetch(this.textParseUrl, {
-        method: 'POST',
-        headers: { 'X-CSRFToken': this.csrfToken, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: this.textToParse })
-      })
-      .then(res => res.json().then(data => ({ ok: res.ok, data })))
-      .then(({ ok, data }) => {
-        if (!ok) throw new Error(data.error || 'AI failed to parse the text.');
-        this.fillForm(data);
-      })
-      .catch(e => { this.parseError = e.message; })
-      .finally(() => { this.isParsing = false; });
-    },
-    parseFile() {
-      if (!this.droppedFile) { this.parseError = 'Please select or drop a file first.'; return; }
-      this.isParsing = true; this.parseError = null; this.showExtracted = false;
-      const fd = new FormData();
-      fd.append('file', this.droppedFile);
-      fetch(this.fileParseUrl, { method: 'POST', headers: { 'X-CSRFToken': this.csrfToken }, body: fd })
-      .then(res => {
-        if (!res.ok) return res.json().then(d => { throw new Error(d.error || 'Server error'); });
-        return res.json();
-      })
-      .then(data => { if (data.error) throw new Error(data.error); this.fillForm(data); })
-      .catch(e => { this.parseError = e.message; })
-      .finally(() => { this.isParsing = false; });
-    },
-    conflicts: [],
-    isCheckingConflicts: false,
-    checkConflicts() {
-      const data = {
-        date: document.querySelector('input[name=date]')?.value,
-        start_time: document.querySelector('input[name=start_time]')?.value,
-        end_time: document.querySelector('input[name=end_time]')?.value,
-        employees: Array.from(document.querySelectorAll('input[name=employees]:checked')).map(el => el.value),
-        venue: document.querySelector('input[name=venue]')?.value,
-        resources: Array.from(document.querySelectorAll('input[name=resources]:checked')).map(el => el.value),
-        exclude_memo_id: window._EXCLUDE_ID || null
-      };
-      if (!data.date || !data.start_time || !data.end_time) {
-        this.conflicts = [];
-        return;
-      }
-      this.isCheckingConflicts = true;
-      fetch(window._CHECK_CONFLICTS_URL, {
-        method: 'POST',
-        headers: { 'X-CSRFToken': this.csrfToken, 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      })
-      .then(res => res.json())
-      .then(data => { this.conflicts = data.conflicts || []; })
-      .catch(err => console.error('Conflict check error:', err))
-      .finally(() => { this.isCheckingConflicts = false; });
-    },
-    recommendations: null,
-    isGettingRecommendations: false,
-    getRecommendations() {
-      this.isGettingRecommendations = true;
-      const data = {
-        title: document.querySelector('input[name=title]')?.value,
-        date: document.querySelector('input[name=date]')?.value,
-        start_time: document.querySelector('input[name=start_time]')?.value,
-        end_time: document.querySelector('input[name=end_time]')?.value,
-        employees: Array.from(document.querySelectorAll('input[name=employees]:checked')).map(el => el.value),
-        venue: document.querySelector('input[name=venue]')?.value,
-        priority: document.querySelector('select[name=priority]')?.value,
-        category: document.querySelector('select[name=category]')?.value,
-      };
-      fetch(window._RECOMMENDATIONS_URL, {
-        method: 'POST',
-        headers: { 'X-CSRFToken': this.csrfToken, 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      })
-      .then(res => res.json())
-      .then(data => { this.recommendations = data; })
-      .catch(err => console.error('Recommendation error:', err))
-      .finally(() => { this.isGettingRecommendations = false; });
-    },
-    dedupAllUsers() {
-      const seen = new Set();
-      this.allUsers = this.allUsers.filter(u => {
-        const normalized = u.name.trim().replace(/\s+/g, ' ');
-        if (seen.has(normalized)) return false;
-        seen.add(normalized);
-        return true;
-      }).map(u => ({ ...u, name: u.name.trim().replace(/\s+/g, ' ') }));
-    },
-    init() {
-      this.dedupAllUsers();
-      this.$watch('textToParse', () => {});
-      const inputs = ['date', 'start_time', 'end_time', 'venue'];
-      inputs.forEach(name => {
-        const el = document.querySelector('[name=' + name + ']');
-        if (el) el.addEventListener('change', () => this.checkConflicts());
-      });
-      document.addEventListener('change', (e) => {
-        if (e.target.name === 'resources') this.checkConflicts();
-      });
-      const seenCheckboxValues = new Set();
-      document.querySelectorAll('input[name=employees]').forEach(cb => {
-        if (seenCheckboxValues.has(cb.value)) {
-          cb.remove();
-        } else {
-          seenCheckboxValues.add(cb.value);
+      },
+
+      updateEmployeesText() {
+        this.employees_text = this.toAll ? 'All Faculty Members & Students' : this.selectedNames.join(', ');
+      },
+
+      get displayDate() {
+        if (!this.date) return '—';
+        if (this.memoCategory === 'external' && this.vehicleStartDate && this.vehicleEndDate && this.vehicleStartDate !== this.vehicleEndDate) {
+          const start = new Date(this.vehicleStartDate);
+          const end = new Date(this.vehicleEndDate);
+          return `${start.toLocaleDateString('en-US', {month:'long', day:'numeric'})} - ${end.toLocaleDateString('en-US', {month:'long', day:'numeric', year:'numeric'})}`;
         }
-      });
-      const checkedBoxes = document.querySelectorAll('input[name=employees]:checked');
-      const checkedNames = [];
-      const seenNames = new Set();
-      checkedBoxes.forEach(cb => {
-        const user = this.allUsers.find(u => String(u.id) === cb.value);
-        const name = user ? user.name : cb.value;
-        const normalized = name.trim().replace(/\s+/g, ' ');
-        if (!seenNames.has(normalized)) {
-          seenNames.add(normalized);
-          checkedNames.push(normalized);
+        return new Date(this.date).toLocaleDateString('en-US', {month:'long', day:'numeric', year:'numeric'});
+      },
+
+      recalcDays() {
+        if (this.vehicleStartDate && this.vehicleEndDate) {
+          const start = new Date(this.vehicleStartDate);
+          const end = new Date(this.vehicleEndDate);
+          const diff = Math.round((end - start) / (1000 * 60 * 60 * 24));
+          this.vehicleDays = diff >= 0 ? diff + 1 : 1;
         }
-      });
-      this.selectedNames = [...new Set(checkedNames)];
-      this.updateEmployeesText();
-    }
-  }));
-});
+      },
+
+      syncEndDate() {
+        if (this.vehicleStartDate && this.vehicleDays >= 1) {
+          const start = new Date(this.vehicleStartDate);
+          start.setDate(start.getDate() + parseInt(this.vehicleDays) - 1);
+          this.vehicleEndDate = start.toISOString().split('T')[0];
+        }
+      },
+
+      fetchAvailableVehicles() {
+        const dateParam = this.date ? `&date=${this.date}` : '';
+        fetch(`{% url 'resources:api_available_vehicles' %}?days=${this.vehicleDays}${dateParam}&exclude_memo_id=${window._EXCLUDE_ID}`)
+          .then(r => r.json())
+          .then(data => { this.availableVehicles = data.vehicles; })
+          .catch(err => console.error(err));
+      },
+
+      handleDrop(e) {
+        e.preventDefault(); this.isDragging = false;
+        const file = e.dataTransfer.files[0];
+        if (file) { this.droppedFile = file; this.parseError = null; }
+      },
+
+      handleFileInput(e) {
+        const file = e.target.files[0];
+        if (file) { this.droppedFile = file; this.parseError = null; }
+      },
+
+      fillForm(data) {
+        this.title = data.title || this.title;
+        this.description = data.description || this.description;
+        this.date = data.date || this.date;
+        this.venue = data.venue || this.venue;
+        if (data.start_time) this.startTime = data.start_time;
+        if (data.end_time) this.endTime = data.end_time;
+        if (data.category) this.memoCategory = data.category;
+        if (data.destination) this.destination = data.destination;
+        
+        this.parsedParticipants = data.participants || '';
+        this.parsedActivityType = data.activity_type || '';
+        this.showExtracted = !!(this.parsedParticipants || this.parsedActivityType);
+        this.parseMode = false;
+        this.syncState();
+      },
+
+      parseAI() {
+        this.isParsing = true; this.parseError = null;
+        const url = this.parseTab === 'text' ? window._PARSE_TEXT_URL : window._PARSE_FILE_URL;
+        const body = this.parseTab === 'text' ? JSON.stringify({ text: this.textToParse }) : new FormData();
+        if (this.parseTab === 'file') body.append('file', this.droppedFile);
+
+        fetch(url, {
+          method: 'POST',
+          headers: this.parseTab === 'text' ? { 'X-CSRFToken': window._CSRF_TOKEN, 'Content-Type': 'application/json' } : { 'X-CSRFToken': window._CSRF_TOKEN },
+          body: body
+        })
+        .then(res => res.json())
+        .then(data => { if (data.error) throw new Error(data.error); this.fillForm(data); })
+        .catch(e => { this.parseError = e.message; })
+        .finally(() => { this.isParsing = false; });
+      },
+
+      conflicts: [],
+      isCheckingConflicts: false,
+      checkConflicts() {
+        if (!this.date || !this.startTime || !this.endTime) return;
+        this.isCheckingConflicts = true;
+        fetch(window._CHECK_CONFLICTS_URL, {
+          method: 'POST',
+          headers: { 'X-CSRFToken': window._CSRF_TOKEN, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            date: this.date, start_time: this.startTime, end_time: this.endTime,
+            employees: this.selectedIds, venue: this.venue, exclude_memo_id: window._EXCLUDE_ID
+          })
+        })
+        .then(res => res.json())
+        .then(data => { this.conflicts = data.conflicts || []; })
+        .catch(err => console.error(err))
+        .finally(() => { this.isCheckingConflicts = false; });
+      },
+
+      recommendations: null,
+      isGettingRecommendations: false,
+      getRecommendations() {
+        this.isGettingRecommendations = true;
+        fetch(window._RECOMMENDATIONS_URL, {
+          method: 'POST',
+          headers: { 'X-CSRFToken': window._CSRF_TOKEN, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: this.title, date: this.date, start_time: this.startTime, end_time: this.endTime,
+            employees: this.selectedIds, venue: this.venue, priority: this.priority, category: this.memoCategory
+          })
+        })
+        .then(res => res.json())
+        .then(data => { this.recommendations = data; })
+        .finally(() => { this.isGettingRecommendations = false; });
+      },
+
+      init() {
+        this.$watch('date', () => { this.checkConflicts(); this.fetchAvailableVehicles(); });
+        this.$watch('startTime', () => this.checkConflicts());
+        this.$watch('endTime', () => this.checkConflicts());
+        this.$watch('venue', () => this.checkConflicts());
+        this.syncState();
+        this.fetchAvailableVehicles();
+      }
+    }));
+  });
 </script>
 
 <form method="post" class="mt-6" x-data="memoForm">
   {% csrf_token %}
 
-  <div class="mb-6">
+  <!-- AI Toggle -->
+  <div class="mb-6 text-right">
     <button type="button" @click="parseMode = !parseMode; parseError = null;"
       class="inline-flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-semibold hover:bg-slate-900 transition">
       <i class="fa-solid fa-wand-magic-sparkles"></i>
@@ -320,507 +304,320 @@ document.addEventListener('alpine:init', () => {
     </button>
   </div>
 
-  <div x-show="parseMode" x-cloak class="mb-6 rounded-2xl bg-slate-50 border border-slate-200 overflow-hidden">
+  <!-- AI Panel -->
+  <div x-show="parseMode" x-cloak class="mb-6 rounded-2xl bg-slate-50 border border-slate-200 overflow-hidden shadow-sm">
     <div class="flex border-b border-slate-200">
-      <button type="button" @click="parseTab = 'text'"
-        :class="parseTab === 'text' ? 'bg-white border-b-2 border-slate-800 text-slate-800 font-semibold' : 'text-slate-500 hover:text-slate-700'"
-        class="flex-1 px-5 py-3 text-sm transition flex items-center justify-center gap-2">
-        <i class="fa-solid fa-align-left text-xs"></i> Paste Text
-      </button>
-      <button type="button" @click="parseTab = 'file'"
-        :class="parseTab === 'file' ? 'bg-white border-b-2 border-slate-800 text-slate-800 font-semibold' : 'text-slate-500 hover:text-slate-700'"
-        class="flex-1 px-5 py-3 text-sm transition flex items-center justify-center gap-2">
-        <i class="fa-solid fa-file-arrow-up text-xs"></i> Upload File
-      </button>
+      <button type="button" @click="parseTab = 'text'" :class="parseTab === 'text' ? 'bg-white border-b-2 border-slate-800 text-slate-800 font-semibold' : 'text-slate-500'" class="flex-1 px-5 py-3 text-sm transition">Paste Text</button>
+      <button type="button" @click="parseTab = 'file'" :class="parseTab === 'file' ? 'bg-white border-b-2 border-slate-800 text-slate-800 font-semibold' : 'text-slate-500'" class="flex-1 px-5 py-3 text-sm transition">Upload File</button>
     </div>
-
     <div class="p-6">
       <div x-show="parseTab === 'text'">
-        <p class="text-xs text-slate-500 mb-3">Paste any memo, email, or travel order text below.</p>
-        <textarea x-model="textToParse" rows="5"
-          class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-slate-800 focus:outline-none mb-3 text-sm bg-white"
-          placeholder="Paste an email or memo here..."></textarea>
+        <textarea x-model="textToParse" rows="5" class="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-slate-800 outline-none" placeholder="Paste memo text here..."></textarea>
       </div>
-
       <div x-show="parseTab === 'file'">
-        <p class="text-xs text-slate-500 mb-3">Supports <strong>PDF, DOCX, TXT</strong> and images (<strong>JPG, PNG,
-            WEBP</strong>). Scanned documents are processed with AI Vision.</p>
         <div @dragover.prevent="isDragging = true" @dragleave.prevent="isDragging = false" @drop="handleDrop($event)"
-          :class="isDragging ? 'border-indigo-400 bg-indigo-50 scale-[1.01]' : 'border-slate-300 bg-white hover:border-indigo-300 hover:bg-slate-50'"
-          class="relative border-2 border-dashed rounded-2xl p-8 mb-3 text-center transition-all duration-200 cursor-pointer"
-          @click="$refs.fileInput.click()">
-          <input type="file" x-ref="fileInput" class="hidden"
-            accept=".pdf,.docx,.doc,.txt,.jpg,.jpeg,.png,.webp,.gif,.bmp,.tiff" @change="handleFileInput($event)">
-          <div x-show="!droppedFile">
-            <i class="fa-solid fa-cloud-arrow-up text-3xl text-slate-300 mb-3"></i>
-            <p class="text-sm font-semibold text-slate-600">Drag &amp; drop your file here</p>
-            <p class="text-xs text-slate-400 mt-1">or click to browse</p>
-            <div class="mt-3 flex flex-wrap justify-center gap-1.5 text-xs">
-              <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">PDF</span>
-              <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">DOCX</span>
-              <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">TXT</span>
-              <span class="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-500">JPG</span>
-              <span class="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-500">PNG</span>
-              <span class="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-500">WEBP</span>
-            </div>
-          </div>
-          <div x-show="droppedFile" class="flex items-center justify-center gap-3">
-            <i class="fa-solid fa-file-circle-check text-2xl text-indigo-500"></i>
-            <div class="text-left">
-              <p class="text-sm font-semibold text-slate-700" x-text="droppedFile ? droppedFile.name : ''"></p>
-              <p class="text-xs text-slate-400"
-                x-text="droppedFile ? (droppedFile.size / 1024).toFixed(1) + ' KB' : ''"></p>
-            </div>
-            <button type="button" @click.stop="droppedFile = null"
-              class="ml-2 text-slate-400 hover:text-red-500 transition">
-              <i class="fa-solid fa-xmark"></i>
-            </button>
-          </div>
+          :class="isDragging ? 'border-indigo-400 bg-indigo-50' : 'border-slate-300 bg-white'"
+          class="border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all" @click="$refs.fileInput.click()">
+          <input type="file" x-ref="fileInput" class="hidden" @change="handleFileInput($event)">
+          <p class="text-sm font-semibold text-slate-600" x-text="droppedFile ? droppedFile.name : 'Drag & drop file or click to browse'"></p>
         </div>
       </div>
-
-      <div x-show="parseError" class="mb-3 px-4 py-2 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700"
-        x-text="parseError"></div>
-
-      <div class="flex items-center gap-3">
-        <button type="button" @click="parseAI"
-          :disabled="isParsing || (parseTab === 'text' && !textToParse.trim()) || (parseTab === 'file' && !droppedFile)"
-          class="px-5 py-2.5 bg-slate-800 text-white font-semibold rounded-lg text-sm hover:bg-slate-900 transition disabled:opacity-50 flex items-center gap-2">
-          <span x-show="isParsing"><i class="fa-solid fa-spinner fa-spin"></i> Parsing...</span>
-          <span x-show="!isParsing"><i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Fill Form</span>
+      <div x-show="parseError" class="mt-3 text-xs text-red-500" x-text="parseError"></div>
+      <div class="mt-4 flex gap-3">
+        <button type="button" @click="parseAI" :disabled="isParsing" class="px-5 py-2.5 bg-slate-800 text-white rounded-lg text-sm font-bold flex items-center gap-2">
+          <i class="fa-solid fa-spinner fa-spin" x-show="isParsing"></i>
+          <span x-text="isParsing ? 'Parsing...' : 'Auto-Fill Form'"></span>
         </button>
-        <button type="button" @click="parseMode = false; parseError = null; droppedFile = null;"
-          class="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900">Cancel</button>
+        <button type="button" @click="parseMode = false" class="px-4 py-2 text-sm font-medium text-slate-500">Cancel</button>
       </div>
     </div>
   </div>
 
-  <div x-show="showExtracted" x-cloak class="mb-6 p-5 rounded-2xl border border-indigo-200 bg-indigo-50">
-    <div class="flex items-center gap-2 mb-3">
-      <i class="fa-solid fa-circle-check text-indigo-500"></i>
-      <span class="text-sm font-bold text-indigo-700">AI Extracted Details</span>
-      <span class="ml-auto text-xs text-indigo-400 cursor-pointer hover:text-indigo-600"
-        @click="showExtracted = false">&#x2715; Dismiss</span>
+  <!-- Extracted Info -->
+  <div x-show="showExtracted" x-cloak class="mb-6 p-5 rounded-2xl border border-indigo-200 bg-indigo-50 flex flex-col gap-3">
+    <div class="flex items-center justify-between">
+      <span class="text-sm font-bold text-indigo-700"><i class="fa-solid fa-circle-check"></i> AI Extracted Details</span>
+      <button type="button" @click="showExtracted = false" class="text-indigo-400 hover:text-indigo-600">&#x2715;</button>
     </div>
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-      <div x-show="parsedActivityType">
-        <div class="text-xs font-semibold text-indigo-500 uppercase tracking-wide mb-1">Activity Type</div>
-        <div class="px-3 py-2 rounded-lg bg-white border border-indigo-100 text-slate-700 font-medium"
-          x-text="parsedActivityType"></div>
-      </div>
-      <div x-show="parsedParticipants">
-        <div class="text-xs font-semibold text-indigo-500 uppercase tracking-wide mb-1">Detected Participants</div>
-        <div class="px-3 py-2 rounded-lg bg-white border border-indigo-100 text-slate-600 text-xs leading-relaxed"
-          x-text="parsedParticipants"></div>
-      </div>
+    <div class="grid grid-cols-2 gap-4 text-xs">
+      <div x-show="parsedActivityType"><strong>Activity:</strong> <span x-text="parsedActivityType"></span></div>
+      <div x-show="parsedParticipants"><strong>Participants:</strong> <span x-text="parsedParticipants"></span></div>
     </div>
-    <p class="text-xs text-indigo-400 mt-3 italic">Participants are shown for reference. Use the "Assigned User" field
-      to assign the memo.</p>
   </div>
 
+  <!-- Conflicts -->
   <template x-if="conflicts.length > 0">
     <div class="mb-6 p-5 rounded-2xl border border-red-200 bg-red-50 animate-pulse-subtle">
-      <div class="flex items-center gap-2 mb-3">
-        <i class="fa-solid fa-triangle-exclamation text-red-500"></i>
-        <span class="text-sm font-bold text-red-700">Conflict Detection Alert</span>
+      <div class="flex items-center gap-2 mb-3 text-red-700 font-bold text-sm">
+        <i class="fa-solid fa-triangle-exclamation"></i> Conflict Detected
       </div>
-      <ul class="space-y-2">
+      <ul class="space-y-1 text-xs text-red-600">
         <template x-for="c in conflicts" :key="c.message">
-          <li class="flex items-start gap-2 text-sm text-red-600">
-            <span class="mt-1.5 w-1.5 h-1.5 rounded-full bg-red-400 shrink-0"></span>
-            <span x-text="c.message"></span>
-          </li>
+          <li x-text="c.message"></li>
         </template>
       </ul>
-      <p class="text-xs text-red-400 mt-3 italic">Proceeding with these conflicts will flag this memo for
-        administrative review.</p>
-
-      <!-- AI Recommendation Engine Preview -->
-      <div class="mt-4 pt-4 border-t border-red-100">
-        <button type="button" @click="getRecommendations()" :disabled="isGettingRecommendations"
-          class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-red-200 text-red-700 rounded-lg text-xs font-bold hover:bg-red-50 transition shadow-sm">
-          <i class="fa-solid fa-wand-magic-sparkles" :class="isGettingRecommendations ? 'fa-spin' : ''"></i>
-          <span x-text="isGettingRecommendations ? 'Optimizing...' : 'Get AI Recommendations'"></span>
-        </button>
-
-        <div x-show="recommendations" x-cloak class="mt-4 p-4 rounded-xl bg-white border border-red-100 shadow-sm">
-          <div class="flex items-center gap-2 mb-3">
-            <i class="fa-solid fa-sparkles text-uniGreen text-xs"></i>
-            <span class="text-xs font-black text-slate-800 uppercase tracking-wider">Suggested Alternatives</span>
-          </div>
-          <p class="text-xs text-slate-600 mb-4 italic" x-text="recommendations ? recommendations.summary : ''"></p>
-          <div class="grid grid-cols-1 gap-2">
-            <template x-for="slot in (recommendations ? recommendations.slots : [])" :key="slot.date + slot.start_time">
-              <div class="flex items-center justify-between p-3 rounded-lg bg-slate-50 border border-slate-100">
-                <div class="text-xs font-semibold text-slate-700">
-                  <span
-                    x-text="new Date(slot.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })"></span>
-                  •
-                  <span x-text="slot.start_time"></span> - <span x-text="slot.end_time"></span>
-                </div>
-                <div class="px-2 py-0.5 rounded bg-uniGreen/10 text-uniGreen text-[10px] font-bold"
-                  x-text="'Score: ' + slot.score"></div>
-              </div>
-            </template>
-          </div>
-        </div>
+      <button type="button" @click="getRecommendations()" class="mt-4 text-[10px] font-bold text-red-700 border border-red-200 px-3 py-1.5 rounded-lg bg-white hover:bg-red-50 transition">
+        <i class="fa-solid fa-wand-magic-sparkles" :class="isGettingRecommendations ? 'fa-spin' : ''"></i> Optimized Suggestions
+      </button>
+      <div x-show="recommendations" x-cloak class="mt-3 p-3 bg-white rounded-xl border border-red-100 shadow-sm">
+        <p class="text-[10px] text-slate-600 italic" x-text="recommendations ? recommendations.summary : ''"></p>
       </div>
     </div>
   </template>
 
-  <div class="flex flex-row gap-10 items-start relative">
-    <!-- Form Side -->
-    <div class="space-y-6" style="width: 50%; flex-shrink: 0;">
+  <div class="flex flex-col lg:flex-row gap-10 items-start">
+    <!-- Form Content -->
+    <div class="w-full lg:w-1/2 space-y-6">
       <div class="rounded-2xl bg-white border border-slate-100 shadow-soft p-6">
-        <h2 class="text-lg font-bold mb-6 text-slate-800 flex items-center gap-2">
-          <i class="fa-solid fa-pen-to-square text-uniGold"></i>
-          Memo Details
-        </h2>        <div class="flex flex-col gap-5">
-          <!-- Category -->
-          <div class="w-full">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="h-10 w-10 rounded-xl bg-uniGold/20 flex items-center justify-center text-uniGreen shadow-inner">
+            <i class="fa-solid fa-file-signature text-lg"></i>
+          </div>
+          <h2 class="text-xl font-bold text-slate-800">Memo Details</h2>
+        </div>
+
+        {% if form.errors %}
+        <div class="mb-6 p-4 rounded-xl bg-red-50 border border-red-100 text-xs text-red-600">
+          <strong>Please fix:</strong>
+          <ul class="list-disc list-inside mt-1">
+            {% for field, errors in form.errors.items %}<li>{{ field|title }}: {{ errors|striptags }}</li>{% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+
+        <div class="space-y-5">
+          <!-- Category Selector -->
+          <div>
             <label class="text-sm font-semibold text-slate-700 block mb-2">Category</label>
-            <div class="flex flex-col sm:flex-row gap-3">
-              <label class="flex-1 cursor-pointer">
+            <div class="flex gap-3">
+              <label class="flex-1 cursor-pointer group">
                 <input type="radio" name="category" value="internal" x-model="memoCategory" class="sr-only peer">
-                <div class="peer-checked:bg-uniGreen peer-checked:text-white peer-checked:border-uniGreen flex items-center justify-center gap-2 p-3 rounded-2xl border-2 border-slate-200 bg-white text-slate-600 font-bold text-sm transition hover:border-uniGreen/50">
+                <div class="peer-checked:bg-uniGreen peer-checked:text-white flex items-center justify-center gap-2 p-3 rounded-xl border-2 border-slate-100 font-bold text-sm transition group-hover:border-uniGreen/50">
                   <i class="fa-solid fa-building"></i> Internal
                 </div>
               </label>
-              <label class="flex-1 cursor-pointer">
+              <label class="flex-1 cursor-pointer group">
                 <input type="radio" name="category" value="external" x-model="memoCategory" class="sr-only peer">
-                <div class="peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500 flex items-center justify-center gap-2 p-3 rounded-2xl border-2 border-slate-200 bg-white text-slate-600 font-bold text-sm transition hover:border-orange-400/50">
+                <div class="peer-checked:bg-orange-500 peer-checked:text-white flex items-center justify-center gap-2 p-3 rounded-xl border-2 border-slate-100 font-bold text-sm transition group-hover:border-orange-500/50">
                   <i class="fa-solid fa-arrow-up-right-from-square"></i> External
                 </div>
               </label>
             </div>
           </div>
 
-          <div class="w-full">
-            <label class="text-sm font-semibold text-slate-700">Reference Number</label>
-            <input type="text" name="reference_number" x-model="reference_number"
-              class="mt-2 w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-uniGold/50 focus:border-uniGold transition">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="text-sm font-semibold text-slate-700">Reference Number</label>
+              <input type="text" name="reference_number" x-model="reference_number" class="mt-2 w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-uniGold/50 outline-none transition">
+            </div>
+            <div>
+              <label class="text-sm font-semibold text-slate-700">Priority</label>
+              <select name="priority" x-model="priority" class="mt-2 w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-uniGold/50 outline-none transition">
+                <option value="low">Low</option>
+                <option value="normal" selected>Normal</option>
+                <option value="high">High</option>
+                <option value="urgent">Urgent</option>
+              </select>
+            </div>
           </div>
 
-          <div class="w-full">
+          <div>
             <label class="text-sm font-semibold text-slate-700">Subject / Title</label>
-            <input type="text" name="title" x-model="title"
-              class="mt-2 w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-uniGold/50 focus:border-uniGold transition">
+            <input type="text" name="title" x-model="title" class="mt-2 w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-uniGold/50 outline-none transition" placeholder="Enter memo title...">
           </div>
 
-          <div class="w-full">
-            <label class="text-sm font-semibold text-slate-700">Description / Body</label>
-            <textarea name="description" x-model="description" rows="5"
-              class="mt-2 w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-uniGold/50 focus:border-uniGold transition"></textarea>
+          <div>
+            <label class="text-sm font-semibold text-slate-700">Description</label>
+            <textarea name="description" x-model="description" rows="4" class="mt-2 w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-uniGold/50 outline-none transition" placeholder="Memo body content..."></textarea>
           </div>
 
-          <div class="w-full">
+          <!-- Recipient Selector -->
+          <div>
             <div class="flex items-center justify-between mb-2">
-              <label class="text-sm font-semibold text-slate-700">Employees (TO)</label>
-              <label class="flex items-center gap-2 cursor-pointer group">
-                <input type="checkbox" name="to_all" x-model="toAll" @change="updateEmployeesText(); checkConflicts();"
-                  class="h-4 w-4 rounded border-slate-300 text-uniGreen focus:ring-uniGold/50">
-<span class="text-xs font-bold text-slate-600 group-hover:text-uniGreen transition">All Faculty Members
-                   and Students</span>
+              <label class="text-sm font-semibold text-slate-700">Recipients</label>
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" name="to_all" x-model="toAll" @change="updateEmployeesText()" class="rounded border-slate-300 text-uniGreen focus:ring-uniGold">
+                <span class="text-xs font-bold text-slate-600">Select All</span>
               </label>
             </div>
-
-            <!-- Search and Add -->
-            <div class="relative" x-show="!toAll">
-              <div class="flex items-center gap-2">
-                <div class="relative flex-1">
-                  <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                  <input type="text" x-model="search" placeholder="Search employee name..."
-                    class="w-full pl-11 pr-4 py-3 rounded-2xl border border-slate-200 bg-white focus:ring-2 focus:ring-uniGold/50 focus:border-uniGold transition">
+            <div x-show="!toAll" class="space-y-3">
+              <div class="relative">
+                <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                <input type="text" x-model="search" placeholder="Search employee..." class="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-uniGold/50 outline-none">
+                <div x-show="filteredResults.length > 0" class="absolute z-10 left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-lg max-h-48 overflow-y-auto p-1">
+                  <template x-for="user in filteredResults" :key="user.id">
+                    <button type="button" @click="addEmployee(user.name, user.id)" class="w-full text-left px-4 py-2 hover:bg-slate-50 rounded-lg text-sm font-medium transition" x-text="user.name"></button>
+                  </template>
                 </div>
-                <button type="button" @click="if(filteredResults.length > 0) addEmployee(filteredResults[0].name, filteredResults[0].id)"
-                  class="h-[50px] w-[50px] flex items-center justify-center rounded-2xl bg-uniGreen text-white shadow-soft hover:opacity-90 transition">
-                  <i class="fa-solid fa-plus text-lg"></i>
-                </button>
               </div>
-
-              <!-- Dropdown Results -->
-              <div x-show="filteredResults.length > 0" x-cloak
-                class="absolute z-50 left-0 right-0 mt-2 max-h-60 overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-xl p-2 space-y-1">
-                <template x-for="user in filteredResults" :key="user.name">
-                  <button type="button" @click="addEmployee(user.name, user.id)"
-                    class="w-full text-left px-4 py-3 rounded-xl hover:bg-slate-50 transition flex items-center justify-between group">
-                    <span class="text-sm font-semibold text-slate-700" x-text="user.name"></span>
-                    <i class="fa-solid fa-plus text-xs text-slate-300 group-hover:text-uniGreen transition"></i>
-                  </button>
+              <div class="flex flex-wrap gap-2">
+                <template x-for="name in uniqueSelectedEmployees" :key="name">
+                  <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-xs font-bold text-slate-700">
+                    <span x-text="name"></span>
+                    <button type="button" @click="removeEmployee(name)" class="text-slate-400 hover:text-red-500 transition">&#x2715;</button>
+                  </span>
                 </template>
               </div>
             </div>
+            <div class="hidden">{% for cb in form.employees %}{{ cb.tag }}{% endfor %}</div>
+          </div>
 
-            <!-- Selected List -->
-            <div class="mt-3 flex flex-wrap gap-2" x-show="!toAll">
-              <template x-for="name in uniqueSelectedEmployees" :key="name">
-                <div
-                  class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 border border-slate-200 group">
-                  <span class="text-xs font-bold text-slate-700" x-text="name"></span>
-                  <button type="button" @click="removeEmployee(name)"
-                    class="text-slate-400 hover:text-red-500 transition">
-                    <i class="fa-solid fa-circle-xmark"></i>
-                  </button>
-                </div>
-              </template>
-              <div x-show="selectedNames.length === 0" class="text-xs text-slate-400 italic py-2">No individual employees
-                selected.</div>
+          <!-- Internal Specifics -->
+          <div x-show="memoCategory === 'internal'" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label class="text-sm font-semibold text-slate-700">Date</label>
+              <input type="date" name="date" x-model="date" class="mt-2 w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-uniGold/50 transition">
+            </div>
+            <div>
+              <label class="text-sm font-semibold text-slate-700">Start Time</label>
+              <input type="time" name="start_time" x-model="startTime" class="mt-2 w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-uniGold/50 transition">
+            </div>
+            <div>
+              <label class="text-sm font-semibold text-slate-700">End Time</label>
+              <input type="time" name="end_time" x-model="endTime" class="mt-2 w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-uniGold/50 transition">
+            </div>
+          </div>
+
+          <!-- External Specifics -->
+          <div x-show="memoCategory === 'external'" class="space-y-4 p-5 rounded-2xl bg-orange-50/50 border border-orange-100">
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="text-xs font-bold text-orange-700 uppercase">Venue</label>
+                <input type="text" name="venue" x-model="venue" class="mt-2 w-full px-4 py-3 rounded-xl border border-orange-200 outline-none focus:ring-2 focus:ring-orange-500 transition">
+              </div>
+              <div>
+                <label class="text-xs font-bold text-orange-700 uppercase">Destination</label>
+                <input type="text" name="destination" x-model="destination" class="mt-2 w-full px-4 py-3 rounded-xl border border-orange-200 outline-none focus:ring-2 focus:ring-orange-500 transition">
+              </div>
+            </div>
+            
+            <div class="flex gap-4">
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" x-model="needVehicle" class="rounded border-orange-300 text-orange-500">
+                <span class="text-xs font-bold text-slate-700">Book Vehicle</span>
+              </label>
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" x-model="needResources" class="rounded border-orange-300 text-orange-500">
+                <span class="text-xs font-bold text-slate-700">Request Equipment</span>
+              </label>
             </div>
 
-            <!-- Hidden Actual Checkboxes -->
-            <div class="hidden">
-              {% for checkbox in form.employees %}
-              {{ checkbox.tag }}
+            <!-- Vehicle Fields -->
+            <div x-show="needVehicle" x-cloak class="pt-4 border-t border-orange-200 space-y-4">
+              <div class="flex items-center justify-between">
+                <label class="text-xs font-bold text-orange-700">Select Fleet</label>
+                <button type="button" @click="fetchAvailableVehicles()" class="text-[10px] font-bold text-uniGreen hover:underline">Refresh List</button>
+              </div>
+              <select name="vehicle" x-model="selectedVehicle" class="w-full px-4 py-3 rounded-xl border border-orange-200 bg-white">
+                <option value="">-- Select Available Vehicle --</option>
+                <template x-for="v in availableVehicles" :key="v.id">
+                  <option :value="v.id" x-text="v.name"></option>
+                </template>
+              </select>
+              <div class="grid grid-cols-3 gap-3">
+                <div>
+                  <label class="text-[10px] font-bold text-slate-500 uppercase">Start Date</label>
+                  <input type="date" name="vehicle_start_date" x-model="vehicleStartDate" @change="recalcDays(); date = vehicleStartDate;" class="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs">
+                </div>
+                <div>
+                  <label class="text-[10px] font-bold text-slate-500 uppercase">End Date</label>
+                  <input type="date" name="vehicle_end_date" x-model="vehicleEndDate" @change="recalcDays()" class="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs">
+                </div>
+                <div>
+                  <label class="text-[10px] font-bold text-slate-500 uppercase">Days</label>
+                  <input type="number" name="vehicle_days" x-model="vehicleDays" @change="syncEndDate()" class="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs font-bold">
+                </div>
+              </div>
+            </div>
+
+            <!-- Resources -->
+            <div x-show="needResources" x-cloak class="pt-4 border-t border-orange-200 grid grid-cols-2 gap-2">
+              {% for cb in form.resources %}
+              <label class="flex items-center gap-2 p-2 rounded-lg hover:bg-white border border-transparent hover:border-orange-200 transition cursor-pointer">
+                {{ cb.tag }} <span class="text-xs text-slate-600">{{ cb.choice_label }}</span>
+              </label>
               {% endfor %}
             </div>
           </div>
 
-          <!-- Priority (always visible) -->
-          <div class="w-full">
-            <label class="text-sm font-semibold text-slate-700">Priority</label>
-            {{ form.priority }}
-          </div>
-
-          <!-- Internal Fields (Date, Time) -->
-          <div class="w-full" id="internal-fields">
-            <div class="flex flex-col sm:flex-row gap-4">
-              <div class="flex-1">
-                <label class="text-sm font-semibold text-slate-700">Date</label>
-                <input type="date" name="date" x-model="date"
-                  class="mt-2 w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-uniGold/50 focus:border-uniGold transition">
-              </div>
+          <!-- Options -->
+          <div class="pt-6 border-t border-slate-100 flex flex-wrap gap-6">
+            <div class="flex-1">
+              <label class="text-sm font-semibold text-slate-700 block mb-2">Delegation</label>
+              {{ form.delegated_to }}
             </div>
-
-            <div class="flex flex-col sm:flex-row gap-4 mt-4">
-              <div class="flex-1">
-                <label class="text-sm font-semibold text-slate-700">Start Time</label>
-                {{ form.start_time }}
-              </div>
-              <div class="flex-1">
-                <label class="text-sm font-semibold text-slate-700">End Time</label>
-                {{ form.end_time }}
-              </div>
-            </div>
-          </div>
-
-          <!-- External Fields -->
-          <div class="w-full hidden" id="external-fields">
-            <div class="rounded-2xl border border-orange-200 bg-white p-6 flex flex-col gap-6 shadow-sm">
-              <div class="flex items-center gap-2 text-orange-700 font-bold text-sm">
-                <i class="fa-solid fa-location-dot"></i> External Activity Details
-              </div>
-              <div class="flex flex-col md:flex-row gap-4">
-                <div class="flex-1">
-                  <label class="text-sm font-semibold text-slate-700">Venue</label>
-                  <input type="text" name="venue" x-model="venue" class="mt-2 w-full px-4 py-3 rounded-2xl border border-orange-200 bg-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400 transition" placeholder="e.g. City Hall Conference Room">
+            <div class="flex items-end pb-1">
+              <label class="flex items-center gap-3 cursor-pointer p-3 rounded-xl border border-slate-100 hover:bg-slate-50 transition-all w-full">
+                {{ form.required }}
+                <div class="flex flex-col">
+                  <span class="text-sm font-bold text-slate-700">Require Acknowledgment</span>
+                  <span class="text-[10px] text-slate-400">Recipient must sign digitally</span>
                 </div>
-                <div class="flex-1">
-                  <label class="text-sm font-semibold text-slate-700">Destination</label>
-                  <input type="text" name="destination" x-model="destination" class="mt-2 w-full px-4 py-3 rounded-2xl border border-orange-200 bg-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400 transition" placeholder="e.g. Surigao City">
-                </div>
-              </div>
-
-              <!-- Interactive Options -->
-              <div class="flex flex-wrap gap-3 p-4 rounded-xl bg-orange-50/50 border border-orange-100">
-                <label class="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" id="need-vehicle-check" class="h-4 w-4 rounded border-orange-300 text-orange-500 focus:ring-orange-400">
-                  <span class="text-sm font-semibold text-slate-700"><i class="fa-solid fa-van-shuttle text-orange-500 mr-1"></i> Need Vehicle?</span>
-                </label>
-                <label class="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" id="need-resources-check" class="h-4 w-4 rounded border-orange-300 text-orange-500 focus:ring-orange-400">
-                  <span class="text-sm font-semibold text-slate-700"><i class="fa-solid fa-briefcase text-orange-500 mr-1"></i> Book Resources?</span>
-                </label>
-              </div>
-
-              <!-- Vehicle Section -->
-              <div id="vehicle-section" class="hidden">
-                <div class="border-t border-orange-200 pt-4 flex flex-col gap-4">
-                  <div class="flex items-center gap-2 text-orange-700 font-semibold text-sm">
-                    <i class="fa-solid fa-van-shuttle"></i> Vehicle Assignment
-                  </div>
-                  <div>
-                  <label class="text-sm font-semibold text-slate-700">Select Vehicle</label>
-                  <select name="vehicle" x-model="selectedVehicle" class="mt-2 w-full h-[52px] max-h-[52px] px-4 py-3 rounded-2xl border border-orange-200 bg-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400 transition">
-                    <option value="">-- No Vehicle Needed --</option>
-                    {% for vehicle in form.vehicle.field.queryset %}
-                    <option value="{{ vehicle.pk }}" {% if form.vehicle.value == vehicle.pk %}selected{% endif %}>
-                      {{ vehicle.name }} ({{ vehicle.plate_number }}) &mdash; Capacity: {{ vehicle.capacity }}
-                    </option>
-                    {% endfor %}
-                  </select>
-                </div>
-                <!-- Date range for vehicle -->
-                <div x-show="selectedVehicle" x-cloak
-                  x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
-                  class="flex flex-col md:flex-row flex-wrap gap-4 p-4 rounded-xl bg-white border border-orange-100">
-                  <div class="w-full md:flex-1">
-                    <label class="text-xs font-bold text-slate-600 uppercase tracking-wide">Start Date</label>
-                    <input type="date" name="vehicle_start_date" x-model="vehicleStartDate" @change="recalcDays()" class="mt-1.5 w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400 transition">
-                  </div>
-                  <div class="w-full md:flex-1">
-                    <label class="text-xs font-bold text-slate-600 uppercase tracking-wide">End Date</label>
-                    <input type="date" name="vehicle_end_date" x-model="vehicleEndDate" @change="recalcDays()" class="mt-1.5 w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400 transition">
-                  </div>
-                  <div class="w-full md:flex-1">
-                    <label class="text-xs font-bold text-slate-600 uppercase tracking-wide">No. of Days</label>
-                    <div class="mt-1.5 flex items-center gap-2">
-                      <button type="button" @click="vehicleDays = Math.max(1, vehicleDays - 1); syncEndDate()" class="w-9 h-9 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-orange-100 hover:border-orange-300 transition font-bold"><i class="fa-solid fa-minus text-xs"></i></button>
-                      <input type="number" name="vehicle_days" x-model="vehicleDays" min="1" @change="syncEndDate()" class="flex-1 text-center px-2 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-bold focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400 transition">
-                      <button type="button" @click="vehicleDays = vehicleDays + 1; syncEndDate()" class="w-9 h-9 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-orange-100 hover:border-orange-300 transition font-bold"><i class="fa-solid fa-plus text-xs"></i></button>
-                    </div>
-                  </div>
-                  <div class="w-full">
-                    <div class="px-3 py-2 rounded-lg bg-orange-50 border border-orange-100 text-xs text-orange-700 flex items-center gap-2" x-show="vehicleDays > 0">
-                      <i class="fa-solid fa-circle-info"></i>
-                      <span x-text="'Vehicle reserved for ' + vehicleDays + ' day(s): ' + (vehicleStartDate || '—') + ' to ' + (vehicleEndDate || '—')"></span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <!-- Resources Section -->
-              <div id="resources-section" class="hidden">
-                <div class="border-t border-orange-200 pt-4 flex flex-col gap-4">
-                  <div class="flex items-center gap-2 text-orange-700 font-semibold text-sm">
-                    <i class="fa-solid fa-briefcase"></i> Book Resources
-                  </div>
-                  <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 p-4 border border-orange-200 rounded-2xl bg-orange-50/30">
-                    {% for checkbox in form.resources %}
-                    <label class="flex items-center gap-3 cursor-pointer hover:bg-white p-2 rounded-xl transition-all border border-transparent hover:border-orange-200">
-                      {{ checkbox.tag }}
-                      <span class="text-sm text-slate-700">{{ checkbox.choice_label }}</span>
-                    </label>
-                    {% endfor %}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Section Divider for Delegation -->
-          <div class="pt-6 mt-6 border-t border-slate-100">
-            <h2 class="text-lg font-bold mb-6 text-slate-800 flex items-center gap-2">
-              <i class="fa-solid fa-user-check text-uniGold"></i>
-              Delegation & Options
-            </h2>
-            
-            <div class="space-y-6">
-              <!-- Delegation & Options -->
-              <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div>
-                  <label class="text-sm font-semibold text-slate-700 block mb-2">Delegate To <span class="text-slate-400 font-normal">(optional)</span></label>
-                  {{ form.delegated_to }}
-                </div>
-                <div class="flex items-end pb-1">
-                  <label class="flex items-center gap-3 cursor-pointer p-3 rounded-2xl border border-slate-100 hover:bg-slate-50 transition-all w-full">
-                    {{ form.required }}
-                    <div class="flex flex-col">
-                      <span class="text-sm font-bold text-slate-700">Mark as Required</span>
-                      <span class="text-[10px] text-slate-400">Recipient must acknowledge this memo</span>
-                    </div>
-                  </label>
-                </div>
-              </div>
+              </label>
             </div>
           </div>
         </div>
       </div>
 
-
-
-      <!-- Action Buttons -->
-      <div class="flex flex-col sm:flex-row items-center gap-4 pt-4">
-        <button type="submit"
-          class="w-full sm:flex-1 inline-flex items-center justify-center gap-3 px-8 py-5 rounded-2xl bg-uniGreen text-white shadow-xl shadow-uniGreen/10 hover:shadow-uniGreen/20 hover:scale-[1.01] active:scale-[0.98] transition-all duration-200">
-          <i class="fa-solid fa-floppy-disk text-xl"></i>
-          <span class="font-bold text-xl">Save Memorandum</span>
-        </button>
-        <div
-          class="w-full sm:w-auto px-10 py-5 rounded-2xl bg-white border-2 border-slate-100 text-slate-500 font-bold hover:bg-slate-50 hover:text-slate-700 hover:border-slate-200 transition-all text-center">
-          Cancel
-        </div>
+      <div class="flex flex-col sm:flex-row gap-4">
+        <button type="submit" class="flex-1 bg-uniGreen text-white py-5 rounded-2xl font-bold text-xl shadow-xl hover:scale-[1.01] transition-all">Save Memorandum</button>
+        <a href="{% url 'memos:memo_list' %}" class="px-10 py-5 rounded-2xl bg-white border-2 border-slate-100 text-slate-500 font-bold hover:bg-slate-50 text-center">Cancel</a>
       </div>
     </div>
 
-    <!-- Preview Side -->
-    <div style="width: 0; flex-shrink: 0;">
-      <div style="position: fixed; top: 4rem; right: 0; width: 40%; max-width: 550px; height: calc(100vh - 4rem); overflow-y: auto; z-index: 50; padding: 1.5rem; background: rgba(255,255,255,0.95);">
-        <div class="flex items-center justify-between mb-4">
+    <!-- Preview -->
+    <div class="w-full lg:w-1/2 lg:block hidden relative">
+      <div class="fixed-preview">
+        <div class="flex items-center justify-between mb-4 px-2">
           <h2 class="text-lg font-bold text-slate-800">Formal Preview</h2>
-          <button type="button" @click="window.print()"
-            class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-bold text-slate-600 hover:border-uniGreen hover:text-uniGreen transition flex items-center gap-2">
-            <i class="fa-solid fa-print"></i>
-            <span>Print PDF</span>
+          <button type="button" @click="window.print()" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-bold text-slate-600 hover:text-uniGreen transition flex items-center gap-2">
+            <i class="fa-solid fa-print"></i> Print PDF
           </button>
         </div>
 
-        <div class="bg-slate-100 p-4 rounded-3xl shadow-inner">
-          <!-- The "Paper" -->
-          <div id="memo-paper"
-            class="bg-white shadow-2xl w-full mx-auto min-h-[1100px] p-[0.75in] text-[#1a1a1a] font-serif leading-tight print:shadow-none print:p-0 origin-top">
-
-            <!-- Header -->
+        <div class="bg-slate-100 p-4 rounded-3xl shadow-inner scale-[0.95] origin-top">
+          <div id="memo-paper" class="bg-white shadow-2xl w-full p-[0.75in] text-[#1a1a1a] leading-tight">
+            <!-- Paper Header -->
             <div class="flex items-center justify-between border-b-2 border-uniGreen pb-3 mb-4">
-              <img src="/static/img/logo.png" class="h-14 w-auto object-contain" alt="SNSU Logo">
+              <img src="/static/img/logo.png" class="h-12 w-auto" alt="Logo">
               <div class="text-center flex-1 mx-2">
-                <div class="text-[8px] uppercase tracking-widest text-slate-500">Republic of the Philippines</div>
-                <div class="text-[14px] font-bold text-slate-900 leading-tight">SURIGAO DEL NORTE STATE UNIVERSITY</div>
-                <div class="text-[8px] text-slate-600">Narciso Street, Surigao City 8400, Philippines</div>
+                <div class="text-[7px] uppercase tracking-widest text-slate-500">Republic of the Philippines</div>
+                <div class="text-[12px] font-bold text-slate-900 leading-tight">SURIGAO DEL NORTE STATE UNIVERSITY</div>
+                <div class="text-[7px] text-slate-600">Surigao City 8400, Philippines</div>
               </div>
-              <div
-                class="w-14 h-14 bg-slate-50 border border-slate-100 flex items-center justify-center grayscale opacity-50">
-                <i class="fa-solid fa-university text-slate-200 text-xl"></i>
-              </div>
+              <div class="w-12 h-12 bg-slate-50 border border-slate-100 opacity-20"></div>
             </div>
 
-            <!-- Office Title -->
             <div class="text-center mb-6">
-              <h3 class="text-xs font-bold uppercase tracking-widest border-b border-black inline-block pb-0.5">
-                FACILITIES MANAGEMENT OFFICE</h3>
+              <h3 class="text-[10px] font-bold uppercase tracking-widest border-b border-black inline-block pb-0.5">FACILITIES MANAGEMENT OFFICE</h3>
             </div>
 
-            <!-- Info Grid -->
-            <div class="grid grid-cols-[100px_1fr] gap-y-0.5 text-[10px] mb-6">
-              <div class="font-bold">OFFICE MEMO</div>
-              <div>:</div>
-              <div class="font-bold uppercase">REFERENCE NO.</div>
-              <div class="flex gap-1" :class="reference_number ? 'text-black' : 'text-slate-300'">
-                : <span x-text="reference_number || 'SNSU-FMO-03-01-S.2026'"></span>
-              </div>
+            <div class="grid grid-cols-[80px_1fr] gap-y-0.5 text-[9px] mb-6">
+              <div class="font-bold">REF NO.</div>
+              <div class="flex gap-1">: <span x-text="reference_number || 'SNSU-FMO-2026-001'"></span></div>
               <div class="font-bold uppercase">DATE</div>
-              <div class="flex gap-1" :class="date ? 'text-black' : 'text-slate-300'">
-                : <span
-                  x-text="date ? new Date(date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'March 4, 2026'"></span>
-              </div>
+              <div class="flex gap-1">: <span x-text="displayDate"></span></div>
               <div class="font-bold uppercase">TO</div>
-              <div class="flex gap-1" :class="employees_text ? 'text-black' : 'text-slate-300'">
-                : <span class="font-bold" x-text="employees_text || 'All Faculty Members & Students'"></span>
-              </div>
+              <div class="flex gap-1">: <span class="font-bold" x-text="employees_text || 'All Faculty Members & Students'"></span></div>
               <div class="font-bold uppercase">FROM</div>
               <div class="flex gap-1">: <span class="font-bold">Facilities Management Office</span></div>
               <div class="font-bold uppercase">SUBJECT</div>
-              <div class="flex gap-1" :class="title ? 'text-black font-bold' : 'text-slate-300'">
-                : <span class="font-bold uppercase" x-text="title || 'PARTICIPATION IN SCHOOL SURVEY'"></span>
-              </div>
+              <div class="flex gap-1">: <span class="font-bold uppercase" x-text="title || 'MEMORANDUM TITLE'"></span></div>
             </div>
 
             <div class="border-t border-black mb-6"></div>
 
-            <!-- Body -->
-            <div class="text-[10px] space-y-3 text-justify leading-relaxed"
-              :class="description ? 'text-black' : 'text-slate-300'">
-              <div
-                x-html="(description || 'In line with the University\'s commitment to continuous quality improvement, effective facilities management...').replace(/\n/g, '<br>')">
-              </div>
+            <div class="text-[10px] space-y-3 text-justify leading-relaxed">
+              <div x-html="(description || 'Memo body content will appear here...').replace(/\n/g, '<br>')"></div>
             </div>
 
-            <!-- Signatures -->
             <div class="mt-12 grid grid-cols-2 gap-8">
-              <div class="mt-4">
+              <div>
                 <div class="border-b border-black w-32 mb-1"></div>
                 <div class="font-bold text-[10px] uppercase">AR. MARLON C. SOLLOSO</div>
-                <div class="text-[8px] text-slate-600">Head, Facilities Management Office</div>
+                <div class="text-[8px] text-slate-600">Head, FMO</div>
               </div>
-              <div class="mt-4 flex flex-col items-end">
+              <div class="flex flex-col items-end">
                 <div class="text-left">
                   <div class="text-[8px] italic mb-3">Noted by:</div>
                   <div class="font-bold text-[10px] uppercase">MAURICIO S. ADLAON, PhD</div>
@@ -828,115 +625,11 @@ document.addEventListener('alpine:init', () => {
                 </div>
               </div>
             </div>
-
-            <!-- Footer -->
-            <div
-              class="mt-16 pt-2 border-t border-slate-100 flex justify-between text-[6px] text-slate-400 uppercase tracking-widest">
-              <div>Tel. Nos: (086) 827-3741 / 3742</div>
-              <div>Email: info@snsu.edu.ph | URL: snsu.edu.ph</div>
-            </div>
           </div>
         </div>
       </div>
     </div>
   </div>
 </form>
-
-<style>
-  @media print {
-    body * {
-      visibility: hidden;
-    }
-
-    #memo-paper,
-    #memo-paper * {
-      visibility: visible;
-    }
-
-    #memo-paper {
-      position: absolute;
-      left: 0;
-      top: 0;
-      margin: 0;
-      padding: 0.5in;
-      width: 100%;
-      box-shadow: none;
-    }
-  }
-
-  #memo-paper {
-    font-family: 'Times New Roman', Times, serif;
-  }
-
-  /* Ensure fixed positioning works for preview */
-  @media (min-width: 1024px) {
-    div[style*="position: fixed"] {
-      position: fixed !important;
-      top: 0 !important;
-      right: 0 !important;
-      z-index: 9999 !important;
-    }
-  }
-</style>
-
-<script>
-// Force cache bust - timestamp: {% now "YmdHis" %}
-console.log('JS LOADED - v3');
-
-document.addEventListener('DOMContentLoaded', function() {
-  console.log('DOM READY');
-  const categoryRadios = document.querySelectorAll('input[name="category"]');
-  const externalFields = document.getElementById('external-fields');
-  const internalFields = document.getElementById('internal-fields');
-  const needVehicleCheck = document.getElementById('need-vehicle-check');
-  const needResourcesCheck = document.getElementById('need-resources-check');
-  const vehicleSection = document.getElementById('vehicle-section');
-  const resourcesSection = document.getElementById('resources-section');
-
-  console.log('Found elements:', {
-    radios: categoryRadios.length,
-    external: !!externalFields,
-    internal: !!internalFields,
-    vehicleCheck: !!needVehicleCheck,
-    resourcesCheck: !!needResourcesCheck,
-    vehicleSec: !!vehicleSection,
-    resourcesSec: !!resourcesSection
-  });
-
-  function updateCategory() {
-    const selected = document.querySelector('input[name="category"]:checked')?.value;
-    console.log('Category changed to:', selected);
-    if (selected === 'external') {
-      externalFields?.classList.remove('hidden');
-      internalFields?.classList.add('hidden');
-    } else {
-      externalFields?.classList.add('hidden');
-      internalFields?.classList.remove('hidden');
-    }
-  }
-
-  function updateOptions() {
-    console.log('Options updated - Vehicle:', needVehicleCheck?.checked, 'Resources:', needResourcesCheck?.checked);
-    if (needVehicleCheck?.checked) {
-      vehicleSection?.classList.remove('hidden');
-    } else {
-      vehicleSection?.classList.add('hidden');
-    }
-    if (needResourcesCheck?.checked) {
-      resourcesSection?.classList.remove('hidden');
-    } else {
-      resourcesSection?.classList.add('hidden');
-    }
-  }
-
-  categoryRadios.forEach(r => r.addEventListener('change', updateCategory));
-  needVehicleCheck?.addEventListener('change', updateOptions);
-  needResourcesCheck?.addEventListener('change', updateOptions);
-
-  // Initialize
-  updateCategory();
-  updateOptions();
-});
-</script>
 
 {% endblock %}

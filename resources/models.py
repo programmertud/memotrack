@@ -35,9 +35,24 @@ class Vehicle(models.Model):
     plate_number = models.CharField(max_length=50, unique=True)
     capacity = models.PositiveIntegerField(default=4)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.AVAILABLE)
+    
+    driver_name = models.CharField(max_length=100, blank=True)
+    driver_image = models.ImageField(upload_to="drivers/", null=True, blank=True)
 
     def __str__(self) -> str:
         return f"{self.name} ({self.plate_number})"
+
+    @property
+    def is_booked_today(self):
+        from django.utils import timezone
+        from django.db.models import Q
+        today = timezone.now().date()
+        # A vehicle is booked if there's a booking spanning today, 
+        # or if it's linked to an approved memo for today.
+        return self.bookings.filter(
+            Q(start_date__lte=today, end_date__gte=today) |
+            Q(start_date__isnull=True, memo__date=today)
+        ).exists()
 
 
 class VehicleBooking(models.Model):

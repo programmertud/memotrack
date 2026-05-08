@@ -62,6 +62,12 @@
           <span>Decision Panel</span>
         </a>
 
+        <a href="{% url 'memos:memo_request_list' %}"
+           class="sidebar-link {% if request.resolver_match.url_name == 'memo_request_list' or request.resolver_match.url_name == 'memo_request_detail' %}active{% endif %}">
+          <i class="fa-solid fa-inbox sidebar-icon"></i>
+          <span>Memo Requests</span>
+        </a>
+
         <div class="sidebar-section-label mt-3">Intelligence & Governance</div>
         
         <a href="{% url 'governance:policy_list' %}"
@@ -153,10 +159,16 @@
           <span>Memos</span>
         </a>
 
-        <a href="{% url 'resources:vehicle_list' %}"
-           class="sidebar-link {% if request.resolver_match.url_name == 'vehicle_list' %}active{% endif %}">
-          <i class="fa-solid fa-van-shuttle sidebar-icon"></i>
-          <span>Vehicles</span>
+        <a href="{% url 'memos:memo_request_create' %}"
+           class="sidebar-link {% if request.resolver_match.url_name == 'memo_request_create' %}active{% endif %}">
+          <i class="fa-solid fa-paper-plane sidebar-icon"></i>
+          <span>Request Memo</span>
+        </a>
+
+        <a href="{% url 'memos:memo_request_list' %}"
+           class="sidebar-link {% if request.resolver_match.url_name == 'memo_request_list' or request.resolver_match.url_name == 'memo_request_detail' %}active{% endif %}">
+          <i class="fa-solid fa-inbox sidebar-icon"></i>
+          <span>My Requests</span>
         </a>
 
         {% if request.user.profile.role == 'approver' %}

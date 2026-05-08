@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Review Request | SkedIt.AI{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+  <div class="flex items-center justify-between mb-8">
+    <div class="flex items-center gap-4">
+      <a href="{% url 'memos:memo_request_list' %}" class="h-10 w-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-uniGold hover:border-uniGold transition shadow-sm">
+        <i class="fa-solid fa-arrow-left"></i>
+      </a>
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight text-slate-800">Review Request</h1>
+        <p class="text-sm text-slate-500 mt-1">Submitted by <span class="font-bold text-slate-700">{{ memo_req.requester.get_full_name|default:memo_req.requester.username }}</span></p>
+      </div>
+    </div>
+    
+    {% if user.profile.role == 'admin' or user.is_staff or user.is_superuser %}
+    <div class="flex items-center gap-3">
+      {% if memo_req.status == 'pending' %}
+      <form method="post" action="{% url 'memos:memo_request_reject' memo_req.pk %}">
+        {% csrf_token %}
+        <button type="submit" class="px-6 py-3 bg-white border border-red-200 text-red-500 rounded-2xl font-bold hover:bg-red-50 transition flex items-center gap-2">
+          <i class="fa-solid fa-circle-xmark"></i>
+          Reject
+        </button>
+      </form>
+      <form method="post" action="{% url 'memos:memo_request_approve' memo_req.pk %}">
+        {% csrf_token %}
+        <button type="submit" class="px-6 py-3 bg-uniGreen text-white rounded-2xl font-bold shadow-lg shadow-uniGreen/20 hover:bg-green-700 transition flex items-center gap-2">
+          <i class="fa-solid fa-circle-check"></i>
+          Approve Request
+        </button>
+      </form>
+      {% elif memo_req.status == 'approved' %}
+      <a href="{% url 'memos:memo_create' %}?from_request={{ memo_req.pk }}" class="px-6 py-3 bg-uniGold text-white rounded-2xl font-bold shadow-lg shadow-uniGold/20 hover:bg-amber-600 transition flex items-center gap-2">
+        <i class="fa-solid fa-wand-magic-sparkles"></i>
+        Convert to Memo
+      </a>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Main Detail -->
+    <div class="lg:col-span-2 space-y-8">
+      <div class="bg-white rounded-[2rem] border border-slate-100 shadow-soft overflow-hidden">
+        <div class="p-8 border-b border-slate-50 bg-slate-50/50 flex items-center justify-between">
+          <h2 class="font-bold text-slate-800">Attachment Preview</h2>
+          <a href="{{ memo_req.attachment.url }}" target="_blank" class="text-xs font-bold text-uniGold hover:underline">
+            <i class="fa-solid fa-download mr-1"></i> Download Original
+          </a>
+        </div>
+        <div class="p-8 flex justify-center bg-slate-100/50">
+          {% if memo_req.attachment.name|lower|slice:"-4:" == ".jpg" or memo_req.attachment.name|lower|slice:"-5:" == ".jpeg" or memo_req.attachment.name|lower|slice:"-4:" == ".png" %}
+          <img src="{{ memo_req.attachment.url }}" class="max-w-full rounded-xl shadow-lg border-4 border-white">
+          {% else %}
+          <div class="py-20 text-center">
+            <i class="fa-solid fa-file-invoice text-6xl text-slate-200 mb-4"></i>
+            <p class="text-slate-500 font-bold">Document attached: {{ memo_req.attachment.name }}</p>
+            <p class="text-xs text-slate-400 mt-2">Open the link above to view/download.</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar Info -->
+    <div class="space-y-6">
+      <div class="bg-white rounded-3xl border border-slate-100 shadow-soft p-6">
+        <h3 class="text-sm font-bold text-slate-800 mb-4 uppercase tracking-wider">Request Details</h3>
+        <div class="space-y-4">
+          <div>
+            <p class="text-[10px] font-bold text-slate-400 uppercase">Submission Date</p>
+            <p class="text-sm font-bold text-slate-700">{{ memo_req.created_at|date:"F d, Y @ P" }}</p>
+          </div>
+          <div>
+            <p class="text-[10px] font-bold text-slate-400 uppercase">Current Status</p>
+            <span class="inline-block mt-1 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest
+              {% if memo_req.status == 'pending' %}bg-amber-100 text-amber-600
+              {% elif memo_req.status == 'converted' %}bg-green-100 text-green-600
+              {% else %}bg-slate-100 text-slate-600{% endif %}">
+              {{ memo_req.get_status_display }}
+            </span>
+          </div>
+          <div class="pt-4 border-t border-slate-50">
+            <p class="text-[10px] font-bold text-slate-400 uppercase mb-2">Requester Note</p>
+            <div class="p-4 rounded-2xl bg-slate-50 text-sm text-slate-600 italic border border-slate-100">
+              "{{ memo_req.note|default:'No note provided.' }}"
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {% if memo_req.memo %}
+      <div class="bg-uniGreen/5 rounded-3xl border border-uniGreen/10 p-6">
+        <p class="text-xs font-bold text-uniGreen uppercase mb-2">Linked Memo</p>
+        <p class="text-sm font-bold text-slate-800 mb-3">{{ memo_req.memo.title }}</p>
+        <a href="{% url 'memos:memo_list' %}" class="text-xs font-bold text-slate-500 hover:text-uniGold transition underline">
+          View in List
+        </a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

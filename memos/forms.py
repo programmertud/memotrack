@@ -1,7 +1,8 @@
 from django import forms
 from django.contrib.auth import get_user_model
 
-from .models import Memo
+from .models import Memo, MemoRequest
+from accounts.models import Profile
 from resources.models import Resource, ResourceBooking, Vehicle, VehicleBooking
 
 
@@ -16,7 +17,7 @@ class UserMultipleChoiceField(forms.ModelMultipleChoiceField):
 
 class MemoForm(forms.ModelForm):
     employees = UserMultipleChoiceField(
-        queryset=User.objects.all().select_related("profile").distinct(),
+        queryset=User.objects.exclude(is_superuser=True).exclude(profile__role=Profile.Role.ADMIN).select_related("profile").distinct(),
         widget=forms.CheckboxSelectMultiple,
         label="Employees"
     )
@@ -74,8 +75,8 @@ class MemoForm(forms.ModelForm):
         }
         widgets = {
             "date": forms.DateInput(attrs={"type": "date", "class": "mt-2 w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-uniGold/50 focus:border-uniGold transition"}),
-            "start_time": forms.TimeInput(attrs={"type": "time", "class": "mt-2 w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-uniGold/50 focus:border-uniGold transition"}),
-            "end_time": forms.TimeInput(attrs={"type": "time", "class": "mt-2 w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-uniGold/50 focus:border-uniGold transition"}),
+            "start_time": forms.TimeInput(attrs={"type": "time", "x-model": "startTime", "@change": "checkConflicts()", "class": "mt-2 w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-uniGold/50 focus:border-uniGold transition"}),
+            "end_time": forms.TimeInput(attrs={"type": "time", "x-model": "endTime", "@change": "checkConflicts()", "class": "mt-2 w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-uniGold/50 focus:border-uniGold transition"}),
             "priority": forms.Select(attrs={"class": "mt-2 w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-uniGold/50 focus:border-uniGold transition"}),
         }
 
@@ -133,3 +134,23 @@ class MemoForm(forms.ModelForm):
             elif not vehicle:
                 VehicleBooking.objects.filter(memo=memo).delete()
         return memo
+
+
+class MemoRequestForm(forms.ModelForm):
+    class Meta:
+        model = MemoRequest
+        fields = ["attachment", "note"]
+        widgets = {
+            "attachment": forms.FileInput(
+                attrs={
+                    "class": "block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-uniGreen/10 file:text-uniGreen hover:file:bg-uniGreen/20"
+                }
+            ),
+            "note": forms.Textarea(
+                attrs={
+                    "rows": 3,
+                    "class": "mt-2 w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-uniGold/50 focus:border-uniGold transition",
+                    "placeholder": "What is this memo for? (Optional)",
+                }
+            ),
+        }

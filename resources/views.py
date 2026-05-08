@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect
 from django.views.decorators.http import require_http_methods
+from django.db.models import Q
 
 from .models import Vehicle
 from .models import VehicleBooking
@@ -42,7 +43,7 @@ def vehicle_admin_create(request):
     if not _is_admin(request.user):
         messages.error(request, "You do not have permission to manage vehicles.")
         return redirect("accounts:post_login")
-    form = VehicleForm(request.POST or None)
+    form = VehicleForm(request.POST or None, request.FILES or None)
     if request.method == "POST" and form.is_valid():
         vehicle = form.save()
         messages.success(request, f"Vehicle '{vehicle.name}' created.")
@@ -57,7 +58,7 @@ def vehicle_admin_edit(request, pk: int):
         messages.error(request, "You do not have permission to manage vehicles.")
         return redirect("accounts:post_login")
     vehicle = get_object_or_404(Vehicle, pk=pk)
-    form = VehicleForm(request.POST or None, instance=vehicle)
+    form = VehicleForm(request.POST or None, request.FILES or None, instance=vehicle)
     if request.method == "POST" and form.is_valid():
         form.save()
         messages.success(request, "Vehicle updated.")
@@ -118,6 +119,55 @@ def vehicle_book(request, memo_id: int):
         "resources/vehicle_book.html",
         {"memo": memo, "form": form, "booking": booking, "suggestions": suggestions},
     )
+
+
+from django.http import JsonResponse
+from datetime import datetime, timedelta
+
+
+def api_available_vehicles(request):
+    from django.utils import timezone
+    date_str = request.GET.get("date")
+    days = int(request.GET.get("days", 1))
+    exclude_memo_id = request.GET.get("exclude_memo_id")
+    today = timezone.now().date()
+
+    # Start with all vehicles that are generally available (lowercase status)
+    available_qs = Vehicle.objects.filter(status="available")
+
+    # If no date is provided, filter out those already booked for TODAY
+    if not date_str:
+        booked_ids = VehicleBooking.objects.filter(
+            Q(start_date__lte=today, end_date__gte=today) |
+            Q(start_date__isnull=True, memo__date=today)
+        ).values_list("vehicle_id", flat=True)
+        available_qs = available_qs.exclude(id__in=booked_ids)
+    else:
+        # If a date is provided, filter out those already booked for that specific range
+        try:
+            start_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+            end_date = start_date + timedelta(days=max(0, days - 1))
+            
+            # Find bookings that overlap with the selected range
+            booked_qs = VehicleBooking.objects.filter(
+                Q(start_date__lte=end_date, end_date__gte=start_date) |
+                Q(start_date__isnull=True, memo__date__range=[start_date, end_date])
+            )
+            
+            # If we are editing an existing memo, don't count ITS OWN booking as a conflict
+            if exclude_memo_id and exclude_memo_id.isdigit():
+                booked_qs = booked_qs.exclude(memo_id=int(exclude_memo_id))
+                
+            booked_ids = booked_qs.values_list("vehicle_id", flat=True)
+            available_qs = available_qs.exclude(id__in=booked_ids)
+        except (ValueError, TypeError):
+            pass
+
+    data = [
+        {"id": v.id, "name": f"{v.name} ({v.plate_number}) - Capacity: {v.capacity}"}
+        for v in available_qs
+    ]
+    return JsonResponse({"vehicles": data})
 
 
 def grouped_trips(request):

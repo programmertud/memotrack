@@ -1,5 +1,4 @@
 from django.shortcuts import render
-
 from django.contrib import messages
 from django.utils import timezone
 from django.contrib.auth import get_user_model
@@ -7,31 +6,28 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect
 from django.views.decorators.http import require_http_methods
-
-from .models import Memo, MemoDecision
-from .forms import MemoForm
-from .conflicts import check_conflicts
-
-from notifications.models import Notification
-from memotrack.ai_utils import parse_memo_text, get_scheduling_recommendation, get_predictive_analytics, parse_memo_image, extract_text_from_file
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 import json
 
+from .models import Memo, MemoDecision, MemoRequest
+from .forms import MemoForm, MemoRequestForm
+from .conflicts import check_conflicts
 
+from notifications.models import Notification
+from memotrack.ai_utils import (
+    parse_memo_text, 
+    get_scheduling_recommendation, 
+    get_predictive_analytics, 
+    parse_memo_image, 
+    extract_text_from_file
+)
 
 from django.db.models import Count, Q
 from django.db.models.functions import TruncDay
-from accounts.models import Campus, Department
-
+from accounts.models import Campus, Department, Profile
 
 User = get_user_model()
-
-
-try:
-    from accounts.models import Profile
-except Exception:  # pragma: no cover
-    Profile = None
 
 
 def _is_approver(user) -> bool:
@@ -40,9 +36,7 @@ def _is_approver(user) -> bool:
     if getattr(user, "is_staff", False) or getattr(user, "is_superuser", False):
         return True
     role = getattr(getattr(user, "profile", None), "role", None)
-    if Profile is not None:
-        return role in (Profile.Role.APPROVER, Profile.Role.ADMIN)
-    return role in ("approver", "admin")
+    return role in (Profile.Role.APPROVER, Profile.Role.ADMIN)
 
 
 def _is_admin(user) -> bool:
@@ -52,9 +46,7 @@ def _is_admin(user) -> bool:
     if getattr(user, "is_staff", False) or getattr(user, "is_superuser", False):
         return True
     role = getattr(getattr(user, "profile", None), "role", None)
-    if Profile is not None:
-        return role == Profile.Role.ADMIN
-    return role == "admin"
+    return role == Profile.Role.ADMIN
 
 
 @login_required
@@ -99,6 +91,99 @@ def memo_admin_list(request):
     return render(request, "memos/memo_admin_list.html", {"memos": memos})
 
 
+@login_required
+def memo_request_create(request):
+    """Employee view to submit a quick memo request (just file/note)."""
+    form = MemoRequestForm(request.POST or None, request.FILES or None)
+    if request.method == "POST" and form.is_valid():
+        memo_req = form.save(commit=False)
+        memo_req.requester = request.user
+        memo_req.status = MemoRequest.Status.PENDING
+        memo_req.save()
+
+        # Notify admins
+        admins = User.objects.filter(profile__role=Profile.Role.ADMIN)
+        for admin in admins:
+            Notification.objects.create(
+                user=admin,
+                title="New Memo Request",
+                message=f"{request.user.username} submitted a new document for processing.",
+                severity=Notification.Severity.INFO,
+            )
+
+        messages.success(request, "Your request has been submitted successfully.")
+        return redirect("memos:memo_list")
+
+    return render(request, "memos/memo_request_form.html", {"form": form})
+
+
+@login_required
+def memo_request_list(request):
+    """View to see incoming requests. Admins see all, employees see their own."""
+    if _is_admin(request.user):
+        requests = MemoRequest.objects.all().order_by("-created_at")
+    else:
+        requests = MemoRequest.objects.filter(requester=request.user).order_by("-created_at")
+
+    return render(request, "memos/memo_request_list.html", {"requests": requests})
+
+
+@login_required
+def memo_request_detail(request, pk):
+    """View to inspect a specific request. Employees can only see their own."""
+    memo_req = get_object_or_404(MemoRequest, pk=pk)
+
+    if not _is_admin(request.user) and memo_req.requester != request.user:
+        messages.error(request, "Access denied.")
+        return redirect("memos:memo_request_list")
+
+    return render(request, "memos/memo_request_detail.html", {"memo_req": memo_req})
+
+
+@login_required
+@require_http_methods(["POST"])
+def memo_request_approve(request, pk):
+    if not _is_admin(request.user):
+        messages.error(request, "Unauthorized.")
+        return redirect("accounts:post_login")
+
+    memo_req = get_object_or_404(MemoRequest, pk=pk)
+    memo_req.status = MemoRequest.Status.APPROVED
+    memo_req.save()
+
+    Notification.objects.create(
+        user=memo_req.requester,
+        title="Request Approved",
+        message="Your memo request has been approved and is pending conversion.",
+        severity=Notification.Severity.SUCCESS,
+    )
+
+    messages.success(request, "Request approved.")
+    return redirect("memos:memo_request_detail", pk=pk)
+
+
+@login_required
+@require_http_methods(["POST"])
+def memo_request_reject(request, pk):
+    if not _is_admin(request.user):
+        messages.error(request, "Unauthorized.")
+        return redirect("accounts:post_login")
+
+    memo_req = get_object_or_404(MemoRequest, pk=pk)
+    memo_req.status = MemoRequest.Status.REJECTED
+    memo_req.save()
+
+    Notification.objects.create(
+        user=memo_req.requester,
+        title="Request Rejected",
+        message="Your memo request was rejected. Please check your submission details.",
+        severity=Notification.Severity.DANGER,
+    )
+
+    messages.warning(request, "Request rejected.")
+    return redirect("memos:memo_request_detail", pk=pk)
+
+
 @require_http_methods(["GET", "POST"])
 def memo_create(request):
     if not request.user.is_authenticated:
@@ -108,28 +193,51 @@ def memo_create(request):
         messages.error(request, "You do not have permission to create memos.")
         return redirect("accounts:post_login")
 
+    request_id = request.GET.get("from_request")
+    memo_req = None
+    if request_id:
+        memo_req = get_object_or_404(MemoRequest, pk=request_id)
+
     form = MemoForm(request.POST or None)
+
+    if request_id and request.method == "GET":
+        # Pre-populate with the requester
+        form.fields["employees"].initial = [memo_req.requester.id]
+
     if request.method == "POST" and form.is_valid():
         memo = form.save(commit=False)
         memo.created_by = request.user
         memo.status = Memo.Status.PENDING
         memo.save()
         form.save_m2m()
-        
+
+        # Link to request if applicable
+        if memo_req:
+            memo_req.memo = memo
+            memo_req.status = MemoRequest.Status.CONVERTED
+            memo_req.save()
+
+            # Notify requester
+            Notification.objects.create(
+                user=memo_req.requester,
+                title="Request Processed",
+                message=f"Your request has been converted into memo: {memo.title}",
+                severity=Notification.Severity.SUCCESS,
+            )
+
         if memo.has_conflicts():
             memo.status = Memo.Status.CONFLICT
             memo.save()
             messages.warning(request, "Conflict detected. Review options before finalizing.")
-            try:
-                _notify_conflict(request, memo)
-            except NameError:
-                pass # in case _notify_conflict is not imported/defined
+            _notify_conflict(request, memo)
             return redirect("memos:memo_conflict", pk=memo.pk)
 
         messages.success(request, "Memo created successfully.")
         return redirect("memos:memo_list")
 
-    return render(request, "memos/memo_form.html", {"form": form, "mode": "create"})
+    return render(
+        request, "memos/memo_form.html", {"form": form, "mode": "create", "memo_req": memo_req}
+    )
 
 
 @require_http_methods(["GET", "POST"])

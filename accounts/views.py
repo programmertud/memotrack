@@ -19,7 +19,7 @@ from django.views.decorators.csrf import csrf_protect
 from django.http import JsonResponse
 from django.core.files.base import ContentFile
 
-from memos.models import Memo
+from memos.models import Memo, MemoRequest
 from memos.models import MemoDecision
 from notifications.models import Notification
 from resources.models import Vehicle, VehicleBooking
@@ -195,7 +195,9 @@ def admin_dashboard(request):
 
     # ── Memo stats ──
     all_memos        = Memo.objects.all()
-    pending_requests = all_memos.filter(status=Memo.Status.PENDING).count()
+    pending_memos    = all_memos.filter(status=Memo.Status.PENDING).count()
+    pending_uploads  = MemoRequest.objects.filter(status=MemoRequest.Status.PENDING).count()
+    pending_requests = pending_memos + pending_uploads
     approved_requests= all_memos.filter(status=Memo.Status.APPROVED).count()
     rejected_requests= all_memos.filter(status=Memo.Status.REJECTED).count()
     conflict_alerts  = all_memos.filter(status=Memo.Status.CONFLICT).count()
@@ -454,12 +456,22 @@ def instructor_dashboard(request):
 
     today = timezone.localdate()
 
+    # KPI Stats for Employee (User)
+    memos_qs = Memo.objects.filter(Q(employees=request.user) | Q(delegated_to=request.user))
+    total_memos = memos_qs.distinct().count()
+    unread_notifications = Notification.objects.filter(user=request.user, is_read=False).count()
+    pending_leave = LeaveRequest.objects.filter(user=request.user, status=LeaveRequest.Status.PENDING).count()
+    upcoming_trips = memos_qs.filter(date__gte=today).exclude(destination="").distinct().count()
+    total_requests = MemoRequest.objects.filter(requester=request.user).count()
+    
     personal_schedule = (
-        Memo.objects.filter(delegated_to=request.user, date__gte=today)
+        memos_qs.filter(date__gte=today)
         .order_by("date", "start_time")
-        .select_related("delegated_to")[:15]
+        .distinct()[:15]
     )
-    class_assignments = Memo.objects.filter(delegated_to=request.user, venue__icontains="class").order_by(
+    conflicts_count = memos_qs.filter(status=Memo.Status.CONFLICT).distinct().count()
+
+    class_assignments = memos_qs.filter(venue__icontains="class").order_by("-date").distinct()[:10]
         "-date"
     )[:10]
     travel_assignments = (
@@ -484,6 +496,13 @@ def instructor_dashboard(request):
             "event_participation": event_participation,
             "leave_requests": leave_requests,
             "notifications": notifications,
+            "total_memos": total_memos,
+            "unread_notifications": unread_notifications,
+            "pending_leave": pending_leave,
+            "upcoming_trips": upcoming_trips,
+            "total_requests": total_requests,
+            "conflicts_count": conflicts_count,
+            "today": today,
             "chart_counts": {
                 "schedule": personal_schedule.count() if hasattr(personal_schedule, "count") else len(personal_schedule),
                 "class": class_assignments.count() if hasattr(class_assignments, "count") else len(class_assignments),
