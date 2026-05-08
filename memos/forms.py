@@ -16,7 +16,7 @@ class UserMultipleChoiceField(forms.ModelMultipleChoiceField):
 
 class MemoForm(forms.ModelForm):
     employees = UserMultipleChoiceField(
-        queryset=User.objects.all().select_related("profile"),
+        queryset=User.objects.all().select_related("profile").distinct(),
         widget=forms.CheckboxSelectMultiple,
         label="Employees"
     )
@@ -92,16 +92,36 @@ class MemoForm(forms.ModelForm):
                 self.fields["vehicle_start_date"].initial = vb.start_date
                 self.fields["vehicle_end_date"].initial = vb.end_date
 
+    def clean_employees(self):
+        employees = self.cleaned_data.get("employees", [])
+        if employees:
+            seen = set()
+            unique_employees = []
+            for emp in employees:
+                if emp.id not in seen:
+                    seen.add(emp.id)
+                    unique_employees.append(emp)
+            employees = unique_employees
+        return employees
+
+    def clean(self):
+        cleaned_data = super().clean()
+        to_all = cleaned_data.get("to_all")
+        employees = cleaned_data.get("employees")
+        
+        if to_all and employees:
+            raise forms.ValidationError("Cannot select individual employees when 'All Faculty Members and Student' is checked.")
+        
+        return cleaned_data
+
     def save(self, commit=True):
         memo = super().save(commit=commit)
         if commit:
-            # Handle resource bookings
             selected_resources = self.cleaned_data.get("resources", [])
             ResourceBooking.objects.filter(memo=memo).delete()
             for res in selected_resources:
                 ResourceBooking.objects.create(memo=memo, resource=res)
 
-            # Handle vehicle booking (external only)
             vehicle = self.cleaned_data.get("vehicle")
             if vehicle and memo.category == Memo.Category.EXTERNAL:
                 vb, _ = VehicleBooking.objects.get_or_create(memo=memo, defaults={"vehicle": vehicle})

@@ -152,10 +152,10 @@ def user_dashboard(request):
 
     today = timezone.localdate()
 
-    upcoming_memos = Memo.objects.filter(employees=request.user, date__gte=today).order_by(
+    upcoming_memos = Memo.objects.filter(delegated_to=request.user, date__gte=today).order_by(
         "date", "start_time"
     )
-    recent_memos = upcoming_memos.prefetch_related("employees")[:10]
+    recent_memos = upcoming_memos.select_related("delegated_to")[:10]
 
     recent_notifications = Notification.objects.filter(user=request.user).order_by("-created_at")[:10]
     unread_count = Notification.objects.filter(user=request.user, is_read=False).count()
@@ -204,7 +204,8 @@ def admin_dashboard(request):
     # ── Today's schedule sorted by time ──
     today_schedules = (
         Memo.objects.filter(date=today)
-        .prefetch_related("employees", "employees__profile")
+        .select_related("delegated_to")
+        .prefetch_related("delegated_to__profile")
         .order_by("start_time")
     )
     today_count = today_schedules.count()
@@ -212,21 +213,23 @@ def admin_dashboard(request):
     # ── Upcoming (next 7 days, excluding today) ──
     upcoming_events = (
         Memo.objects.filter(date__gt=today, date__lte=upcoming_until)
-        .prefetch_related("employees", "employees__profile")
+        .select_related("delegated_to")
+        .prefetch_related("delegated_to__profile")
         .order_by("date", "start_time")
     )[:8]
 
     # ── Conflicts ──
     conflict_memos = (
         Memo.objects.filter(status=Memo.Status.CONFLICT)
-        .prefetch_related("employees", "employees__profile")
+        .select_related("delegated_to")
+        .prefetch_related("delegated_to__profile")
         .order_by("-date")
     )[:5]
 
     # ── Recent activity ──
     recent_memos = (
-        Memo.objects.select_related("created_by")
-        .prefetch_related("employees", "employees__profile", "created_by__profile")
+        Memo.objects.select_related("delegated_to", "created_by")
+        .prefetch_related("delegated_to__profile", "created_by__profile")
         .order_by("-created_at")
     )[:8]
 
@@ -249,7 +252,8 @@ def admin_dashboard(request):
     # ── High priority pending memos (action required) ──
     urgent_memos = (
         Memo.objects.filter(status=Memo.Status.PENDING, priority=Memo.Priority.HIGH)
-        .prefetch_related("employees", "employees__profile")
+        .select_related("delegated_to")
+        .prefetch_related("delegated_to__profile")
         .order_by("date", "start_time")
     )[:5]
 
@@ -287,8 +291,9 @@ def admin_dashboard(request):
 
 def _normalize_admin_role(role: str) -> str:
     role = (role or "").strip().lower()
+    # Accept 'employee' as alias for 'instructor' role
     if role == "employee":
-        return Profile.Role.EMPLOYEE  # Which is "instructor"
+        return Profile.Role.EMPLOYEE
     if role not in {Profile.Role.STAFF, Profile.Role.EMPLOYEE}:
         return ""
     return role
@@ -401,7 +406,7 @@ def hr_dashboard(request):
     leave_pending = LeaveRequest.objects.filter(status=LeaveRequest.Status.PENDING).count()
 
     busy_today = (
-        Memo.objects.filter(date=today).values_list("assigned_user_id", flat=True).distinct()
+        Memo.objects.filter(date=today).values_list("delegated_to_id", flat=True).distinct()
     )
     available_staff = (
         Profile.objects.all()
@@ -420,8 +425,8 @@ def hr_dashboard(request):
 
     workload_summary = (
         Memo.objects.filter(date=today)
-        .values("employees__username")
-        .order_by("employees__username")
+        .values("delegated_to__username")
+        .order_by("delegated_to__username")
     )
 
     return render(
@@ -450,19 +455,19 @@ def instructor_dashboard(request):
     today = timezone.localdate()
 
     personal_schedule = (
-        Memo.objects.filter(employees=request.user, date__gte=today)
+        Memo.objects.filter(delegated_to=request.user, date__gte=today)
         .order_by("date", "start_time")
-        .prefetch_related("employees")[:15]
+        .select_related("delegated_to")[:15]
     )
-    class_assignments = Memo.objects.filter(employees=request.user, venue__icontains="class").order_by(
+    class_assignments = Memo.objects.filter(delegated_to=request.user, venue__icontains="class").order_by(
         "-date"
     )[:10]
     travel_assignments = (
-        Memo.objects.filter(employees=request.user)
+        Memo.objects.filter(delegated_to=request.user)
         .exclude(destination="")
         .order_by("-date")[:10]
     )
-    event_participation = Memo.objects.filter(employees=request.user, priority=Memo.Priority.HIGH).order_by(
+    event_participation = Memo.objects.filter(delegated_to=request.user, priority=Memo.Priority.HIGH).order_by(
         "-date"
     )[:10]
 
@@ -508,7 +513,7 @@ def approver_dashboard(request):
     if dept:
         dept_user_ids = dept.profiles.values_list("user_id", flat=True)
         department_schedules = Memo.objects.filter(
-            employees__id__in=dept_user_ids, date__gte=today
+            delegated_to_id__in=dept_user_ids, date__gte=today
         ).order_by("date", "start_time")[:25]
     else:
         department_schedules = Memo.objects.none()

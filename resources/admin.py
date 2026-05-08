@@ -19,6 +19,7 @@ class ResourceAdmin(admin.ModelAdmin):
     list_filter = ("resource_type", "is_active")
     search_fields = ("name", "description")
 
+
 @admin.register(VehicleBooking)
 class VehicleBookingAdmin(admin.ModelAdmin):
     list_display = ("vehicle", "memo", "created_at")

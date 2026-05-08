@@ -22,8 +22,7 @@
         <div class="flex items-start justify-between gap-4">
           <div>
             <div class="font-semibold">{{ memo.title }}</div>
-            <div class="text-sm text-slate-500 mt-1">{{ memo.get_employee_names }} • {{ memo.date }} • {{
-              memo.start_time }} - {{ memo.end_time }}</div>
+            <div class="text-sm text-slate-500 mt-1">{{ memo.get_employee_names }} • {{ memo.date }} • {{ memo.start_time }} - {{ memo.end_time }}</div>
           </div>
           <a class="px-3 py-2 rounded-xl bg-red-50 text-red-700 border border-red-100 text-sm font-semibold"
             href="{% url 'memos:memo_conflict' memo.pk %}">Review</a>
@@ -46,8 +45,7 @@
         <div class="flex items-start justify-between gap-4">
           <div>
             <div class="font-semibold">{{ memo.title }}</div>
-            <div class="text-sm text-slate-500 mt-1">{{ memo.get_employee_names }} • {{ memo.date }} • {{
-              memo.start_time }} - {{ memo.end_time }}</div>
+            <div class="text-sm text-slate-500 mt-1">{{ memo.get_employee_names }} • {{ memo.date }} • {{ memo.start_time }} - {{ memo.end_time }}</div>
           </div>
           <div class="flex items-center gap-2">
             <form method="post" action="{% url 'memos:decision_approve' memo.pk %}">

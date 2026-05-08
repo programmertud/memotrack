@@ -25,234 +25,291 @@
   window._CSRF_TOKEN = "{{ csrf_token }}";
 </script>
 
-<form method="post" class="mt-6" x-data="{
-  parseMode: false,
-  parseTab: 'text',
-  textToParse: '',
-  isParsing: false,
-  parseError: null,
-  parsedParticipants: '',
-  parsedActivityType: '',
-  showExtracted: false,
-  droppedFile: null,
-  isDragging: false,
-  fileParseUrl: window._PARSE_FILE_URL,
-  textParseUrl: window._PARSE_TEXT_URL,
-  csrfToken: window._CSRF_TOKEN,
-  
-  // Real-time preview fields
-  title: '{{ form.title.value|default_if_none:""|escapejs }}',
-  reference_number: '{{ form.reference_number.value|default_if_none:""|escapejs }}',
-  description: '{{ form.description.value|default_if_none:""|escapejs }}',
-  date: '{{ form.date.value|default_if_none:""|escapejs }}',
-  toAll: {{ form.to_all.value|yesno:"true,false" }},
-  search: '',
-  employees_text: '',
-  venue: '{{ form.venue.value|default_if_none:""|escapejs }}',
-  destination: '{{ form.destination.value|default_if_none:""|escapejs }}',
-  memoCategory: '{{ form.category.value|default:"internal" }}',
-  selectedVehicle: '',
-  vehicleStartDate: '{{ form.vehicle_start_date.value|default:"" }}',
-  vehicleEndDate: '{{ form.vehicle_end_date.value|default:"" }}',
-  vehicleDays: {{ form.vehicle_days.value|default:1 }},
-  allUsers: [
-    {% for u in form.employees.field.queryset %}
-      { id: '{{ u.id }}', name: '{% if u.profile.first_name %}{{ u.profile.first_name|escapejs }} {{ u.profile.last_name|escapejs }}{% else %}{{ u.username|escapejs }}{% endif %}' },
-    {% endfor %}
-  ],
-  selectedIds: [], 
-  get filteredResults() { 
-    if (this.search.length < 1) return []; 
-    return this.allUsers.filter(u =>
-      u.name.toLowerCase().includes(this.search.toLowerCase()) &&
-      !this.selectedIds.includes(String(u.id))
-    );
-  },
-  addEmployee(id) {
-  if (!this.selectedIds.includes(String(id))) {
-  this.selectedIds.push(String(id));
-  this.$nextTick(() => {
-  let cb = document.querySelector(`input[name=employees][value='${id}']`);
-  if (cb) { cb.checked = true; cb.dispatchEvent(new Event('change', { bubbles: true })); }
-  this.selectedIds = Array.from(document.querySelectorAll('input[name=employees]:checked')).map(el => el.value);
-  this.updateEmployeesText();
-  this.checkConflicts();
-  });
-  }
-  this.search = '';
-  },
-  removeEmployee(id) {
-  this.selectedIds = this.selectedIds.filter(i => i !== String(id));
-  this.$nextTick(() => {
-  let cb = document.querySelector(`input[name=employees][value='${id}']`);
-  if (cb) { cb.checked = false; cb.dispatchEvent(new Event('change', { bubbles: true })); }
-  this.selectedIds = Array.from(document.querySelectorAll('input[name=employees]:checked')).map(el => el.value);
-  this.updateEmployeesText();
-  this.checkConflicts();
-  });
-  },
-
-  updateEmployeesText() {
-    if (this.toAll) {
-      this.employees_text = 'All Faculty Members & Students';
-    } else {
-      const selected = this.allUsers.filter(u => this.selectedIds.includes(String(u.id)));
-      this.employees_text = selected.map(u => u.name).join(', ');
-    }
-  },
-
-  recalcDays() {
-    if (this.vehicleStartDate && this.vehicleEndDate) {
-      const start = new Date(this.vehicleStartDate);
-      const end = new Date(this.vehicleEndDate);
-      const diff = Math.round((end - start) / (1000 * 60 * 60 * 24));
-      this.vehicleDays = diff >= 1 ? diff + 1 : 1;
-    }
-  },
-
-  syncEndDate() {
-    if (this.vehicleStartDate && this.vehicleDays >= 1) {
-      const start = new Date(this.vehicleStartDate);
-      start.setDate(start.getDate() + parseInt(this.vehicleDays) - 1);
-      this.vehicleEndDate = start.toISOString().split('T')[0];
-    }
-  },
-
-  handleDrop(e) {
-  e.preventDefault(); this.isDragging = false;
-  const file = e.dataTransfer.files[0];
-  if (file) { this.droppedFile = file; this.parseError = null; }
-  },
-  handleFileInput(e) {
-  const file = e.target.files[0];
-  if (file) { this.droppedFile = file; this.parseError = null; }
-  },
-  fillForm(data) {
-    document.querySelector('input[name=title]').value = data.title || '';
-    this.title = data.title || '';
-    document.querySelector('textarea[name=description]').value = data.description || '';
-    this.description = data.description || '';
-    document.querySelector('input[name=date]').value = data.date || '';
-    this.date = data.date || '';
-    document.querySelector('input[name=start_time]').value = data.start_time || '';
-    if (data.end_time) document.querySelector('input[name=end_time]').value = data.end_time;
-    document.querySelector('input[name=venue]').value = data.venue || '';
-    if (data.destination) document.querySelector('input[name=destination]').value = data.destination;
-    if (data.priority) document.querySelector('select[name=priority]').value = data.priority;
-    if (data.category) document.querySelector('select[name=category]').value = data.category;
-    this.parsedParticipants = data.participants || '';
-    this.parsedActivityType = data.activity_type || '';
-    this.showExtracted = !!(this.parsedParticipants || this.parsedActivityType);
-    this.parseMode = false; this.textToParse = ''; this.droppedFile = null;
-    this.updateEmployeesText();
-  },
-  parseAI() {
-  if (this.parseTab === 'file') { this.parseFile(); return; }
-  this.isParsing = true; this.parseError = null; this.showExtracted = false;
-  fetch(this.textParseUrl, {
-  method: 'POST',
-  headers: { 'X-CSRFToken': this.csrfToken, 'Content-Type': 'application/json' },
-  body: JSON.stringify({ text: this.textToParse })
-  })
-  .then(res => res.json().then(data => ({ ok: res.ok, data })))
-  .then(({ ok, data }) => {
-  if (!ok) throw new Error(data.error || 'AI failed to parse the text.');
-  this.fillForm(data);
-  })
-  .catch(e => { this.parseError = e.message; })
-  .finally(() => { this.isParsing = false; });
-  },
-  parseFile() {
-  if (!this.droppedFile) { this.parseError = 'Please select or drop a file first.'; return; }
-  this.isParsing = true; this.parseError = null; this.showExtracted = false;
-  const fd = new FormData();
-  fd.append('file', this.droppedFile);
-  fetch(this.fileParseUrl, { method: 'POST', headers: { 'X-CSRFToken': this.csrfToken }, body: fd })
-  .then(res => { 
-    if (!res.ok) return res.json().then(d => { throw new Error(d.error || 'Server error'); }); 
-    return res.json(); 
-  })
-  .then(data => { if (data.error) throw new Error(data.error); this.fillForm(data); })
-  .catch(e => { this.parseError = e.message; })
-  .finally(() => { this.isParsing = false; });
-  },
-
-  conflicts: [],
-  isCheckingConflicts: false,
-  checkConflicts() {
-  const data = {
-  date: document.querySelector('input[name=date]').value,
-  start_time: document.querySelector('input[name=start_time]').value,
-  end_time: document.querySelector('input[name=end_time]').value,
-  employees: Array.from(document.querySelectorAll('input[name=employees]:checked')).map(el => el.value),
-  venue: document.querySelector('input[name=venue]').value,
-  resources: Array.from(document.querySelectorAll('input[name=resources]:checked')).map(el => el.value),
-  exclude_memo_id: window._EXCLUDE_ID || null
-  };
-
-  if (!data.date || !data.start_time || !data.end_time) {
-  this.conflicts = [];
-  return;
-  }
-
-  this.isCheckingConflicts = true;
-  fetch(window._CHECK_CONFLICTS_URL, {
-  method: 'POST',
-  headers: { 'X-CSRFToken': this.csrfToken, 'Content-Type': 'application/json' },
-  body: JSON.stringify(data)
-  })
-  .then(res => res.json())
-  .then(data => {
-  this.conflicts = data.conflicts || [];
-  })
-  .catch(err => console.error('Conflict check error:', err))
-  .finally(() => { this.isCheckingConflicts = false; });
-  },
-
-  recommendations: null,
-  isGettingRecommendations: false,
-  getRecommendations() {
-  this.isGettingRecommendations = true;
-  const data = {
-  title: document.querySelector('input[name=title]').value,
-  date: document.querySelector('input[name=date]').value,
-  start_time: document.querySelector('input[name=start_time]').value,
-  end_time: document.querySelector('input[name=end_time]').value,
-  employees: Array.from(document.querySelectorAll('input[name=employees]:checked')).map(el => el.value),
-  venue: document.querySelector('input[name=venue]').value,
-  priority: document.querySelector('select[name=priority]').value,
-  category: document.querySelector('select[name=category]').value,
-  };
-
-  fetch(window._RECOMMENDATIONS_URL, {
-  method: 'POST',
-  headers: { 'X-CSRFToken': this.csrfToken, 'Content-Type': 'application/json' },
-  body: JSON.stringify(data)
-  })
-  .then(res => res.json())
-  .then(data => { this.recommendations = data; })
-  .catch(err => console.error('Recommendation error:', err))
-  .finally(() => { this.isGettingRecommendations = false; });
-  },
-  init() {
-    this.$watch('textToParse', () => {}); 
-    const inputs = ['date', 'start_time', 'end_time', 'venue'];
-    inputs.forEach(name => {
-      const el = document.querySelector(`[name=${name}]`);
-      if (el) el.addEventListener('change', () => this.checkConflicts());
-    });
-    document.addEventListener('change', (e) => {
-      if (e.target.name === 'employees') {
-        this.selectedIds = Array.from(document.querySelectorAll('input[name=employees]:checked')).map(el => el.value);
+<script>
+document.addEventListener('alpine:init', () => {
+  Alpine.data('memoForm', () => ({
+    parseMode: false,
+    parseTab: 'text',
+    textToParse: '',
+    isParsing: false,
+    parseError: null,
+    parsedParticipants: '',
+    parsedActivityType: '',
+    showExtracted: false,
+    droppedFile: null,
+    isDragging: false,
+    fileParseUrl: window._PARSE_FILE_URL,
+    textParseUrl: window._PARSE_TEXT_URL,
+    csrfToken: window._CSRF_TOKEN,
+    title: '{{ form.title.value|default_if_none:""|escapejs }}',
+    reference_number: '{{ form.reference_number.value|default_if_none:""|escapejs }}',
+    description: '{{ form.description.value|default_if_none:""|escapejs }}',
+    date: '{{ form.date.value|default_if_none:""|escapejs }}',
+    toAll: {{ form.to_all.value|yesno:"true,false" }},
+    search: '',
+    employees_text: '',
+    venue: '{{ form.venue.value|default_if_none:""|escapejs }}',
+    destination: '{{ form.destination.value|default_if_none:""|escapejs }}',
+    memoCategory: '{{ form.category.value|default:"internal" }}',
+    selectedVehicle: '',
+    vehicleStartDate: '{{ form.vehicle_start_date.value|default:"" }}',
+    vehicleEndDate: '{{ form.vehicle_end_date.value|default:"" }}',
+    vehicleDays: {{ form.vehicle_days.value|default:1 }},
+    needVehicle: false,
+    needResources: false,
+    allUsers: [
+      {% for u in form.employees.field.queryset %}
+      { id: {{ u.pk }}, name: '{% if u.profile.first_name %}{{ u.profile.first_name|escapejs }} {{ u.profile.last_name|escapejs }}{% else %}{{ u.username|escapejs }}{% endif %}' },
+      {% endfor %}
+    ],
+    selectedNames: [],
+    addingNames: new Set(),
+    get filteredResults() {
+      if (this.search.length < 1) return [];
+      const seen = new Set();
+      const result = this.allUsers.filter(u => {
+        const normalized = u.name.trim().replace(/\s+/g, ' ');
+        if (seen.has(normalized)) return false;
+        seen.add(normalized);
+        return normalized.toLowerCase().includes(this.search.toLowerCase()) &&
+          !this.selectedNames.map(n => n.trim().replace(/\s+/g, ' ')).includes(normalized);
+      });
+      return result;
+    },
+    get uniqueSelectedEmployees() {
+      return [...new Set(this.selectedNames.map(n => n.trim().replace(/\s+/g, ' ')))];
+    },
+    addEmployee(name, id) {
+      name = String(name).trim().replace(/\s+/g, ' ');
+      if (this.addingNames.has(name) || this.selectedNames.map(n => n.trim().replace(/\s+/g, ' ')).includes(name)) {
+        this.search = '';
+        return;
+      }
+      this.addingNames.add(name);
+      this.selectedNames.push(name);
+      this.selectedNames = [...new Set(this.selectedNames.map(n => n.trim().replace(/\s+/g, ' ')))];
+      if (id) {
+        const cb = document.querySelector('input[name="employees"][value="' + id + '"]');
+        if (cb) cb.checked = true;
+      }
+      this.$nextTick(() => {
+        this.addingNames.delete(name);
         this.updateEmployeesText();
         this.checkConflicts();
+      });
+      this.search = '';
+    },
+    removeEmployee(name) {
+      name = String(name).trim().replace(/\s+/g, ' ');
+      const id = this.allUsers.find(u => u.name === name)?.id;
+      if (id) {
+        const cb = document.querySelector('input[name="employees"][value="' + id + '"]');
+        if (cb) cb.checked = false;
       }
-      if (e.target.name === 'resources') this.checkConflicts();
-    });
-    this.selectedIds = Array.from(document.querySelectorAll('input[name=employees]:checked')).map(el => el.value);
-    this.updateEmployeesText();
-  }
-  }">
+      this.selectedNames = this.selectedNames.filter(n => n.trim().replace(/\s+/g, ' ') !== name);
+      this.selectedNames = [...new Set(this.selectedNames.map(n => n.trim().replace(/\s+/g, ' ')))];
+      this.$nextTick(() => {
+        this.updateEmployeesText();
+        this.checkConflicts();
+      });
+    },
+    updateEmployeesText() {
+      if (this.toAll) {
+        this.employees_text = 'All Faculty Members & Students';
+      } else {
+        this.employees_text = this.selectedNames.join(', ');
+      }
+    },
+    recalcDays() {
+      if (this.vehicleStartDate && this.vehicleEndDate) {
+        const start = new Date(this.vehicleStartDate);
+        const end = new Date(this.vehicleEndDate);
+        const diff = Math.round((end - start) / (1000 * 60 * 60 * 24));
+        this.vehicleDays = diff >= 1 ? diff + 1 : 1;
+      }
+    },
+    syncEndDate() {
+      if (this.vehicleStartDate && this.vehicleDays >= 1) {
+        const start = new Date(this.vehicleStartDate);
+        start.setDate(start.getDate() + parseInt(this.vehicleDays) - 1);
+        this.vehicleEndDate = start.toISOString().split('T')[0];
+      }
+    },
+    handleDrop(e) {
+      e.preventDefault();
+      this.isDragging = false;
+      const file = e.dataTransfer.files[0];
+      if (file) { this.droppedFile = file; this.parseError = null; }
+    },
+    handleFileInput(e) {
+      const file = e.target.files[0];
+      if (file) { this.droppedFile = file; this.parseError = null; }
+    },
+    fillForm(data) {
+      const titleEl = document.querySelector('input[name=title]');
+      if (titleEl) titleEl.value = data.title || '';
+      this.title = data.title || '';
+      const descEl = document.querySelector('textarea[name=description]');
+      if (descEl) descEl.value = data.description || '';
+      this.description = data.description || '';
+      const dateEl = document.querySelector('input[name=date]');
+      if (dateEl) dateEl.value = data.date || '';
+      this.date = data.date || '';
+      const stEl = document.querySelector('input[name=start_time]');
+      if (stEl) stEl.value = data.start_time || '';
+      if (data.end_time) {
+        const etEl = document.querySelector('input[name=end_time]');
+        if (etEl) etEl.value = data.end_time;
+      }
+      const venueEl = document.querySelector('input[name=venue]');
+      if (venueEl) venueEl.value = data.venue || '';
+      if (data.destination) {
+        const destEl = document.querySelector('input[name=destination]');
+        if (destEl) destEl.value = data.destination;
+      }
+      if (data.priority) {
+        const pEl = document.querySelector('select[name=priority]');
+        if (pEl) pEl.value = data.priority;
+      }
+      if (data.category) {
+        const cEl = document.querySelector('select[name=category]');
+        if (cEl) cEl.value = data.category;
+      }
+      this.parsedParticipants = data.participants || '';
+      this.parsedActivityType = data.activity_type || '';
+      this.showExtracted = !!(this.parsedParticipants || this.parsedActivityType);
+      this.parseMode = false; this.textToParse = ''; this.droppedFile = null;
+      this.updateEmployeesText();
+    },
+    parseAI() {
+      if (this.parseTab === 'file') { this.parseFile(); return; }
+      this.isParsing = true; this.parseError = null; this.showExtracted = false;
+      fetch(this.textParseUrl, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': this.csrfToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: this.textToParse })
+      })
+      .then(res => res.json().then(data => ({ ok: res.ok, data })))
+      .then(({ ok, data }) => {
+        if (!ok) throw new Error(data.error || 'AI failed to parse the text.');
+        this.fillForm(data);
+      })
+      .catch(e => { this.parseError = e.message; })
+      .finally(() => { this.isParsing = false; });
+    },
+    parseFile() {
+      if (!this.droppedFile) { this.parseError = 'Please select or drop a file first.'; return; }
+      this.isParsing = true; this.parseError = null; this.showExtracted = false;
+      const fd = new FormData();
+      fd.append('file', this.droppedFile);
+      fetch(this.fileParseUrl, { method: 'POST', headers: { 'X-CSRFToken': this.csrfToken }, body: fd })
+      .then(res => {
+        if (!res.ok) return res.json().then(d => { throw new Error(d.error || 'Server error'); });
+        return res.json();
+      })
+      .then(data => { if (data.error) throw new Error(data.error); this.fillForm(data); })
+      .catch(e => { this.parseError = e.message; })
+      .finally(() => { this.isParsing = false; });
+    },
+    conflicts: [],
+    isCheckingConflicts: false,
+    checkConflicts() {
+      const data = {
+        date: document.querySelector('input[name=date]')?.value,
+        start_time: document.querySelector('input[name=start_time]')?.value,
+        end_time: document.querySelector('input[name=end_time]')?.value,
+        employees: Array.from(document.querySelectorAll('input[name=employees]:checked')).map(el => el.value),
+        venue: document.querySelector('input[name=venue]')?.value,
+        resources: Array.from(document.querySelectorAll('input[name=resources]:checked')).map(el => el.value),
+        exclude_memo_id: window._EXCLUDE_ID || null
+      };
+      if (!data.date || !data.start_time || !data.end_time) {
+        this.conflicts = [];
+        return;
+      }
+      this.isCheckingConflicts = true;
+      fetch(window._CHECK_CONFLICTS_URL, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': this.csrfToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      })
+      .then(res => res.json())
+      .then(data => { this.conflicts = data.conflicts || []; })
+      .catch(err => console.error('Conflict check error:', err))
+      .finally(() => { this.isCheckingConflicts = false; });
+    },
+    recommendations: null,
+    isGettingRecommendations: false,
+    getRecommendations() {
+      this.isGettingRecommendations = true;
+      const data = {
+        title: document.querySelector('input[name=title]')?.value,
+        date: document.querySelector('input[name=date]')?.value,
+        start_time: document.querySelector('input[name=start_time]')?.value,
+        end_time: document.querySelector('input[name=end_time]')?.value,
+        employees: Array.from(document.querySelectorAll('input[name=employees]:checked')).map(el => el.value),
+        venue: document.querySelector('input[name=venue]')?.value,
+        priority: document.querySelector('select[name=priority]')?.value,
+        category: document.querySelector('select[name=category]')?.value,
+      };
+      fetch(window._RECOMMENDATIONS_URL, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': this.csrfToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      })
+      .then(res => res.json())
+      .then(data => { this.recommendations = data; })
+      .catch(err => console.error('Recommendation error:', err))
+      .finally(() => { this.isGettingRecommendations = false; });
+    },
+    dedupAllUsers() {
+      const seen = new Set();
+      this.allUsers = this.allUsers.filter(u => {
+        const normalized = u.name.trim().replace(/\s+/g, ' ');
+        if (seen.has(normalized)) return false;
+        seen.add(normalized);
+        return true;
+      }).map(u => ({ ...u, name: u.name.trim().replace(/\s+/g, ' ') }));
+    },
+    init() {
+      this.dedupAllUsers();
+      this.$watch('textToParse', () => {});
+      const inputs = ['date', 'start_time', 'end_time', 'venue'];
+      inputs.forEach(name => {
+        const el = document.querySelector('[name=' + name + ']');
+        if (el) el.addEventListener('change', () => this.checkConflicts());
+      });
+      document.addEventListener('change', (e) => {
+        if (e.target.name === 'resources') this.checkConflicts();
+      });
+      const seenCheckboxValues = new Set();
+      document.querySelectorAll('input[name=employees]').forEach(cb => {
+        if (seenCheckboxValues.has(cb.value)) {
+          cb.remove();
+        } else {
+          seenCheckboxValues.add(cb.value);
+        }
+      });
+      const checkedBoxes = document.querySelectorAll('input[name=employees]:checked');
+      const checkedNames = [];
+      const seenNames = new Set();
+      checkedBoxes.forEach(cb => {
+        const user = this.allUsers.find(u => String(u.id) === cb.value);
+        const name = user ? user.name : cb.value;
+        const normalized = name.trim().replace(/\s+/g, ' ');
+        if (!seenNames.has(normalized)) {
+          seenNames.add(normalized);
+          checkedNames.push(normalized);
+        }
+      });
+      this.selectedNames = [...new Set(checkedNames)];
+      this.updateEmployeesText();
+    }
+  }));
+});
+</script>
+
+<form method="post" class="mt-6" x-data="memoForm">
   {% csrf_token %}
 
   <div class="mb-6">
@@ -411,14 +468,33 @@
     </div>
   </template>
 
-  <div class="grid grid-cols-1 xl:grid-cols-2 gap-10 items-start">
+  <div class="flex flex-row gap-10 items-start relative">
     <!-- Form Side -->
-    <div class="space-y-6">
+    <div class="space-y-6" style="width: 50%; flex-shrink: 0;">
       <div class="rounded-2xl bg-white border border-slate-100 shadow-soft p-6">
         <h2 class="text-lg font-bold mb-6 text-slate-800 flex items-center gap-2">
           <i class="fa-solid fa-pen-to-square text-uniGold"></i>
           Memo Details
         </h2>        <div class="flex flex-col gap-5">
+          <!-- Category -->
+          <div class="w-full">
+            <label class="text-sm font-semibold text-slate-700 block mb-2">Category</label>
+            <div class="flex flex-col sm:flex-row gap-3">
+              <label class="flex-1 cursor-pointer">
+                <input type="radio" name="category" value="internal" x-model="memoCategory" class="sr-only peer">
+                <div class="peer-checked:bg-uniGreen peer-checked:text-white peer-checked:border-uniGreen flex items-center justify-center gap-2 p-3 rounded-2xl border-2 border-slate-200 bg-white text-slate-600 font-bold text-sm transition hover:border-uniGreen/50">
+                  <i class="fa-solid fa-building"></i> Internal
+                </div>
+              </label>
+              <label class="flex-1 cursor-pointer">
+                <input type="radio" name="category" value="external" x-model="memoCategory" class="sr-only peer">
+                <div class="peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500 flex items-center justify-center gap-2 p-3 rounded-2xl border-2 border-slate-200 bg-white text-slate-600 font-bold text-sm transition hover:border-orange-400/50">
+                  <i class="fa-solid fa-arrow-up-right-from-square"></i> External
+                </div>
+              </label>
+            </div>
+          </div>
+
           <div class="w-full">
             <label class="text-sm font-semibold text-slate-700">Reference Number</label>
             <input type="text" name="reference_number" x-model="reference_number"
@@ -443,8 +519,8 @@
               <label class="flex items-center gap-2 cursor-pointer group">
                 <input type="checkbox" name="to_all" x-model="toAll" @change="updateEmployeesText(); checkConflicts();"
                   class="h-4 w-4 rounded border-slate-300 text-uniGreen focus:ring-uniGold/50">
-                <span class="text-xs font-bold text-slate-600 group-hover:text-uniGreen transition">All Faculty Members
-                  and Student</span>
+<span class="text-xs font-bold text-slate-600 group-hover:text-uniGreen transition">All Faculty Members
+                   and Students</span>
               </label>
             </div>
 
@@ -456,7 +532,7 @@
                   <input type="text" x-model="search" placeholder="Search employee name..."
                     class="w-full pl-11 pr-4 py-3 rounded-2xl border border-slate-200 bg-white focus:ring-2 focus:ring-uniGold/50 focus:border-uniGold transition">
                 </div>
-                <button type="button" @click="if(filteredResults.length > 0) addEmployee(filteredResults[0].id)"
+                <button type="button" @click="if(filteredResults.length > 0) addEmployee(filteredResults[0].name, filteredResults[0].id)"
                   class="h-[50px] w-[50px] flex items-center justify-center rounded-2xl bg-uniGreen text-white shadow-soft hover:opacity-90 transition">
                   <i class="fa-solid fa-plus text-lg"></i>
                 </button>
@@ -465,8 +541,8 @@
               <!-- Dropdown Results -->
               <div x-show="filteredResults.length > 0" x-cloak
                 class="absolute z-50 left-0 right-0 mt-2 max-h-60 overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-xl p-2 space-y-1">
-                <template x-for="user in filteredResults" :key="user.id">
-                  <button type="button" @click="addEmployee(user.id)"
+                <template x-for="user in filteredResults" :key="user.name">
+                  <button type="button" @click="addEmployee(user.name, user.id)"
                     class="w-full text-left px-4 py-3 rounded-xl hover:bg-slate-50 transition flex items-center justify-between group">
                     <span class="text-sm font-semibold text-slate-700" x-text="user.name"></span>
                     <i class="fa-solid fa-plus text-xs text-slate-300 group-hover:text-uniGreen transition"></i>
@@ -477,18 +553,17 @@
 
             <!-- Selected List -->
             <div class="mt-3 flex flex-wrap gap-2" x-show="!toAll">
-              <template x-for="id in selectedIds" :key="id">
+              <template x-for="name in uniqueSelectedEmployees" :key="name">
                 <div
                   class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 border border-slate-200 group">
-                  <span class="text-xs font-bold text-slate-700"
-                    x-text="allUsers.find(u => u.id == id)?.name || id"></span>
-                  <button type="button" @click="removeEmployee(id)"
+                  <span class="text-xs font-bold text-slate-700" x-text="name"></span>
+                  <button type="button" @click="removeEmployee(name)"
                     class="text-slate-400 hover:text-red-500 transition">
                     <i class="fa-solid fa-circle-xmark"></i>
                   </button>
                 </div>
               </template>
-              <div x-show="selectedIds.length === 0" class="text-xs text-slate-400 italic py-2">No individual employees
+              <div x-show="selectedNames.length === 0" class="text-xs text-slate-400 italic py-2">No individual employees
                 selected.</div>
             </div>
 
@@ -500,50 +575,36 @@
             </div>
           </div>
 
-          <div class="flex flex-col sm:flex-row gap-4">
-            <div class="flex-1">
-              <label class="text-sm font-semibold text-slate-700">Date</label>
-              <input type="date" name="date" x-model="date"
-                class="mt-2 w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-uniGold/50 focus:border-uniGold transition">
-            </div>
-            <div class="flex-1">
-              <label class="text-sm font-semibold text-slate-700">Priority</label>
-              {{ form.priority }}
-            </div>
-          </div>
-
-          <div class="flex flex-col sm:flex-row gap-4">
-            <div class="flex-1">
-              <label class="text-sm font-semibold text-slate-700">Start Time</label>
-              {{ form.start_time }}
-            </div>
-            <div class="flex-1">
-              <label class="text-sm font-semibold text-slate-700">End Time</label>
-              {{ form.end_time }}
-            </div>
-          </div>
-
-          <!-- Category -->
+          <!-- Priority (always visible) -->
           <div class="w-full">
-            <label class="text-sm font-semibold text-slate-700 block mb-2">Category</label>
-            <div class="flex flex-col sm:flex-row gap-3">
-              <label class="flex-1 cursor-pointer">
-                <input type="radio" name="category" value="internal" x-model="memoCategory" class="sr-only peer">
-                <div class="peer-checked:bg-uniGreen peer-checked:text-white peer-checked:border-uniGreen flex items-center justify-center gap-2 p-3 rounded-2xl border-2 border-slate-200 bg-white text-slate-600 font-bold text-sm transition hover:border-uniGreen/50">
-                  <i class="fa-solid fa-building"></i> Internal
-                </div>
-              </label>
-              <label class="flex-1 cursor-pointer">
-                <input type="radio" name="category" value="external" x-model="memoCategory" class="sr-only peer">
-                <div class="peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500 flex items-center justify-center gap-2 p-3 rounded-2xl border-2 border-slate-200 bg-white text-slate-600 font-bold text-sm transition hover:border-orange-400/50">
-                  <i class="fa-solid fa-arrow-up-right-from-square"></i> External
-                </div>
-              </label>
+            <label class="text-sm font-semibold text-slate-700">Priority</label>
+            {{ form.priority }}
+          </div>
+
+          <!-- Internal Fields (Date, Time) -->
+          <div class="w-full" id="internal-fields">
+            <div class="flex flex-col sm:flex-row gap-4">
+              <div class="flex-1">
+                <label class="text-sm font-semibold text-slate-700">Date</label>
+                <input type="date" name="date" x-model="date"
+                  class="mt-2 w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-uniGold/50 focus:border-uniGold transition">
+              </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-4 mt-4">
+              <div class="flex-1">
+                <label class="text-sm font-semibold text-slate-700">Start Time</label>
+                {{ form.start_time }}
+              </div>
+              <div class="flex-1">
+                <label class="text-sm font-semibold text-slate-700">End Time</label>
+                {{ form.end_time }}
+              </div>
             </div>
           </div>
 
           <!-- External Fields -->
-          <div class="w-full" x-show="memoCategory === 'external'" x-cloak>
+          <div class="w-full hidden" id="external-fields">
             <div class="rounded-2xl border border-orange-200 bg-white p-6 flex flex-col gap-6 shadow-sm">
               <div class="flex items-center gap-2 text-orange-700 font-bold text-sm">
                 <i class="fa-solid fa-location-dot"></i> External Activity Details
@@ -558,12 +619,26 @@
                   <input type="text" name="destination" x-model="destination" class="mt-2 w-full px-4 py-3 rounded-2xl border border-orange-200 bg-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400 transition" placeholder="e.g. Surigao City">
                 </div>
               </div>
+
+              <!-- Interactive Options -->
+              <div class="flex flex-wrap gap-3 p-4 rounded-xl bg-orange-50/50 border border-orange-100">
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" id="need-vehicle-check" class="h-4 w-4 rounded border-orange-300 text-orange-500 focus:ring-orange-400">
+                  <span class="text-sm font-semibold text-slate-700"><i class="fa-solid fa-van-shuttle text-orange-500 mr-1"></i> Need Vehicle?</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" id="need-resources-check" class="h-4 w-4 rounded border-orange-300 text-orange-500 focus:ring-orange-400">
+                  <span class="text-sm font-semibold text-slate-700"><i class="fa-solid fa-briefcase text-orange-500 mr-1"></i> Book Resources?</span>
+                </label>
+              </div>
+
               <!-- Vehicle Section -->
-              <div class="border-t border-orange-200 pt-4 flex flex-col gap-4">
-                <div class="flex items-center gap-2 text-orange-700 font-semibold text-sm">
-                  <i class="fa-solid fa-van-shuttle"></i> Vehicle Assignment
-                </div>
-                <div>
+              <div id="vehicle-section" class="hidden">
+                <div class="border-t border-orange-200 pt-4 flex flex-col gap-4">
+                  <div class="flex items-center gap-2 text-orange-700 font-semibold text-sm">
+                    <i class="fa-solid fa-van-shuttle"></i> Vehicle Assignment
+                  </div>
+                  <div>
                   <label class="text-sm font-semibold text-slate-700">Select Vehicle</label>
                   <select name="vehicle" x-model="selectedVehicle" class="mt-2 w-full h-[52px] max-h-[52px] px-4 py-3 rounded-2xl border border-orange-200 bg-white focus:outline-none focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400 transition">
                     <option value="">-- No Vehicle Needed --</option>
@@ -602,38 +677,33 @@
                   </div>
                 </div>
               </div>
+              <!-- Resources Section -->
+              <div id="resources-section" class="hidden">
+                <div class="border-t border-orange-200 pt-4 flex flex-col gap-4">
+                  <div class="flex items-center gap-2 text-orange-700 font-semibold text-sm">
+                    <i class="fa-solid fa-briefcase"></i> Book Resources
+                  </div>
+                  <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 p-4 border border-orange-200 rounded-2xl bg-orange-50/30">
+                    {% for checkbox in form.resources %}
+                    <label class="flex items-center gap-3 cursor-pointer hover:bg-white p-2 rounded-xl transition-all border border-transparent hover:border-orange-200">
+                      {{ checkbox.tag }}
+                      <span class="text-sm text-slate-700">{{ checkbox.choice_label }}</span>
+                    </label>
+                    {% endfor %}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
-          <!-- Internal Fields -->
-          <div class="w-full" x-show="memoCategory === 'internal'" x-cloak>
-            <div class="p-1">
-              <label class="text-sm font-semibold text-slate-700">Venue <span class="text-slate-400 font-normal">(optional)</span></label>
-              <input type="text" name="venue" x-model="venue" class="mt-2 w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-uniGold/50 focus:border-uniGold transition" placeholder="e.g. Board Room">
-            </div>
-          </div>
-
-          <!-- Section Divider for Resources -->
+          <!-- Section Divider for Delegation -->
           <div class="pt-6 mt-6 border-t border-slate-100">
             <h2 class="text-lg font-bold mb-6 text-slate-800 flex items-center gap-2">
-              <i class="fa-solid fa-briefcase text-uniGold"></i>
-              Resources & Delegation
+              <i class="fa-solid fa-user-check text-uniGold"></i>
+              Delegation & Options
             </h2>
             
             <div class="space-y-6">
-              <!-- Resources -->
-              <div>
-                <label class="text-sm font-semibold text-slate-700 block mb-2">Book Resources</label>
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 p-4 border border-slate-100 rounded-2xl bg-slate-50/50">
-                  {% for checkbox in form.resources %}
-                  <label class="flex items-center gap-3 cursor-pointer hover:bg-white p-2 rounded-xl transition-all border border-transparent hover:border-slate-100">
-                    {{ checkbox.tag }}
-                    <span class="text-sm text-slate-700">{{ checkbox.choice_label }}</span>
-                  </label>
-                  {% endfor %}
-                </div>
-              </div>
-
               <!-- Delegation & Options -->
               <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div>
@@ -664,16 +734,16 @@
           <i class="fa-solid fa-floppy-disk text-xl"></i>
           <span class="font-bold text-xl">Save Memorandum</span>
         </button>
-        <a href="{% url 'memos:memo_list' %}"
+        <div
           class="w-full sm:w-auto px-10 py-5 rounded-2xl bg-white border-2 border-slate-100 text-slate-500 font-bold hover:bg-slate-50 hover:text-slate-700 hover:border-slate-200 transition-all text-center">
           Cancel
-        </a>
+        </div>
       </div>
     </div>
 
     <!-- Preview Side -->
-    <div>
-      <div class="xl:sticky xl:top-6">
+    <div style="width: 0; flex-shrink: 0;">
+      <div style="position: fixed; top: 4rem; right: 0; width: 40%; max-width: 550px; height: calc(100vh - 4rem); overflow-y: auto; z-index: 50; padding: 1.5rem; background: rgba(255,255,255,0.95);">
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-lg font-bold text-slate-800">Formal Preview</h2>
           <button type="button" @click="window.print()"
@@ -797,5 +867,76 @@
   #memo-paper {
     font-family: 'Times New Roman', Times, serif;
   }
+
+  /* Ensure fixed positioning works for preview */
+  @media (min-width: 1024px) {
+    div[style*="position: fixed"] {
+      position: fixed !important;
+      top: 0 !important;
+      right: 0 !important;
+      z-index: 9999 !important;
+    }
+  }
 </style>
+
+<script>
+// Force cache bust - timestamp: {% now "YmdHis" %}
+console.log('JS LOADED - v3');
+
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('DOM READY');
+  const categoryRadios = document.querySelectorAll('input[name="category"]');
+  const externalFields = document.getElementById('external-fields');
+  const internalFields = document.getElementById('internal-fields');
+  const needVehicleCheck = document.getElementById('need-vehicle-check');
+  const needResourcesCheck = document.getElementById('need-resources-check');
+  const vehicleSection = document.getElementById('vehicle-section');
+  const resourcesSection = document.getElementById('resources-section');
+
+  console.log('Found elements:', {
+    radios: categoryRadios.length,
+    external: !!externalFields,
+    internal: !!internalFields,
+    vehicleCheck: !!needVehicleCheck,
+    resourcesCheck: !!needResourcesCheck,
+    vehicleSec: !!vehicleSection,
+    resourcesSec: !!resourcesSection
+  });
+
+  function updateCategory() {
+    const selected = document.querySelector('input[name="category"]:checked')?.value;
+    console.log('Category changed to:', selected);
+    if (selected === 'external') {
+      externalFields?.classList.remove('hidden');
+      internalFields?.classList.add('hidden');
+    } else {
+      externalFields?.classList.add('hidden');
+      internalFields?.classList.remove('hidden');
+    }
+  }
+
+  function updateOptions() {
+    console.log('Options updated - Vehicle:', needVehicleCheck?.checked, 'Resources:', needResourcesCheck?.checked);
+    if (needVehicleCheck?.checked) {
+      vehicleSection?.classList.remove('hidden');
+    } else {
+      vehicleSection?.classList.add('hidden');
+    }
+    if (needResourcesCheck?.checked) {
+      resourcesSection?.classList.remove('hidden');
+    } else {
+      resourcesSection?.classList.add('hidden');
+    }
+  }
+
+  categoryRadios.forEach(r => r.addEventListener('change', updateCategory));
+  needVehicleCheck?.addEventListener('change', updateOptions);
+  needResourcesCheck?.addEventListener('change', updateOptions);
+
+  // Initialize
+  updateCategory();
+  updateOptions();
+});
+</script>
+
 {% endblock %}
