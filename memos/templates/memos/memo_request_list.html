@@ -53,7 +53,7 @@
       </span>
 
       <div class="h-10 w-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400">
-        {% if req.attachment.name|lower|slice:"-4:" == ".jpg" or req.attachment.name|lower|slice:"-5:" == ".jpeg" or req.attachment.name|lower|slice:"-4:" == ".png" %}
+        {% if req.attachment %}
         <i class="fa-solid fa-image"></i>
         {% else %}
         <i class="fa-solid fa-file-lines"></i>

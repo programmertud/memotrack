@@ -53,13 +53,12 @@
           </a>
         </div>
         <div class="p-8 flex justify-center bg-slate-100/50">
-          {% if memo_req.attachment.name|lower|slice:"-4:" == ".jpg" or memo_req.attachment.name|lower|slice:"-5:" == ".jpeg" or memo_req.attachment.name|lower|slice:"-4:" == ".png" %}
+          {% if memo_req.attachment %}
           <img src="{{ memo_req.attachment.url }}" class="max-w-full rounded-xl shadow-lg border-4 border-white">
           {% else %}
           <div class="py-20 text-center">
             <i class="fa-solid fa-file-invoice text-6xl text-slate-200 mb-4"></i>
-            <p class="text-slate-500 font-bold">Document attached: {{ memo_req.attachment.name }}</p>
-            <p class="text-xs text-slate-400 mt-2">Open the link above to view/download.</p>
+            <p class="text-slate-500 font-bold">No attachment provided.</p>
           </div>
           {% endif %}
         </div>
