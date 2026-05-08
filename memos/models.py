@@ -20,9 +20,8 @@ class Memo(models.Model):
         CONFLICT = "conflict", "Conflict"
 
     class Category(models.TextChoices):
-        INSTITUTIONAL = "institutional", "Institutional-wide"
-        DEPARTMENT = "department", "Departmental"
-        PERSONAL = "personal", "Personal/Individual"
+        INTERNAL = "internal", "Internal"
+        EXTERNAL = "external", "External"
 
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
@@ -49,7 +48,7 @@ class Memo(models.Model):
     priority = models.CharField(max_length=10, choices=Priority.choices, default=Priority.MEDIUM)
     required = models.BooleanField(default=False)
 
-    category = models.CharField(max_length=20, choices=Category.choices, default=Category.DEPARTMENT)
+    category = models.CharField(max_length=20, choices=Category.choices, default=Category.INTERNAL)
     status = models.CharField(max_length=15, choices=Status.choices, default=Status.PENDING)
     delegated_to = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -79,6 +78,8 @@ class Memo(models.Model):
     def __str__(self) -> str:
         if self.to_all:
             emp_list = "All Faculty Members and Student"
+        elif not self.pk:
+            emp_list = "Unsaved Memo"
         else:
             emp_list = ", ".join([u.get_username() for u in self.employees.all()[:3]])
             if self.employees.count() > 3:
@@ -123,6 +124,16 @@ class Memo(models.Model):
         for user in self.employees.all():
             if self.conflicts_queryset(user=user).exists():
                 return True
+        
+        # Check resource conflicts
+        for booking in self.resource_bookings.all():
+            if booking.has_conflicts():
+                return True
+
+        # Check vehicle conflicts
+        if hasattr(self, 'vehicle_booking') and self.vehicle_booking.has_conflicts():
+            return True
+
         return False
 
     def get_employee_names(self) -> str:

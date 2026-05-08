@@ -43,8 +43,10 @@ class Vehicle(models.Model):
 class VehicleBooking(models.Model):
     vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, related_name="bookings")
     memo = models.OneToOneField("memos.Memo", on_delete=models.CASCADE, related_name="vehicle_booking")
-
     created_at = models.DateTimeField(default=timezone.now, editable=False)
+    days = models.PositiveIntegerField(default=1, help_text="Number of days for vehicle use")
+    start_date = models.DateField(null=True, blank=True, help_text="Start date of vehicle use")
+    end_date = models.DateField(null=True, blank=True, help_text="End date of vehicle use")
 
     class Meta:
         indexes = [
@@ -55,11 +57,15 @@ class VehicleBooking(models.Model):
         return f"{self.vehicle} for {self.memo}"
 
     def overlaps_queryset(self):
-        qs = VehicleBooking.objects.filter(vehicle=self.vehicle, memo__date=self.memo.date)
+        start = self.start_date or self.memo.date
+        end = self.end_date or self.memo.date
+        
+        qs = VehicleBooking.objects.filter(vehicle=self.vehicle)
         if self.pk:
             qs = qs.exclude(pk=self.pk)
+            
         return qs.filter(
-            Q(memo__start_time__lt=self.memo.end_time) & Q(memo__end_time__gt=self.memo.start_time)
+            Q(start_date__lte=end) & Q(end_date__gte=start)
         )
 
     def has_conflicts(self) -> bool:

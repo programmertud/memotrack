@@ -35,41 +35,38 @@
       margin: 0;
     }
 
-    /* The outer shell fills viewport exactly */
+    /* The outer shell fills viewport naturally */
     #app-shell {
       display: flex;
-      height: 100vh;
-      overflow: hidden;
+      min-height: 100vh;
     }
 
-    /* Sidebar: fixed height, own scrollbar, never pushes content */
+    /* Sidebar: sticks to the top while scrolling */
     #app-sidebar {
       flex-shrink: 0;
       width: 288px;
-      /* w-72 */
       height: 100vh;
+      position: sticky;
+      top: 0;
       overflow-y: auto;
       overflow-x: hidden;
       display: flex;
       flex-direction: column;
       background: #fff;
       border-right: 1px solid #f1f5f9;
-      position: sticky;
-      top: 0;
     }
 
-    /* Main area: own scroll */
+    /* Main area: grows with content */
     #app-main {
       flex: 1;
       display: flex;
       flex-direction: column;
-      overflow-y: auto;
       min-width: 0;
     }
   </style>
 </head>
 
-<body class="bg-gradient-to-br from-green-50 via-white to-green-50 text-slate-800">
+<body class="bg-slate-50 text-slate-800">
   <div id="app-shell">
     <div id="app-sidebar">
       {% include "partials/sidebar.html" %}

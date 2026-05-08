@@ -61,7 +61,7 @@
         <div class="space-y-2">
           {% for row in workload_summary %}
             <div class="p-3 rounded-2xl border border-slate-100 hover:bg-green-50/40 transition">
-              <div class="font-semibold">{{ row.assigned_user__username }}</div>
+              <div class="font-semibold">{{ row.employees__username }}</div>
             </div>
           {% endfor %}
         </div>

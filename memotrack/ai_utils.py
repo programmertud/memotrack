@@ -1,4 +1,5 @@
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from django.conf import settings
 import json
 import logging
@@ -39,24 +40,25 @@ def extract_text_from_file(file_obj, file_name: str) -> str:
         raise ValueError(f"Unsupported file type: {file_name}")
 
 
+def get_genai_client():
+    api_key = getattr(settings, "GEMINI_API_KEY", None)
+    if not api_key:
+        return None
+    return genai.Client(api_key=api_key)
+
+
 def parse_memo_image(image_bytes: bytes, mime_type: str):
     """
     Uses Gemini Vision to extract structured scheduling data from an image.
     Accepts raw image bytes and its MIME type (e.g. 'image/jpeg', 'image/png').
     Returns a dict with the same keys as parse_memo_text, or None on failure.
     """
-    api_key = getattr(settings, "GEMINI_API_KEY", None)
-    if not api_key:
+    client = get_genai_client()
+    if not client:
         return None
-    genai.configure(api_key=api_key)
 
     from django.utils import timezone
     now = timezone.now()
-
-    model = genai.GenerativeModel(
-        model_name="gemini-flash-latest",
-        generation_config={"response_mime_type": "application/json"},
-    )
 
     prompt = f"""
     Today's Date: {now.strftime('%A, %B %d, %Y')}
@@ -80,8 +82,16 @@ def parse_memo_image(image_bytes: bytes, mime_type: str):
     """
 
     try:
-        image_part = {"mime_type": mime_type, "data": base64.b64encode(image_bytes).decode()}
-        response = model.generate_content([prompt, image_part])
+        response = client.models.generate_content(
+            model="gemini-1.5-flash",
+            contents=[
+                prompt,
+                types.Part.from_bytes(data=image_bytes, mime_type=mime_type)
+            ],
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+            ),
+        )
         content = response.text.strip()
         if "```" in content:
             import re
@@ -96,20 +106,6 @@ def parse_memo_image(image_bytes: bytes, mime_type: str):
             logger.error(f"Gemini Image Parsing Error: {e}")
         return None
 
-def get_gemini_model(json_mode=False):
-    api_key = getattr(settings, "GEMINI_API_KEY", None)
-    if not api_key:
-        return None
-    genai.configure(api_key=api_key)
-    
-    config = {}
-    if json_mode:
-        config["response_mime_type"] = "application/json"
-        
-    return genai.GenerativeModel(
-        model_name="gemini-flash-lite-latest",
-        generation_config=config if config else None
-    )
 
 def local_parse_memo_text(text):
     """
@@ -238,12 +234,13 @@ def local_parse_memo_text(text):
 
     return data
 
+
 def parse_memo_text(text):
     """
     Uses Gemini to extract structured data. Falls back to Local Regex Parser on failure.
     """
-    model = get_gemini_model(json_mode=True)
-    if not model:
+    client = get_genai_client()
+    if not client:
         logger.warning("Gemini API not configured. Using local fallback parser.")
         return local_parse_memo_text(text)
 
@@ -263,11 +260,17 @@ def parse_memo_text(text):
     """
 
     try:
-        response = model.generate_content(prompt)
+        response = client.models.generate_content(
+            model="gemini-1.5-flash",
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+            ),
+        )
         
-        # Check if response was blocked by safety filters
-        if not response.candidates or not response.candidates[0].content.parts:
-            logger.error("Gemini Parsing Blocked. Falling back to local parser.")
+        # Check if response was blocked or empty
+        if not response.text:
+            logger.error("Gemini Parsing returned empty text. Falling back to local parser.")
             return local_parse_memo_text(text)
             
         content = response.text.strip()
@@ -285,17 +288,22 @@ def parse_memo_text(text):
         logger.error(f"Gemini API Error: {e}. Using local fallback parser.")
         return local_parse_memo_text(text)
 
+
 def get_scheduling_recommendation(memo_data, conflicts):
     """
     Asks Gemini for a recommendation. Falls back to a rule-based suggestion.
     """
     try:
-        model = get_gemini_model(json_mode=False)
-        if not model: raise ValueError("No model")
+        client = get_genai_client()
+        if not client:
+            raise ValueError("No client")
         
         conflicts_str = "\n".join([f"- {c.title} on {c.date} at {c.venue}" for c in conflicts])
         prompt = f"New event {memo_data.get('title')} conflicts with:\n{conflicts_str}\nRecommend action (reschedule/delegate/anyway)."
-        response = model.generate_content(prompt)
+        response = client.models.generate_content(
+            model="gemini-1.5-flash",
+            contents=prompt
+        )
         return response.text.strip()
     except Exception:
         # Rule-based fallback
@@ -305,17 +313,22 @@ def get_scheduling_recommendation(memo_data, conflicts):
             return "Recommendation: This is a high-priority event. Approve anyway or reschedule existing lower-priority events."
         return "Recommendation: Overlap detected. Consider rescheduling this memo or delegating it to another user."
 
+
 def get_predictive_analytics(upcoming_memos):
     """
     Analyzes schedule density. Falls back to a local calculation.
     """
     try:
-        model = get_gemini_model(json_mode=False)
-        if not model: raise ValueError("No model")
+        client = get_genai_client()
+        if not client:
+            raise ValueError("No client")
         
         memos_data = "\n".join([f"- {m.date}: {m.start_time}" for m in upcoming_memos])
         prompt = f"Analyze schedule density and predict busy periods:\n{memos_data}"
-        response = model.generate_content(prompt)
+        response = client.models.generate_content(
+            model="gemini-1.5-flash",
+            contents=prompt
+        )
         return response.text.strip()
     except Exception:
         # Simple local calculation
@@ -326,3 +339,4 @@ def get_predictive_analytics(upcoming_memos):
         if count > 1:
             return f"Predictive Insight: {most_common} is identified as a high-demand day with {count} scheduled activities. Monitor for potential resource bottlenecks."
         return "Predictive Insight: Schedule density is currently optimal. No high-demand peaks predicted for the next 7 days."
+

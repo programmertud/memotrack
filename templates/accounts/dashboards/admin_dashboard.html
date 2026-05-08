@@ -418,9 +418,7 @@
               style="font-weight:600;font-size:.82rem;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
               {{ m.title }}</div>
             <div style="font-size:.72rem;color:#64748b;margin-top:.15rem;">
-              {% with p=m.assigned_user.profile %}
-              {{ p.first_name|default:m.assigned_user.username }} {{ p.last_name }}
-              {% endwith %}
+              {{ m.get_employee_names }}
               {% if m.venue %} · {{ m.venue }}{% endif %}
             </div>
           </div>
@@ -459,9 +457,7 @@
             {{ m.date|date:"M j" }} · {{ m.start_time|time:"H:i" }}
           </div>
           <div style="font-size:.7rem;color:#475569;">
-            {% with p=m.assigned_user.profile %}
-            {{ p.first_name|default:m.assigned_user.username }} {{ p.last_name }}
-            {% endwith %}
+            {{ m.get_employee_names }}
           </div>
 
         </div>
@@ -532,9 +528,7 @@
             {{ m.date|date:"M j" }} · {{ m.start_time|time:"H:i" }}–{{ m.end_time|time:"H:i" }}
           </div>
           <div style="font-size:.7rem;color:#475569;">
-            {% with p=m.assigned_user.profile %}
-            {{ p.first_name|default:m.assigned_user.username }} {{ p.last_name }}
-            {% endwith %}
+            {{ m.get_employee_names }}
           </div>
 
         </div>
@@ -569,7 +563,7 @@
           <i class="fa-solid fa-list-check" style="color:#a78bfa;width:1rem;text-align:center;"></i> All Memos
           <span class="cnt">{{ total_memos }}</span>
         </a>
-        <a href="{% url 'accounts:admin_user_list' 'instructor' %}" class="qlink">
+        <a href="{% url 'accounts:admin_user_list' 'employee' %}" class="qlink">
           <i class="fa-solid fa-chalkboard-user" style="color:#60a5fa;width:1rem;text-align:center;"></i> Employees
           <span class="cnt">{{ total_employees }}</span>
         </a>
@@ -638,15 +632,18 @@
       <div class="row">
         <div
           style="width:32px;height:32px;border-radius:50%;background:#2F6B2F;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:800;color:#fff;flex-shrink:0;text-transform:uppercase;">
-          {% with p=m.assigned_user.profile %}{{ p.first_name|slice:":1" }}{{ p.last_name|slice:":1" }}{% endwith %}
+          {% with first_emp=m.employees.all.0 %}
+          {% with p=first_emp.profile %}
+          {{ p.first_name|slice:":1" }}{{ p.last_name|slice:":1" }}
+          {% endwith %}
+          {% endwith %}
         </div>
         <div style="flex:1;min-width:0;">
           <div
             style="font-weight:600;font-size:.82rem;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
             {{ m.title }}</div>
           <div style="font-size:.7rem;color:#64748b;">
-            {% with p=m.assigned_user.profile %}
-            {{ p.first_name|default:m.assigned_user.username }} {{ p.last_name }}{% endwith %} · {{ m.date|date:"M j" }}
+            {{ m.get_employee_names }} · {{ m.date|date:"M j" }}
           </div>
           <div style="font-size:.68rem;color:#334155;">{{ m.created_at|timesince }} ago</div>
         </div>

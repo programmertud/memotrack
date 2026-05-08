@@ -6,16 +6,24 @@ from resources.models import VehicleBooking, ResourceBooking
 
 User = get_user_model()
 
-def check_conflicts(date, start_time, end_time, user=None, venue=None, resources=None, exclude_memo_id=None):
+def check_conflicts(date, start_time, end_time, users=None, venue=None, resources=None, exclude_memo_id=None):
     """
     Check for scheduling conflicts across multiple constraints.
     Returns a list of conflict dictionaries.
     """
     conflicts = []
     
-    # 1. Temporal Overlaps for Personnel (Assigned User)
-    if user:
-        from memos.models import Memo
+    if users is None:
+        users = []
+    if not isinstance(users, (list, tuple, set)):
+        users = [users]
+
+    # 1. Temporal Overlaps for Personnel (Assigned Users)
+    from memos.models import Memo
+    for user in users:
+        if not user:
+            continue
+            
         user_memos = Memo.objects.filter(employees=user, date=date)
         if exclude_memo_id:
             user_memos = user_memos.exclude(pk=exclude_memo_id)

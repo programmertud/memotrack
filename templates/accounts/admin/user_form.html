@@ -5,7 +5,7 @@
 {% block content %}
 <div class="flex items-center justify-between gap-4">
   <div>
-    <h1 class="text-2xl font-bold tracking-tight">{% if mode == 'create' %}Create{% else %}Edit{% endif %} {{ role|title }}</h1>
+    <h1 class="text-2xl font-bold tracking-tight">{% if mode == 'create' %}Create{% else %}Edit{% endif %} {% if role == 'instructor' %}Employee{% else %}{{ role|title }}{% endif %}</h1>
     <p class="text-sm text-slate-500 mt-1">{% if mode == 'create' %}Add a new account.{% else %}Update account details.{% endif %}</p>
   </div>
 </div>

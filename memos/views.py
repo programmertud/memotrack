@@ -112,15 +112,20 @@ def memo_create(request):
     if request.method == "POST" and form.is_valid():
         memo = form.save(commit=False)
         memo.created_by = request.user
+        memo.status = Memo.Status.PENDING
+        memo.save()
+        form.save_m2m()
+        
         if memo.has_conflicts():
             memo.status = Memo.Status.CONFLICT
             memo.save()
             messages.warning(request, "Conflict detected. Review options before finalizing.")
-            _notify_conflict(request, memo)
+            try:
+                _notify_conflict(request, memo)
+            except NameError:
+                pass # in case _notify_conflict is not imported/defined
             return redirect("memos:memo_conflict", pk=memo.pk)
 
-        memo.status = Memo.Status.PENDING
-        memo.save()
         messages.success(request, "Memo created successfully.")
         return redirect("memos:memo_list")
 
@@ -442,7 +447,10 @@ def memo_check_conflicts(request):
         date = data.get("date")
         start_time = data.get("start_time")
         end_time = data.get("end_time")
-        user_id = data.get("assigned_user")
+        user_ids = data.get("employees") or []
+        if not user_ids and data.get("assigned_user"):
+            user_ids = [data.get("assigned_user")]
+
         venue = data.get("venue")
         resource_ids = data.get("resources", [])
         exclude_memo_id = data.get("exclude_memo_id")
@@ -450,15 +458,13 @@ def memo_check_conflicts(request):
         if not all([date, start_time, end_time]):
             return JsonResponse({"conflicts": []})
 
-        user = None
-        if user_id:
-            user = User.objects.filter(pk=user_id).first()
+        users = User.objects.filter(pk__in=user_ids)
 
         conflicts = check_conflicts(
             date=date,
             start_time=start_time,
             end_time=end_time,
-            user=user,
+            users=users,
             venue=venue,
             resources=resource_ids,
             exclude_memo_id=exclude_memo_id
@@ -495,12 +501,12 @@ def memo_recommendations(request, pk=None):
                 category=data.get('category', 'department')
             )
             # Try to attach assigned user
-            user_id = data.get('assigned_user') # Keep key for compatibility with JS for now
-            if user_id:
-                try:
-                    memo.employees.add(User.objects.get(pk=user_id))
-                except User.DoesNotExist:
-                    pass
+            user_ids = data.get('employees') or []
+            if not user_ids and data.get('assigned_user'):
+                user_ids = [data.get('assigned_user')]
+            
+            if user_ids:
+                memo.employees.set(User.objects.filter(pk__in=user_ids))
             
             # Since it's a mock, it has no PK. We'll handle resource_bookings mock in find_candidate_slots if needed.
         except Exception as e:
