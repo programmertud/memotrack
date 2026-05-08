@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -24,7 +25,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-k71ap9+_vq$#k31!muwr@+*21r2eh=a7@^nsgn8f)@)x7&e@#b'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = ['*']
 CSRF_TRUSTED_ORIGINS = ['https://*.trycloudflare.com', 'https://*.vercel.app']
@@ -83,10 +84,10 @@ WSGI_APPLICATION = 'memotrack.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config(
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+        conn_max_age=600
+    )
 }
 
 
@@ -142,4 +143,4 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Get your FREE key at: https://aistudio.google.com/apikey
 # Free tier: 1,500 requests/day, 1 million tokens/minute — no billing required
 # Replace below with your actual key (starts with AIza...)
-GEMINI_API_KEY = "AIzaSyDwKqAXXhb_Q6NILABPDTlYL1ublJlgKn0"
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "AIzaSyDwKqAXXhb_Q6NILABPDTlYL1ublJlgKn0")
