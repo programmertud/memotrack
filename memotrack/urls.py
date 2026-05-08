@@ -21,8 +21,28 @@ from django.conf.urls.static import static
 
 from accounts import views as accounts_views
 
+from django.core.management import call_command
+from django.http import HttpResponse
+from django.contrib.auth import get_user_model
+
+def init_db(request):
+    try:
+        # Run migrations
+        call_command('migrate', no_input=True)
+        
+        # Create a default admin if none exists
+        User = get_user_model()
+        if not User.objects.filter(username='admin').exists():
+            User.objects.create_superuser('admin', 'admin@example.com', 'admin')
+            return HttpResponse("Database initialized and superuser 'admin' (password: admin) created successfully!")
+        
+        return HttpResponse("Database migrations applied successfully!")
+    except Exception as e:
+        return HttpResponse(f"Error initializing database: {e}")
+
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('init-db/', init_db),
     path('', accounts_views.home, name='home'),
     path('accounts/', include('accounts.urls')),
     path('', include('memos.urls')),
