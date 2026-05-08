@@ -46,6 +46,8 @@ INSTALLED_APPS = [
     'notifications',
     'governance',
     'analytics',
+    'cloudinary_storage',
+    'cloudinary',
 ]
 
 MIDDLEWARE = [
@@ -144,3 +146,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Free tier: 1,500 requests/day, 1 million tokens/minute — no billing required
 # Replace below with your actual key (starts with AIza...)
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "AIzaSyDwKqAXXhb_Q6NILABPDTlYL1ublJlgKn0")
+
+# ── Cloudinary Storage (Production) ──────────────────────────────────────────
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME'),
+    'API_KEY': os.environ.get('CLOUDINARY_API_KEY'),
+    'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET'),
+}
+
+if not DEBUG:
+    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
