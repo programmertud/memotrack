@@ -149,9 +149,9 @@ GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "AIzaSyDwKqAXXhb_Q6NILABPDTlYL
 
 # ── Cloudinary Storage (Production) ──────────────────────────────────────────
 CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME'),
-    'API_KEY': os.environ.get('CLOUDINARY_API_KEY'),
-    'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET'),
+    'CLOUD_NAME': 'docpntslt',
+    'API_KEY': '459548338583816',
+    'API_SECRET': None,  # Nuclear Fix: Ignore secret to force unsigned preset mode
     'UPLOAD_PRESET': 'skedit',
 }
 
