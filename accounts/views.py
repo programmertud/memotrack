@@ -472,16 +472,13 @@ def instructor_dashboard(request):
     conflicts_count = memos_qs.filter(status=Memo.Status.CONFLICT).distinct().count()
 
     class_assignments = memos_qs.filter(venue__icontains="class").order_by("-date").distinct()[:10]
-        "-date"
-    )[:10]
     travel_assignments = (
-        Memo.objects.filter(delegated_to=request.user)
-        .exclude(destination="")
-        .order_by("-date")[:10]
+        memos_qs.exclude(destination="")
+        .order_by("-date").distinct()[:10]
     )
-    event_participation = Memo.objects.filter(delegated_to=request.user, priority=Memo.Priority.HIGH).order_by(
+    event_participation = memos_qs.filter(priority=Memo.Priority.HIGH).order_by(
         "-date"
-    )[:10]
+    ).distinct()[:10]
 
     leave_requests = LeaveRequest.objects.filter(user=request.user).order_by("-created_at")[:10]
     notifications = Notification.objects.filter(user=request.user).order_by("-created_at")[:10]
