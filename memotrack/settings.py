@@ -159,10 +159,6 @@ if CLOUDINARY_STORAGE['CLOUD_NAME']:
     STORAGES = {
         "default": {
             "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
-            "OPTIONS": {
-                "upload_preset": "skedit",
-                "unsigned": True,
-            }
         },
         "staticfiles": {
             "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
