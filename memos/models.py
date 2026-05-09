@@ -103,8 +103,9 @@ class Memo(models.Model):
     def clean(self):
         from django.core.exceptions import ValidationError
 
-        if self.end_time <= self.start_time:
-            raise ValidationError("End time must be after start time.")
+        if self.start_time and self.end_time:
+            if self.end_time <= self.start_time:
+                raise ValidationError("End time must be after start time.")
 
     def conflicts_queryset(self, user=None):
         if user:
