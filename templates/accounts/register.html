@@ -521,9 +521,8 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', function () {
-      const adminExists = {{ admin_exists| yesno: "true,false"
-    }};
-    const adminError = {{ admin_error| yesno: "true,false" }};
+      const adminExists = {{ admin_exists|yesno:"true,false" }};
+      const adminError = {{ admin_error|yesno:"true,false" }};
     const roleSelect = document.getElementById('{{ form.role.id_for_label }}');
 
     // Disable Admin option in dropdown if admin already exists
