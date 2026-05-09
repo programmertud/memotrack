@@ -43,7 +43,7 @@ def init_db(request):
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('init-db/', init_db),
-    path('', include('public.urls')),
+    path('', include('public_app.urls')),
     path('accounts/', include('accounts.urls')),
     path('memos/', include('memos.urls')),
     path('resources/', include('resources.urls')),

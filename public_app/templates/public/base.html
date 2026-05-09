@@ -133,8 +133,8 @@
 
                 <!-- Right: Desktop Nav -->
                 <div class="hidden md:flex items-center space-x-10 font-medium">
-                    <a href="{% url 'public:home' %}" class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">Home</a>
-                    <a href="{% url 'public:about' %}" class="nav-link {% if request.resolver_match.url_name == 'about' %}active{% endif %}">About</a>
+                    <a href="{% url 'public_app:home' %}" class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">Home</a>
+                    <a href="{% url 'public_app:about' %}" class="nav-link {% if request.resolver_match.url_name == 'about' %}active{% endif %}">About</a>
                     <a href="{% url 'accounts:login' %}" class="px-6 py-2.5 rounded-full btn-gradient text-white shadow-md">Login</a>
                 </div>
 
@@ -150,8 +150,8 @@
         <!-- Mobile Menu Panel -->
         <div id="mobile-menu" class="hidden md:hidden bg-white/95 backdrop-blur-lg border-t border-slate-100 shadow-xl">
             <div class="px-4 pt-4 pb-6 space-y-3">
-                <a href="{% url 'public:home' %}" class="block px-4 py-3 rounded-xl hover:bg-slate-50 transition text-lg {% if request.resolver_match.url_name == 'home' %}text-uniGreen font-semibold bg-green-50{% endif %}">Home</a>
-                <a href="{% url 'public:about' %}" class="block px-4 py-3 rounded-xl hover:bg-slate-50 transition text-lg {% if request.resolver_match.url_name == 'about' %}text-uniGreen font-semibold bg-green-50{% endif %}">About</a>
+                <a href="{% url 'public_app:home' %}" class="block px-4 py-3 rounded-xl hover:bg-slate-50 transition text-lg {% if request.resolver_match.url_name == 'home' %}text-uniGreen font-semibold bg-green-50{% endif %}">Home</a>
+                <a href="{% url 'public_app:about' %}" class="block px-4 py-3 rounded-xl hover:bg-slate-50 transition text-lg {% if request.resolver_match.url_name == 'about' %}text-uniGreen font-semibold bg-green-50{% endif %}">About</a>
                 <a href="{% url 'accounts:login' %}" class="block px-4 py-4 rounded-xl bg-uniGreen text-white text-center font-bold shadow-lg">Login</a>
             </div>
         </div>
@@ -181,8 +181,8 @@
                 <div>
                     <h4 class="text-white font-bold mb-6">Quick Links</h4>
                     <ul class="space-y-4">
-                        <li><a href="{% url 'public:home' %}" class="hover:text-uniGold transition">Home</a></li>
-                        <li><a href="{% url 'public:about' %}" class="hover:text-uniGold transition">About</a></li>
+                        <li><a href="{% url 'public_app:home' %}" class="hover:text-uniGold transition">Home</a></li>
+                        <li><a href="{% url 'public_app:about' %}" class="hover:text-uniGold transition">About</a></li>
                         <li><a href="{% url 'accounts:login' %}" class="hover:text-uniGold transition">Login</a></li>
                     </ul>
                 </div>
