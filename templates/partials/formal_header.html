@@ -1,0 +1,50 @@
+{% load static %}
+<div class="bg-white p-6 border-b-4 border-green-700 w-full flex flex-col md:flex-row items-center justify-between gap-4 mb-8 shadow-sm rounded-t-2xl">
+    
+    <!-- Left: University Logo & Text -->
+    <div class="flex items-center gap-4">
+        <!-- University Logo -->
+        <div class="w-24 h-24 flex-shrink-0">
+            <img src="{% static 'img/university_logo.png' %}?v=2" alt="SNSU Logo" class="w-full h-full object-contain">
+        </div>
+        
+        <!-- Typography -->
+        <div class="flex flex-col">
+            <span class="text-gray-500 font-serif text-sm">Republic of the Philippines</span>
+            <span class="text-gray-600 font-sans font-bold text-lg leading-tight tracking-wide">SURIGAO DEL NORTE STATE UNIVERSITY</span>
+            <span class="text-black font-sans text-sm mt-0.5">Narciso Street, Surigao City, 8400 Philippines</span>
+            <span class="text-orange-500 font-serif italic text-xs mt-1">"For Nation's Greater"</span>
+        </div>
+    </div>
+
+    <!-- Right: Certifications & Control Table -->
+    <div class="flex items-center gap-4">
+        <!-- Certifications Placeholder -->
+        <div class="flex items-center gap-2 h-20 bg-gray-50 border border-dashed border-gray-300 p-2 text-center text-xs text-gray-400 rounded-md w-32 flex-shrink-0">
+            <i class="fa-solid fa-image text-lg mx-auto block mb-1"></i>
+            <span>Upload ISO/PAB Logos Here</span>
+        </div>
+
+        <!-- Document Control Table -->
+        <table class="border-collapse text-xs font-sans">
+            <tbody>
+                <tr>
+                    <td class="border-2 border-black bg-green-600 text-white font-bold p-1 px-2 text-right">Document<br>Code No.</td>
+                    <td class="border-2 border-black font-bold text-sm p-1 px-3 w-40">FM-SNSU-PLM-01-3</td>
+                </tr>
+                <tr>
+                    <td class="border-2 border-black bg-green-600 text-white font-bold p-1 px-2 text-right">Revision No.</td>
+                    <td class="border-2 border-black p-1 px-3">01</td>
+                </tr>
+                <tr>
+                    <td class="border-2 border-black bg-green-600 text-white font-bold p-1 px-2 text-right">Effective<br>Date</td>
+                    <td class="border-2 border-black p-1 px-3">22 December 2023</td>
+                </tr>
+                <tr>
+                    <td class="border-2 border-black bg-green-600 text-white font-bold p-1 px-2 text-right">Page No.</td>
+                    <td class="border-2 border-black font-bold p-1 px-3">1 of 1</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

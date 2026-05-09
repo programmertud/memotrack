@@ -608,14 +608,45 @@
         <div class="bg-slate-100 p-4 rounded-3xl shadow-inner scale-[0.95] origin-top">
           <div id="memo-paper" class="bg-white shadow-2xl w-full p-[0.75in] text-[#1a1a1a] leading-tight">
             <!-- Paper Header -->
-            <div class="flex items-center justify-between border-b-2 border-uniGreen pb-3 mb-4">
-              <img src="/static/img/university_logo.png?v=2" class="h-12 w-auto" alt="Logo">
-              <div class="text-center flex-1 mx-2">
-                <div class="text-[7px] uppercase tracking-widest text-slate-500">Republic of the Philippines</div>
-                <div class="text-[12px] font-bold text-slate-900 leading-tight">SURIGAO DEL NORTE STATE UNIVERSITY</div>
-                <div class="text-[7px] text-slate-600">Surigao City 8400, Philippines</div>
+            <div class="flex items-center justify-between border-b-[1.5px] border-uniGreen pb-3 mb-4">
+              <!-- Left: University Logo & Text -->
+              <div class="flex items-center gap-2">
+                <img src="{% static 'img/university_logo.png' %}?v=2" class="h-[45px] w-[45px] object-contain" alt="Logo">
+                <div class="flex flex-col text-left">
+                  <span class="text-[5.5px] font-serif text-slate-500 tracking-wide uppercase">Republic of the Philippines</span>
+                  <span class="text-[9.5px] font-bold text-slate-900 font-sans tracking-wide leading-tight mt-[1px]">SURIGAO DEL NORTE STATE UNIVERSITY</span>
+                  <span class="text-[5.5px] font-sans text-slate-800 mt-[1px]">Narciso Street, Surigao City, 8400 Philippines</span>
+                  <span class="text-[5px] font-serif italic text-orange-500 mt-[2px]">"For Nation's Greater"</span>
+                </div>
               </div>
-              <div class="w-12 h-12 bg-slate-50 border border-slate-100 opacity-20"></div>
+
+              <!-- Right: Certifications & Control Table -->
+              <div class="flex items-center gap-2">
+                <!-- Certifications -->
+                <img src="{% static 'img/iso_pab.png' %}" class="h-[28px] w-auto object-contain" alt="ISO/PAB Certifications">
+
+                <!-- Document Control Table -->
+                <table class="border-collapse text-[4.5px] font-sans leading-[1.1]">
+                  <tbody>
+                    <tr>
+                      <td class="border border-black bg-uniGreen text-white font-bold p-[2px] text-right w-[25px]">Document<br>Code No.</td>
+                      <td class="border border-black font-bold p-[2px] px-[3px] w-[50px]">FM-SNSU-PLM-01-3</td>
+                    </tr>
+                    <tr>
+                      <td class="border border-black bg-uniGreen text-white font-bold p-[2px] text-right">Revision No.</td>
+                      <td class="border border-black p-[2px] px-[3px]">01</td>
+                    </tr>
+                    <tr>
+                      <td class="border border-black bg-uniGreen text-white font-bold p-[2px] text-right">Effective<br>Date</td>
+                      <td class="border border-black p-[2px] px-[3px]">22 December 2023</td>
+                    </tr>
+                    <tr>
+                      <td class="border border-black bg-uniGreen text-white font-bold p-[2px] text-right">Page No.</td>
+                      <td class="border border-black font-bold p-[2px] px-[3px]">1 of 1</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             <div class="text-center mb-6">
