@@ -123,10 +123,20 @@
 
       get filteredResults() { 
         if (this.search.length < 1) return []; 
-        return this.allUsers.filter(u =>
+        const results = this.allUsers.filter(u =>
           u.name.toLowerCase().includes(this.search.toLowerCase()) &&
           !this.selectedIds.includes(String(u.id))
         );
+        // Aggressive de-duplication by ID
+        const unique = [];
+        const seen = new Set();
+        results.forEach(u => {
+          if (!seen.has(u.id)) {
+            seen.add(u.id);
+            unique.push(u);
+          }
+        });
+        return unique;
       },
 
       get uniqueSelectedEmployees() {
@@ -598,7 +608,7 @@
           <div id="memo-paper" class="bg-white shadow-2xl w-full p-[0.75in] text-[#1a1a1a] leading-tight">
             <!-- Paper Header -->
             <div class="flex items-center justify-between border-b-2 border-uniGreen pb-3 mb-4">
-              <img src="/static/img/logo.png" class="h-12 w-auto" alt="Logo">
+              <img src="{% static 'img/university_logo.png' %}" class="h-12 w-auto" alt="Logo">
               <div class="text-center flex-1 mx-2">
                 <div class="text-[7px] uppercase tracking-widest text-slate-500">Republic of the Philippines</div>
                 <div class="text-[12px] font-bold text-slate-900 leading-tight">SURIGAO DEL NORTE STATE UNIVERSITY</div>
