@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'governance',
     'analytics',
     'cloudinary',
+    'public',
 ]
 
 MIDDLEWARE = [

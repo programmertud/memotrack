@@ -1,0 +1,252 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}SKEDiT.AI - Smart University Scheduling{% endblock %}</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- CSS Frameworks & Icons -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+    <script src="https://unpkg.com/scrollreveal"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        uniGreen: "#006400",
+                        uniGold: "#ffd700",
+                        softGray: "#f7fafc",
+                    },
+                    fontFamily: {
+                        display: ['Outfit', 'Inter', 'sans-serif'],
+                        body: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            --primary: #006400;
+            --accent: #ffd700;
+            --glass-bg: rgba(255, 255, 255, 0.8);
+            --glass-border: rgba(255, 255, 255, 0.4);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            scroll-behavior: smooth;
+        }
+
+        .glass-nav {
+            background: rgba(255, 255, 255, 0);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid transparent;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-nav.scrolled {
+            background: rgba(255, 255, 255, 0.95);
+            border-bottom: 1px solid var(--glass-border);
+            box-shadow: 0 10px 30px -10px rgba(0, 100, 0, 0.1);
+        }
+
+        .nav-link {
+            position: relative;
+            transition: color 0.3s ease;
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--accent);
+            transition: width 0.3s ease;
+        }
+
+        .nav-link:hover::after, .nav-link.active::after {
+            width: 100%;
+        }
+
+        .nav-link.active {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        /* Smooth scroll margin */
+        [id] {
+            scroll-margin-top: 80px;
+        }
+
+        .btn-gradient {
+            background: linear-gradient(135deg, var(--primary), #008000);
+            transition: all 0.3s ease;
+        }
+
+        .btn-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -5px rgba(0, 100, 0, 0.3);
+        }
+
+        /* Back to top button */
+        #back-to-top {
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.4s ease;
+        }
+
+        #back-to-top.show {
+            opacity: 1;
+            visibility: visible;
+        }
+    </style>
+    
+    {% block extra_head %}{% endblock %}
+</head>
+
+<body class="bg-softGray text-slate-900 font-body">
+
+    <!-- Navigation -->
+    <nav id="topbar" class="fixed top-0 left-0 w-full z-50 glass-nav py-4">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Left: Logo & Branding -->
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg border-2 border-uniGold p-2 animate__animated animate__fadeIn">
+                        <img src="/static/img/university_logo.png?v=2" alt="Logo" class="w-full h-full object-contain">
+                    </div>
+                    <span class="text-2xl font-display font-bold tracking-tight text-uniGreen">SKEDiT<span class="text-uniGold">.AI</span></span>
+                </div>
+
+                <!-- Right: Desktop Nav -->
+                <div class="hidden md:flex items-center space-x-10 font-medium">
+                    <a href="{% url 'public:home' %}" class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">Home</a>
+                    <a href="{% url 'public:about' %}" class="nav-link {% if request.resolver_match.url_name == 'about' %}active{% endif %}">About</a>
+                    <a href="{% url 'accounts:login' %}" class="px-6 py-2.5 rounded-full btn-gradient text-white shadow-md">Login</a>
+                </div>
+
+                <!-- Mobile Menu Button -->
+                <div class="md:hidden">
+                    <button id="mobile-menu-btn" class="text-uniGreen p-2 focus:outline-none">
+                        <i class="fa-solid fa-bars-staggered text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Menu Panel -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white/95 backdrop-blur-lg border-t border-slate-100 shadow-xl">
+            <div class="px-4 pt-4 pb-6 space-y-3">
+                <a href="{% url 'public:home' %}" class="block px-4 py-3 rounded-xl hover:bg-slate-50 transition text-lg {% if request.resolver_match.url_name == 'home' %}text-uniGreen font-semibold bg-green-50{% endif %}">Home</a>
+                <a href="{% url 'public:about' %}" class="block px-4 py-3 rounded-xl hover:bg-slate-50 transition text-lg {% if request.resolver_match.url_name == 'about' %}text-uniGreen font-semibold bg-green-50{% endif %}">About</a>
+                <a href="{% url 'accounts:login' %}" class="block px-4 py-4 rounded-xl bg-uniGreen text-white text-center font-bold shadow-lg">Login</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-slate-400 py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+                <div class="col-span-1 md:col-span-2">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center p-1.5">
+                            <img src="/static/img/university_logo.png?v=2" alt="Logo" class="w-full h-full object-contain">
+                        </div>
+                        <span class="text-xl font-display font-bold text-white tracking-tight">SKEDiT.AI</span>
+                    </div>
+                    <p class="max-w-md leading-relaxed">
+                        An AI-powered scheduling and resource management platform for modern universities. 
+                        Streamlining academic logistics with intelligence and precision.
+                    </p>
+                </div>
+                <div>
+                    <h4 class="text-white font-bold mb-6">Quick Links</h4>
+                    <ul class="space-y-4">
+                        <li><a href="{% url 'public:home' %}" class="hover:text-uniGold transition">Home</a></li>
+                        <li><a href="{% url 'public:about' %}" class="hover:text-uniGold transition">About</a></li>
+                        <li><a href="{% url 'accounts:login' %}" class="hover:text-uniGold transition">Login</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-white font-bold mb-6">Contact</h4>
+                    <ul class="space-y-4">
+                        <li class="flex items-center gap-3"><i class="fa-solid fa-envelope text-uniGreen"></i> support@skedit.ai</li>
+                        <li class="flex items-center gap-3"><i class="fa-solid fa-phone text-uniGreen"></i> +1 (234) 567-890</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="pt-8 border-t border-slate-800 text-sm text-center">
+                &copy; 2026 SKEDiT.AI. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <!-- Back to top -->
+    <button id="back-to-top" class="fixed bottom-8 right-8 w-12 h-12 rounded-full bg-uniGreen text-white shadow-2xl flex items-center justify-center z-50 hover:bg-uniGreen/90 transform hover:-translate-y-1 transition duration-300">
+        <i class="fa-solid fa-arrow-up"></i>
+    </button>
+
+    <!-- Global Scripts -->
+    <script>
+        // Topbar scroll effect
+        const topbar = document.getElementById('topbar');
+        const backToTop = document.getElementById('back-to-top');
+
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                topbar.classList.add('scrolled');
+                topbar.classList.remove('py-4');
+                topbar.classList.add('py-2');
+                backToTop.classList.add('show');
+            } else {
+                topbar.classList.remove('scrolled');
+                topbar.classList.add('py-4');
+                topbar.classList.remove('py-2');
+                backToTop.classList.remove('show');
+            }
+        });
+
+        // Mobile menu toggle
+        const menuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+
+        menuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        // Back to top click
+        backToTop.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        // Initialize ScrollReveal
+        ScrollReveal().reveal('.reveal', {
+            distance: '50px',
+            duration: 1000,
+            easing: 'cubic-bezier(0.5, 0, 0, 1)',
+            interval: 100
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

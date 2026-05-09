@@ -43,9 +43,9 @@ def init_db(request):
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('init-db/', init_db),
-    path('', accounts_views.home, name='home'),
+    path('', include('public.urls')),
     path('accounts/', include('accounts.urls')),
-    path('', include('memos.urls')),
+    path('memos/', include('memos.urls')),
     path('resources/', include('resources.urls')),
     path('notifications/', include('notifications.urls')),
     path('governance/', include('governance.urls')),

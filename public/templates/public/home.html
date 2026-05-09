@@ -1,0 +1,180 @@
+{% extends 'public/base.html' %}
+{% load static %}
+
+{% block title %}Home | SKEDiT.AI{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="relative min-h-[90vh] flex items-center pt-24 overflow-hidden bg-white">
+    <!-- Floating Gradients -->
+    <div class="absolute top-[-10%] right-[-5%] w-[50%] h-[50%] bg-green-50 rounded-full blur-[120px] -z-10 opacity-60"></div>
+    <div class="absolute bottom-[-10%] left-[-5%] w-[40%] h-[40%] bg-yellow-50 rounded-full blur-[100px] -z-10 opacity-50"></div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <div class="reveal">
+                <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-green-50 border border-green-100 text-uniGreen font-semibold text-sm mb-8">
+                    <span class="flex h-2 w-2 rounded-full bg-uniGreen"></span>
+                    Now powered by Gemini AI
+                </div>
+                <h1 class="text-5xl md:text-7xl font-display font-extrabold text-slate-900 leading-[1.1] mb-8">
+                    Smart University <br>
+                    <span class="text-uniGreen">Scheduling</span> <br>
+                    Made Easy
+                </h1>
+                <p class="text-xl text-slate-600 leading-relaxed mb-10 max-w-lg">
+                    An AI-powered scheduling and resource management platform designed to automate complex academic logistics for modern universities.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-5">
+                    <a href="{% url 'accounts:login' %}" class="px-10 py-4 rounded-2xl bg-uniGreen text-white font-bold text-lg shadow-xl hover:bg-uniGreen/90 transform hover:-translate-y-1 transition duration-300 text-center">
+                        Get Started
+                    </a>
+                    <a href="{% url 'public:about' %}" class="px-10 py-4 rounded-2xl bg-white text-slate-800 font-bold text-lg border-2 border-slate-100 hover:border-uniGreen/30 hover:bg-slate-50 transition duration-300 text-center">
+                        Learn More
+                    </a>
+                </div>
+                
+                <!-- Stats Preview -->
+                <div class="mt-12 pt-12 border-t border-slate-100 grid grid-cols-3 gap-8">
+                    <div>
+                        <div class="text-3xl font-display font-bold text-slate-900">99%</div>
+                        <div class="text-sm text-slate-500">Accuracy</div>
+                    </div>
+                    <div>
+                        <div class="text-3xl font-display font-bold text-slate-900">24/7</div>
+                        <div class="text-sm text-slate-500">Automation</div>
+                    </div>
+                    <div>
+                        <div class="text-3xl font-display font-bold text-slate-900">50k+</div>
+                        <div class="text-sm text-slate-500">Events Managed</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="relative reveal delay-300">
+                <!-- Dashboard Preview Mockup -->
+                <div class="relative z-10 p-4 bg-white rounded-[2.5rem] shadow-[0_40px_80px_-15px_rgba(0,100,0,0.15)] border-8 border-slate-50">
+                    <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=2070" alt="Dashboard Preview" class="rounded-[1.5rem] w-full shadow-inner">
+                </div>
+                <!-- Decorative Elements -->
+                <div class="absolute -top-6 -right-6 w-32 h-32 bg-uniGold rounded-3xl -z-10 opacity-20 animate-pulse"></div>
+                <div class="absolute -bottom-10 -left-10 w-48 h-48 bg-uniGreen rounded-full -z-10 opacity-10 animate-bounce" style="animation-duration: 8s;"></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="py-24 bg-softGray">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-20 reveal">
+            <h2 class="text-4xl font-display font-bold text-slate-900 mb-6">Powerful AI Features</h2>
+            <p class="text-lg text-slate-600 max-w-2xl mx-auto">
+                Discover the tools that make SKEDiT.AI the leading platform for academic scheduling and coordination.
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <!-- Feature Card 1 -->
+            <div class="bg-white p-10 rounded-[2rem] shadow-soft border border-slate-100 hover:border-uniGreen/20 transform hover:-translate-y-2 transition duration-500 reveal">
+                <div class="w-16 h-16 rounded-2xl bg-green-50 text-uniGreen flex items-center justify-center text-3xl mb-8">
+                    <i class="fa-solid fa-robot"></i>
+                </div>
+                <h3 class="text-xl font-bold text-slate-900 mb-4">AI Memo Parsing</h3>
+                <p class="text-slate-600 leading-relaxed">
+                    Automatically extract event dates, venues, and attendees from unstructured memos and PDF files using Gemini AI.
+                </p>
+            </div>
+
+            <!-- Feature Card 2 -->
+            <div class="bg-white p-10 rounded-[2rem] shadow-soft border border-slate-100 hover:border-uniGreen/20 transform hover:-translate-y-2 transition duration-500 reveal delay-100">
+                <div class="w-16 h-16 rounded-2xl bg-yellow-50 text-uniGold flex items-center justify-center text-3xl mb-8">
+                    <i class="fa-solid fa-calendar-check"></i>
+                </div>
+                <h3 class="text-xl font-bold text-slate-900 mb-4">Conflict Detection</h3>
+                <p class="text-slate-600 leading-relaxed">
+                    Real-time detection of scheduling overlaps for venues, vehicles, and personnel to prevent logistical bottlenecks.
+                </p>
+            </div>
+
+            <!-- Feature Card 3 -->
+            <div class="bg-white p-10 rounded-[2rem] shadow-soft border border-slate-100 hover:border-uniGreen/20 transform hover:-translate-y-2 transition duration-500 reveal delay-200">
+                <div class="w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-3xl mb-8">
+                    <i class="fa-solid fa-van-shuttle"></i>
+                </div>
+                <h3 class="text-xl font-bold text-slate-900 mb-4">Resource Tracking</h3>
+                <p class="text-slate-600 leading-relaxed">
+                    Seamlessly manage university vehicle bookings and venue availability with automated approval workflows.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- AI Scheduling Showcase -->
+<section class="py-24 bg-white overflow-hidden">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="bg-slate-900 rounded-[3rem] p-10 md:p-20 relative">
+            <div class="absolute top-0 right-0 p-12 opacity-10">
+                <i class="fa-solid fa-microchip text-9xl text-white"></i>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                <div class="reveal">
+                    <h2 class="text-4xl font-display font-bold text-white mb-8">Experience the Future <br>of <span class="text-uniGold">AI Scheduling</span></h2>
+                    <p class="text-slate-400 text-lg mb-10 leading-relaxed">
+                        Our platform uses advanced Natural Language Processing to understand your academic documents. Simply upload a memo, and watch as SKEDiT.AI populates your calendar, books the necessary resources, and notifies all attendees.
+                    </p>
+                    <ul class="space-y-4 mb-10 text-white">
+                        <li class="flex items-center gap-4"><i class="fa-solid fa-check text-uniGreen text-xl"></i> Intelligent Venue Selection</li>
+                        <li class="flex items-center gap-4"><i class="fa-solid fa-check text-uniGreen text-xl"></i> Automated Driver Assignments</li>
+                        <li class="flex items-center gap-4"><i class="fa-solid fa-check text-uniGreen text-xl"></i> Smart Attendance Tracking</li>
+                    </ul>
+                    <a href="{% url 'accounts:login' %}" class="inline-block px-8 py-4 rounded-2xl bg-uniGold text-slate-900 font-bold hover:bg-white transition duration-300">
+                        Try Demo Now
+                    </a>
+                </div>
+                <div class="reveal delay-300">
+                    <!-- AI Visualization -->
+                    <div class="relative bg-slate-800 rounded-3xl p-8 border border-slate-700 shadow-2xl">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        </div>
+                        <div class="font-mono text-sm text-green-400 space-y-2">
+                            <p class="animate-pulse">> Initializing AI Parser...</p>
+                            <p>> Reading: "Memorandum_Academic_Conf.pdf"</p>
+                            <p class="text-uniGold">> EVENT DETECTED: Academic Research Summit</p>
+                            <p>> DATE: June 15, 2026 | VENUE: Grand Hall</p>
+                            <p>> COORDINATING RESOURCES...</p>
+                            <p class="text-green-500">> [SUCCESS] Calendar Updated.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action -->
+<section class="py-24 bg-uniGreen relative overflow-hidden">
+    <!-- Texture overlay -->
+    <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(#fff 1px, transparent 1px); background-size: 40px 40px;"></div>
+    
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10 reveal">
+        <h2 class="text-4xl md:text-5xl font-display font-extrabold text-white mb-8">Ready to Modernize Your Scheduling?</h2>
+        <p class="text-xl text-green-100 mb-12 max-w-2xl mx-auto">
+            Join the forward-thinking universities already using SKEDiT.AI to simplify their logistical workflows.
+        </p>
+        <div class="flex flex-col sm:flex-row justify-center gap-6">
+            <a href="{% url 'accounts:login' %}" class="px-12 py-5 rounded-2xl bg-white text-uniGreen font-bold text-xl shadow-2xl hover:bg-uniGold hover:text-slate-900 transition duration-300">
+                Join Now
+            </a>
+            <a href="{% url 'public:about' %}" class="px-12 py-5 rounded-2xl bg-uniGreen text-white font-bold text-xl border-2 border-white/20 hover:border-white transition duration-300">
+                Contact Sales
+            </a>
+        </div>
+    </div>
+</section>
+{% endblock %}

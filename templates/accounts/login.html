@@ -196,7 +196,7 @@
       border: 1px solid #feb2b2;
       color: #c53030;
       padding: 1rem 1.25rem;
-      border-radius: 1rem;
+      border-radius: 1.25rem;
       font-size: 0.875rem;
       margin-bottom: 2rem;
       display: flex;
@@ -206,7 +206,7 @@
     }
 
     .form-group {
-      margin-bottom: 1.75rem;
+      margin-bottom: 1.5rem;
       animation: fadeInUp 0.8s 0.5s both;
     }
 
@@ -222,10 +222,10 @@
 
     .form-control {
       width: 100%;
-      padding: 1rem 1.25rem;
+      padding: 0.875rem 1.25rem;
       background: #f8fafc;
       border: 2px solid #e2e8f0;
-      border-radius: 1rem;
+      border-radius: 1.25rem;
       font-size: 1rem;
       font-family: var(--font-body);
       color: var(--text-main);
@@ -242,7 +242,7 @@
 
     .btn-submit {
       width: 100%;
-      padding: 1.125rem;
+      padding: 1rem;
       background: var(--primary);
       color: var(--white);
       border: none;
@@ -257,7 +257,7 @@
       gap: 0.75rem;
       box-shadow: 0 10px 20px -5px rgba(0, 77, 0, 0.3);
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      margin-top: 2rem;
+      margin-top: 1.5rem;
       animation: fadeInUp 0.8s 0.7s both;
     }
 
@@ -273,12 +273,30 @@
       fill: currentColor;
     }
 
+    /* ── Back to Home Link ── */
+    .back-home {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 1.5rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.875rem;
+      transition: color 0.3s ease;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .back-home:hover {
+      color: var(--primary);
+    }
+
     /* Responsive */
     @media (max-width: 900px) {
       .container {
         flex-direction: column;
         height: auto;
-        max-width: 500px;
+        max-width: 480px;
         margin: 1rem;
       }
 
@@ -356,13 +374,15 @@
           </svg>
         </button>
 
-        {% if login_type != 'admin' %}
         <div style="margin-top: 1.5rem; text-align: center; font-size: 0.875rem; color: var(--text-muted);">
           No account yet?
           <a href="{% url 'accounts:register' %}"
             style="color: var(--primary); font-weight: 600; text-decoration: none;">Create one</a>
         </div>
-        {% endif %}
+        
+        <a href="{% url 'public:home' %}" class="back-home">
+          <i class="fa-solid fa-arrow-left"></i> Back to Homepage
+        </a>
       </form>
     </div>
   </div>
