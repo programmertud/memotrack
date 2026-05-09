@@ -195,7 +195,18 @@
         const dateParam = this.date ? `&date=${this.date}` : '';
         fetch(`{% url 'resources:api_available_vehicles' %}?days=${this.vehicleDays}${dateParam}&exclude_memo_id=${window._EXCLUDE_ID}`)
           .then(r => r.json())
-          .then(data => { this.availableVehicles = data.vehicles; })
+          .then(data => { 
+            // Safety: Ensure only unique vehicles by ID
+            const unique = [];
+            const seen = new Set();
+            (data.vehicles || []).forEach(v => {
+              if (!seen.has(v.id)) {
+                seen.add(v.id);
+                unique.push(v);
+              }
+            });
+            this.availableVehicles = unique;
+          })
           .catch(err => console.error(err));
       },
 
