@@ -64,7 +64,7 @@
   window._PARSE_FILE_URL = "{% url 'memos:memo_parse_ai_file' %}";
   window._CHECK_CONFLICTS_URL = "{% url 'memos:memo_check_conflicts' %}";
   window._RECOMMENDATIONS_URL = "{% url 'memos:memo_recommendations_new' %}";
-  window._EXCLUDE_ID = "{{ memo.pk|default:'' }}";
+  window._EXCLUDE_ID = "{% if memo %}{{ memo.pk }}{% endif %}";
   window._CSRF_TOKEN = "{{ csrf_token }}";
 
   document.addEventListener('alpine:init', () => {
