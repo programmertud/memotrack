@@ -75,8 +75,8 @@ class MemoForm(forms.ModelForm):
         }
         widgets = {
             "date": forms.DateInput(attrs={"type": "date", "class": "mt-2 w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-uniGold/50 focus:border-uniGold transition"}),
-            "start_time": forms.TimeInput(attrs={"type": "time", "x-model": "startTime", "@change": "checkConflicts()", "class": "mt-2 w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-uniGold/50 focus:border-uniGold transition"}),
-            "end_time": forms.TimeInput(attrs={"type": "time", "x-model": "endTime", "@change": "checkConflicts()", "class": "mt-2 w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-uniGold/50 focus:border-uniGold transition"}),
+            "start_time": forms.TimeInput(attrs={"type": "time", "class": "mt-2 w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-uniGold/50 focus:border-uniGold transition"}),
+            "end_time": forms.TimeInput(attrs={"type": "time", "class": "mt-2 w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-uniGold/50 focus:border-uniGold transition"}),
             "priority": forms.Select(attrs={"class": "mt-2 w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-uniGold/50 focus:border-uniGold transition"}),
         }
 

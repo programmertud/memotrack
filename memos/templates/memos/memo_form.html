@@ -64,7 +64,7 @@
   window._PARSE_FILE_URL = "{% url 'memos:memo_parse_ai_file' %}";
   window._CHECK_CONFLICTS_URL = "{% url 'memos:memo_check_conflicts' %}";
   window._RECOMMENDATIONS_URL = "{% url 'memos:memo_recommendations_new' %}";
-  window._EXCLUDE_ID = "{% if memo %}{{ memo.pk }}{% endif %}";
+  window._EXCLUDE_ID = "{{ memo.pk|default:'' }}";
   window._CSRF_TOKEN = "{{ csrf_token }}";
 
   document.addEventListener('alpine:init', () => {
@@ -462,8 +462,8 @@
             <div class="hidden">{% for cb in form.employees %}{{ cb.tag }}{% endfor %}</div>
           </div>
 
-          <!-- Date & Time (Visible for both Internal/External) -->
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- Internal Specifics -->
+          <div x-show="memoCategory === 'internal'" class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label class="text-sm font-semibold text-slate-700">Date</label>
               <input type="date" name="date" x-model="date" class="mt-2 w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-uniGold/50 transition">
@@ -579,7 +579,7 @@
           <div id="memo-paper" class="bg-white shadow-2xl w-full p-[0.75in] text-[#1a1a1a] leading-tight">
             <!-- Paper Header -->
             <div class="flex items-center justify-between border-b-2 border-uniGreen pb-3 mb-4">
-              <img src="{% static 'img/university_logo.png' %}" class="h-12 w-auto" alt="Logo">
+              <img src="/static/img/logo.png" class="h-12 w-auto" alt="Logo">
               <div class="text-center flex-1 mx-2">
                 <div class="text-[7px] uppercase tracking-widest text-slate-500">Republic of the Philippines</div>
                 <div class="text-[12px] font-bold text-slate-900 leading-tight">SURIGAO DEL NORTE STATE UNIVERSITY</div>
