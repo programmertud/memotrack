@@ -154,24 +154,22 @@ class AdminUserUpdateForm(forms.Form):
 
 
 class UserRegisterForm(UserCreationForm):
-    first_name = forms.CharField(max_length=150, widget=_TEXT_INPUT)
-    middle_name = forms.CharField(max_length=150, widget=_TEXT_INPUT, required=False)
-    last_name = forms.CharField(max_length=150, widget=_TEXT_INPUT)
-    employee_id = forms.CharField(max_length=50, widget=_TEXT_INPUT, label="Employee ID")
-    mobile_number = forms.CharField(max_length=30, widget=_TEXT_INPUT)
-    address = forms.CharField(widget=forms.Textarea(attrs={"class": "w-full px-4 py-3 rounded-2xl bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-uniGold/60", "rows": 3}), required=False)
+    full_name = forms.CharField(max_length=255, widget=_TEXT_INPUT, label="Full Name")
+    employee_id = forms.CharField(max_length=50, widget=_TEXT_INPUT, label="ID Number")
+    mobile_number = forms.CharField(max_length=30, widget=_TEXT_INPUT, label="Contact Number")
     email = forms.EmailField(required=True, widget=_EMAIL_INPUT)
     username = forms.CharField(max_length=150, required=False, widget=forms.HiddenInput())
     role = forms.ChoiceField(
         choices=[
             ("admin", "Admin"),
             ("instructor", "Employee"),
-
+            ("staff", "Staff"),
         ],
         widget=_SELECT,
+        label="User Type"
     )
-    password1 = forms.CharField(widget=_PASSWORD_INPUT)
-    password2 = forms.CharField(widget=_PASSWORD_INPUT)
+    password1 = forms.CharField(widget=_PASSWORD_INPUT, label="Password")
+    password2 = forms.CharField(widget=_PASSWORD_INPUT, label="Confirm Password")
 
     class Meta(UserCreationForm.Meta):
         model = User
@@ -180,9 +178,9 @@ class UserRegisterForm(UserCreationForm):
     def clean_employee_id(self):
         employee_id = (self.cleaned_data.get("employee_id") or "").strip()
         if not employee_id:
-            raise forms.ValidationError("Employee ID is required.")
+            raise forms.ValidationError("ID Number is required.")
         if Profile.objects.filter(employee_id=employee_id).exists():
-            raise forms.ValidationError("Employee ID already exists.")
+            raise forms.ValidationError("ID Number already exists.")
         return employee_id
 
     def clean_email(self):
@@ -196,52 +194,36 @@ class UserRegisterForm(UserCreationForm):
     def clean_mobile_number(self):
         mobile = (self.cleaned_data.get("mobile_number") or "").strip()
         if not mobile:
-            raise forms.ValidationError("Mobile number is required.")
+            raise forms.ValidationError("Contact number is required.")
         if Profile.objects.filter(mobile_number=mobile).exists():
-            raise forms.ValidationError("This mobile number is already registered.")
+            raise forms.ValidationError("This contact number is already registered.")
         return mobile
 
     def _generate_unique_username(self) -> str:
-        first  = slugify(self.cleaned_data.get("first_name")  or "", allow_unicode=False)
-        middle = slugify(self.cleaned_data.get("middle_name") or "", allow_unicode=False)
-        last   = slugify(self.cleaned_data.get("last_name")   or "", allow_unicode=False)
-
-        # Build base: first-initial + middle-initial (opt) + last name
-        first_initial  = first[0]  if (first and len(first) > 0)  else ""
-        middle_initial = middle[0] if (middle and len(middle) > 0) else ""
-        name_base = (first_initial + middle_initial + last).replace("-", "")
-
-        # Fall back to email prefix or mobile if names produce nothing
-        if not name_base:
+        full_name = self.cleaned_data.get("full_name") or ""
+        name_slug = slugify(full_name, allow_unicode=False).replace("-", "")
+        
+        if not name_slug:
             email  = (self.cleaned_data.get("email") or "").strip()
-            mobile = (self.cleaned_data.get("mobile_number") or "").strip()
             if email:
-                name_base = slugify(email.split("@", 1)[0], allow_unicode=False).replace("-", "")
-            elif mobile:
-                name_base = slugify(mobile, allow_unicode=False).replace("-", "")
+                name_slug = slugify(email.split("@", 1)[0], allow_unicode=False).replace("-", "")
+        
+        if not name_slug:
+            name_slug = "user"
 
-        if not name_base:
-            raise forms.ValidationError("Unable to generate a username.")
-
-        # Append a random 4-digit number and retry until unique
         for _ in range(20):
             suffix = str(random.randint(1000, 9999))
-            candidate = f"{name_base}{suffix}"
+            candidate = f"{name_slug}{suffix}"
             if not User.objects.filter(username=candidate).exists():
                 return candidate
 
-        # Last resort: longer random suffix
-        candidate = name_base + "".join(random.choices(string.digits, k=6))
-        while User.objects.filter(username=candidate).exists():
-            candidate = name_base + "".join(random.choices(string.digits, k=6))
-        return candidate
+        return name_slug + "".join(random.choices(string.digits, k=6))
 
     def clean(self):
         cleaned = super().clean()
         if not cleaned.get("username"):
             cleaned["username"] = self._generate_unique_username()
 
-        # Enforce single system-admin rule (Profile.Role.ADMIN, NOT Django is_staff)
         if cleaned.get("role") == "admin":
             if Profile.objects.filter(role=Profile.Role.ADMIN).exists():
                 raise forms.ValidationError(
@@ -254,26 +236,27 @@ class UserRegisterForm(UserCreationForm):
         user = super().save(commit=commit)
         user.email = self.cleaned_data.get("email")
         role = self.cleaned_data["role"]
+        full_name = self.cleaned_data.get("full_name", "").strip()
+        
+        parts = full_name.split(" ", 1)
+        first_name = parts[0]
+        last_name = parts[1] if len(parts) > 1 else ""
+
         if commit:
             user.save(update_fields=["email"])
             profile, _ = Profile.objects.get_or_create(user=user)
-            # Map "admin" choice to Profile.Role.ADMIN (system admin, not Django admin)
             profile.role = Profile.Role.ADMIN if role == "admin" else role
-            profile.first_name = self.cleaned_data["first_name"]
-            profile.middle_name = self.cleaned_data.get("middle_name") or ""
-            profile.last_name = self.cleaned_data["last_name"]
+            profile.first_name = first_name
+            profile.last_name = last_name
             profile.employee_id = self.cleaned_data["employee_id"]
             profile.mobile_number = self.cleaned_data["mobile_number"]
-            profile.address = self.cleaned_data.get("address") or ""
             profile.save(
                 update_fields=[
                     "role",
                     "first_name",
-                    "middle_name",
                     "last_name",
                     "employee_id",
                     "mobile_number",
-                    "address",
                 ]
             )
         return user
