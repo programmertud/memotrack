@@ -462,8 +462,8 @@
             <div class="hidden">{% for cb in form.employees %}{{ cb.tag }}{% endfor %}</div>
           </div>
 
-          <!-- Internal Specifics -->
-          <div x-show="memoCategory === 'internal'" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- Date & Time (Visible for both Internal/External) -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label class="text-sm font-semibold text-slate-700">Date</label>
               <input type="date" name="date" x-model="date" class="mt-2 w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-uniGold/50 transition">

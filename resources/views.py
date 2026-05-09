@@ -133,7 +133,7 @@ def api_available_vehicles(request):
     today = timezone.now().date()
 
     # Start with all vehicles that are generally available (lowercase status)
-    available_qs = Vehicle.objects.filter(status="available")
+    available_qs = Vehicle.objects.filter(status="available").distinct()
 
     # If no date is provided, filter out those already booked for TODAY
     if not date_str:
