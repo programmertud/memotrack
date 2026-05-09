@@ -105,11 +105,19 @@
       // Employee selection
       search: '',
       employees_text: '',
-      allUsers: [
-        {% for u in form.employees.field.queryset %}
-          { id: '{{ u.id }}', name: '{% if u.profile.first_name %}{{ u.profile.first_name|escapejs }} {{ u.profile.last_name|escapejs }}{% else %}{{ u.username|escapejs }}{% endif %}' },
-        {% endfor %}
-      ],
+      allUsers: (() => {
+        const users = [
+          {% for u in form.employees.field.queryset %}
+            { id: '{{ u.id }}', name: '{% if u.profile.first_name %}{{ u.profile.first_name|escapejs }} {{ u.profile.last_name|escapejs }}{% else %}{{ u.username|escapejs }}{% endif %}' },
+          {% endfor %}
+        ];
+        const seen = new Set();
+        return users.filter(u => {
+          if (seen.has(u.id)) return false;
+          seen.add(u.id);
+          return true;
+        });
+      })(),
       selectedIds: [],
       selectedNames: [],
 
