@@ -207,8 +207,8 @@ class UserRegisterForm(UserCreationForm):
         last   = slugify(self.cleaned_data.get("last_name")   or "", allow_unicode=False)
 
         # Build base: first-initial + middle-initial (opt) + last name
-        first_initial  = first[0]  if first  else ""
-        middle_initial = middle[0] if middle else ""
+        first_initial  = first[0]  if (first and len(first) > 0)  else ""
+        middle_initial = middle[0] if (middle and len(middle) > 0) else ""
         name_base = (first_initial + middle_initial + last).replace("-", "")
 
         # Fall back to email prefix or mobile if names produce nothing
@@ -256,7 +256,7 @@ class UserRegisterForm(UserCreationForm):
         role = self.cleaned_data["role"]
         if commit:
             user.save(update_fields=["email"])
-            profile = user.profile
+            profile, _ = Profile.objects.get_or_create(user=user)
             # Map "admin" choice to Profile.Role.ADMIN (system admin, not Django admin)
             profile.role = Profile.Role.ADMIN if role == "admin" else role
             profile.first_name = self.cleaned_data["first_name"]
