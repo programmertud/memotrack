@@ -291,28 +291,32 @@ def admin_dashboard(request):
 
 
 
-def _normalize_admin_role(role: str) -> str:
+def _normalize_admin_role(role: str):
     role = (role or "").strip().lower()
-    # Accept 'employee' as alias for 'instructor' role
+    # 'employee' now returns both instructors and staff
     if role == "employee":
-        return Profile.Role.EMPLOYEE
-    if role not in {Profile.Role.STAFF, Profile.Role.EMPLOYEE}:
-        return ""
-    return role
+        return [Profile.Role.EMPLOYEE, Profile.Role.STAFF]
+    if role == "instructor":
+        return [Profile.Role.EMPLOYEE]
+    if role == "staff":
+        return [Profile.Role.STAFF]
+    if role == "admin":
+        return [Profile.Role.ADMIN]
+    return []
 
 
 @login_required
 def admin_user_list(request, role: str):
     if not (request.user.is_staff or getattr(getattr(request.user, 'profile', None), 'role', None) == Profile.Role.ADMIN):
         return redirect('accounts:post_login')
-    role = _normalize_admin_role(role)
-    if not role:
+    roles = _normalize_admin_role(role)
+    if not roles:
         messages.error(request, "Invalid role.")
         return redirect("accounts:admin_dashboard")
 
     users = (
         User.objects.select_related("profile")
-        .filter(profile__role=role)
+        .filter(profile__role__in=roles)
         .order_by("username")
     )
     return render(
