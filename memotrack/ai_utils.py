@@ -1,5 +1,4 @@
-from google import genai
-from google.genai import types
+import google.generativeai as genai
 from django.conf import settings
 import json
 import logging
@@ -7,7 +6,6 @@ import base64
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
-
 
 def extract_text_from_file(file_obj, file_name: str) -> str:
     """
@@ -39,12 +37,12 @@ def extract_text_from_file(file_obj, file_name: str) -> str:
     else:
         raise ValueError(f"Unsupported file type: {file_name}")
 
-
-def get_genai_client():
+def get_genai_model(model_name="gemini-1.5-flash"):
     api_key = getattr(settings, "GEMINI_API_KEY", None)
     if not api_key:
         return None
-    return genai.Client(api_key=api_key)
+    genai.configure(api_key=api_key)
+    return genai.GenerativeModel(model_name)
 
 
 def parse_memo_image(image_bytes: bytes, mime_type: str):
@@ -53,8 +51,8 @@ def parse_memo_image(image_bytes: bytes, mime_type: str):
     Accepts raw image bytes and its MIME type (e.g. 'image/jpeg', 'image/png').
     Returns a dict with the same keys as parse_memo_text, or None on failure.
     """
-    client = get_genai_client()
-    if not client:
+    model = get_genai_model()
+    if not model:
         return None
 
     from django.utils import timezone
@@ -82,16 +80,11 @@ def parse_memo_image(image_bytes: bytes, mime_type: str):
     """
 
     try:
-        response = client.models.generate_content(
-            model="gemini-1.5-flash",
-            contents=[
-                prompt,
-                types.Part.from_bytes(data=image_bytes, mime_type=mime_type)
-            ],
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-            ),
-        )
+        response = model.generate_content([
+            prompt,
+            {'mime_type': mime_type, 'data': image_bytes}
+        ], generation_config={"response_mime_type": "application/json"})
+        
         content = response.text.strip()
         if "```" in content:
             import re
@@ -100,10 +93,7 @@ def parse_memo_image(image_bytes: bytes, mime_type: str):
                 content = json_match.group(0)
         return json.loads(content)
     except Exception as e:
-        if "403" in str(e):
-            logger.error(f"Gemini Image Parsing Error: 403 Your project has been denied access. Please check Google AI Studio project status.")
-        else:
-            logger.error(f"Gemini Image Parsing Error: {e}")
+        logger.error(f"Gemini Image Parsing Error: {e}")
         return None
 
 
@@ -239,8 +229,8 @@ def parse_memo_text(text):
     """
     Uses Gemini to extract structured data. Falls back to Local Regex Parser on failure.
     """
-    client = get_genai_client()
-    if not client:
+    model = get_genai_model()
+    if not model:
         logger.warning("Gemini API not configured. Using local fallback parser.")
         return local_parse_memo_text(text)
 
@@ -260,12 +250,9 @@ def parse_memo_text(text):
     """
 
     try:
-        response = client.models.generate_content(
-            model="gemini-1.5-flash",
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-            ),
+        response = model.generate_content(
+            prompt,
+            generation_config={"response_mime_type": "application/json"},
         )
         
         # Check if response was blocked or empty
@@ -294,16 +281,13 @@ def get_scheduling_recommendation(memo_data, conflicts):
     Asks Gemini for a recommendation. Falls back to a rule-based suggestion.
     """
     try:
-        client = get_genai_client()
-        if not client:
-            raise ValueError("No client")
+        model = get_genai_model()
+        if not model:
+            raise ValueError("No model")
         
         conflicts_str = "\n".join([f"- {c.title} on {c.date} at {c.venue}" for c in conflicts])
         prompt = f"New event {memo_data.get('title')} conflicts with:\n{conflicts_str}\nRecommend action (reschedule/delegate/anyway)."
-        response = client.models.generate_content(
-            model="gemini-1.5-flash",
-            contents=prompt
-        )
+        response = model.generate_content(prompt)
         return response.text.strip()
     except Exception:
         # Rule-based fallback
@@ -319,16 +303,13 @@ def get_predictive_analytics(upcoming_memos):
     Analyzes schedule density. Falls back to a local calculation.
     """
     try:
-        client = get_genai_client()
-        if not client:
-            raise ValueError("No client")
+        model = get_genai_model()
+        if not model:
+            raise ValueError("No model")
         
         memos_data = "\n".join([f"- {m.date}: {m.start_time}" for m in upcoming_memos])
         prompt = f"Analyze schedule density and predict busy periods:\n{memos_data}"
-        response = client.models.generate_content(
-            model="gemini-1.5-flash",
-            contents=prompt
-        )
+        response = model.generate_content(prompt)
         return response.text.strip()
     except Exception:
         # Simple local calculation
