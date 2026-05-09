@@ -428,7 +428,7 @@
     <div class="login-panel">
       <div class="login-header">
         <div class="login-title">Create Account</div>
-        <div class="login-subtitle">Register as a user to access your secure dashboard.</div>
+        <div class="login-subtitle">Register for SkedIt.AI</div>
       </div>
 
 
@@ -437,47 +437,15 @@
         {% csrf_token %}
 
         <div class="form-group full-width">
-          <label for="{{ form.first_name.id_for_label }}">First Name<span class="required-asterisk">*</span></label>
-          {{ form.first_name }}
-          {% if form.first_name.errors %}<div class="field-error">{{ form.first_name.errors|striptags }}</div>{% endif %}
+          <label for="{{ form.full_name.id_for_label }}">Full Name<span class="required-asterisk">*</span></label>
+          {{ form.full_name }}
+          {% if form.full_name.errors %}<div class="field-error">{{ form.full_name.errors|striptags }}</div>{% endif %}
         </div>
 
         <div class="form-group full-width">
-          <label for="{{ form.middle_name.id_for_label }}">Middle Name</label>
-          {{ form.middle_name }}
-          {% if form.middle_name.errors %}<div class="field-error">{{ form.middle_name.errors|striptags }}</div>{% endif %}
-        </div>
-
-        <div class="form-group full-width">
-          <label for="{{ form.last_name.id_for_label }}">Last Name<span class="required-asterisk">*</span></label>
-          {{ form.last_name }}
-          {% if form.last_name.errors %}<div class="field-error">{{ form.last_name.errors|striptags }}</div>{% endif %}
-        </div>
-
-        <div class="form-group full-width">
-          <label for="{{ form.employee_id.id_for_label }}">Employee ID<span class="required-asterisk">*</span></label>
-          {{ form.employee_id }}
-          {% if form.employee_id.errors %}<div class="field-error">{{ form.employee_id.errors|striptags }}</div>{% endif %}
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="{{ form.mobile_number.id_for_label }}">Mobile Number<span
-                class="required-asterisk">*</span></label>
-            {{ form.mobile_number }}
-            {% if form.mobile_number.errors %}<div class="field-error">{{ form.mobile_number.errors|striptags }}</div>{% endif %}
-          </div>
-          <div class="form-group">
-            <label for="{{ form.email.id_for_label }}">Email<span class="required-asterisk">*</span></label>
-            {{ form.email }}
-            {% if form.email.errors %}<div class="field-error">{{ form.email.errors|striptags }}</div>{% endif %}
-          </div>
-        </div>
-
-        <div class="form-group full-width">
-          <label for="{{ form.role.id_for_label }}">Role<span class="required-asterisk">*</span></label>
-          {{ form.role }}
-          {% if form.role.errors %}<div class="field-error">{{ form.role.errors|striptags }}</div>{% endif %}
+          <label for="{{ form.email.id_for_label }}">Email<span class="required-asterisk">*</span></label>
+          {{ form.email }}
+          {% if form.email.errors %}<div class="field-error">{{ form.email.errors|striptags }}</div>{% endif %}
         </div>
 
         <div class="form-row">
@@ -487,11 +455,29 @@
             {% if form.password1.errors %}<div class="field-error">{{ form.password1.errors|striptags }}</div>{% endif %}
           </div>
           <div class="form-group">
-            <label for="{{ form.password2.id_for_label }}">Confirm password<span
-                class="required-asterisk">*</span></label>
+            <label for="{{ form.password2.id_for_label }}">Confirm password<span class="required-asterisk">*</span></label>
             {{ form.password2 }}
             {% if form.password2.errors %}<div class="field-error">{{ form.password2.errors|striptags }}</div>{% endif %}
           </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="{{ form.mobile_number.id_for_label }}">Contact Number<span class="required-asterisk">*</span></label>
+            {{ form.mobile_number }}
+            {% if form.mobile_number.errors %}<div class="field-error">{{ form.mobile_number.errors|striptags }}</div>{% endif %}
+          </div>
+          <div class="form-group">
+            <label for="{{ form.employee_id.id_for_label }}">ID Number<span class="required-asterisk">*</span></label>
+            {{ form.employee_id }}
+            {% if form.employee_id.errors %}<div class="field-error">{{ form.employee_id.errors|striptags }}</div>{% endif %}
+          </div>
+        </div>
+
+        <div class="form-group full-width">
+          <label for="{{ form.role.id_for_label }}">User Type<span class="required-asterisk">*</span></label>
+          {{ form.role }}
+          {% if form.role.errors %}<div class="field-error">{{ form.role.errors|striptags }}</div>{% endif %}
         </div>
 
         <button type="submit" class="btn-submit">
@@ -506,6 +492,11 @@
           Already have an account?
           <a href="{% url 'accounts:login' %}?login_type=user"
             style="color: var(--primary); font-weight: 600; text-decoration: none;">Sign in</a>
+        </div>
+        <div style="margin-top: 1rem; text-align: center;">
+          <a href="/" style="color: var(--text-muted); font-size: 0.875rem; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+            ← Back to Homepage
+          </a>
         </div>
       </form>
     </div>
