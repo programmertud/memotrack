@@ -46,40 +46,36 @@
       min-height: 100vh;
     }
 
-    /* Sidebar: sticks to the top while scrolling */
-    #app-sidebar {
-      flex-shrink: 0;
-      width: 288px;
-      height: 100vh;
-      position: sticky;
-      top: 0;
-      overflow-y: auto;
-      overflow-x: hidden;
-      display: flex;
-      flex-direction: column;
-      background: #fff;
-      border-right: 1px solid #f1f5f9;
-    }
-
     /* Main area: grows with content */
     #app-main {
       flex: 1;
       display: flex;
       flex-direction: column;
       min-width: 0;
+      width: 100%;
     }
   </style>
 </head>
 
-<body class="bg-slate-50 text-slate-800">
+<body class="bg-slate-50 text-slate-800" x-data="{ sidebarOpen: false }">
+  
+  <!-- Mobile Sidebar Backdrop -->
+  <div x-show="sidebarOpen" x-transition.opacity x-cloak
+       class="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm lg:hidden"
+       @click="sidebarOpen = false"></div>
+
   <div id="app-shell">
-    <div id="app-sidebar">
+    <!-- Sidebar -->
+    <div id="app-sidebar" 
+         :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
+         class="fixed lg:sticky top-0 left-0 z-50 h-screen w-72 bg-white border-r border-slate-100 shadow-2xl lg:shadow-none flex flex-col flex-shrink-0 transition-transform duration-300 overflow-y-auto overflow-x-hidden">
       {% include "partials/sidebar.html" %}
     </div>
 
+    <!-- Main Content Wrapper -->
     <div id="app-main">
       {% include "partials/topbar.html" %}
-      <main class="px-4 sm:px-6 lg:px-10 py-6 flex-1">
+      <main class="px-4 sm:px-6 lg:px-10 py-6 flex-1 w-full max-w-[100vw] lg:max-w-none">
         {% block content %}{% endblock %}
       </main>
     </div>

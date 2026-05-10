@@ -4,9 +4,13 @@
 <header class="sticky top-0 z-20 bg-white/70 backdrop-blur border-b border-slate-100">
   <div class="px-4 sm:px-6 lg:px-10 py-4 flex items-center justify-between gap-4">
     <div class="lg:hidden flex items-center gap-3">
-      <div
-        class="h-10 w-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-soft overflow-hidden">
-        <img src="/static/img/university_logo.png?v=2" alt="SkedIt Logo" class="h-full w-full object-contain p-1" />
+      <!-- Hamburger Toggle -->
+      <button @click="sidebarOpen = true" class="h-10 w-10 flex items-center justify-center rounded-xl bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100 transition shadow-sm focus:outline-none flex-shrink-0">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+
+      <div class="h-10 w-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-soft overflow-hidden flex-shrink-0">
+        <img src="{% static 'img/university_logo.png' %}?v=2" alt="SkedIt Logo" class="h-full w-full object-contain p-1" />
       </div>
       <div>
         <div class="text-sm font-semibold leading-tight">SkedIt.AI</div>

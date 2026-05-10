@@ -1,17 +1,20 @@
 {% load static %}
 
 <div class="flex flex-col h-full">
-  <!-- Logo -->
-  <div class="px-6 py-6 border-b border-slate-50 flex-shrink-0">
+  <!-- Logo & Mobile Close -->
+  <div class="px-6 py-6 border-b border-slate-50 flex-shrink-0 flex items-center justify-between">
     <div class="flex items-center gap-4">
       <div class="h-12 w-12 rounded-[1rem] bg-white border border-slate-100 flex items-center justify-center shadow-sm overflow-hidden flex-shrink-0 p-1.5">
-        <img src="/static/img/university_logo.png?v=2" alt="SkedIt Logo" class="h-full w-full object-contain" />
+        <img src="{% static 'img/university_logo.png' %}?v=2" alt="SkedIt Logo" class="h-full w-full object-contain" />
       </div>
       <div>
         <div class="text-base font-bold leading-tight text-slate-800">SkedIt</div>
         <div class="text-[11px] text-slate-400 font-medium">University System</div>
       </div>
     </div>
+    <button @click="sidebarOpen = false" class="lg:hidden h-8 w-8 rounded-full bg-slate-50 text-slate-500 hover:bg-slate-100 flex items-center justify-center transition">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
   </div>
 
   <!-- Navigation (scrollable if needed) -->
