@@ -213,3 +213,121 @@ class MemoRequest(models.Model):
 
     def __str__(self):
         return f"Request from {self.requester.username} ({self.created_at.strftime('%Y-%m-%d')})"
+
+class ActivityDesign(models.Model):
+    title = models.CharField(max_length=200)
+    schedule = models.DateTimeField()
+    venue = models.CharField(max_length=255)
+    target_participants = models.CharField(max_length=255)
+    budget = models.DecimalField(max_digits=10, decimal_places=2)
+    objectives = models.TextField()
+    expected_outcomes = models.TextField()
+
+    # ISO Document Controls
+    doc_number = models.CharField(max_length=50, default="SNSU-F-AD-01")
+    rev_number = models.CharField(max_length=10, default="00")
+    effectivity_date = models.DateField(default=timezone.now)
+
+    # Signatures / Approvals
+    prepared_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="prepared_activities")
+    noted_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="noted_activities")
+    approved_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="approved_activities")
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    memo = models.OneToOneField("Memo", on_delete=models.CASCADE, null=True, blank=True, related_name="activity_design")
+
+    def __str__(self):
+        return self.title
+
+
+class MultiLevelApprovalRequest(models.Model):
+    class Stage(models.TextChoices):
+        DRAFT = "draft", "Draft"
+        DEPT_HEAD = "dept_head", "Department Head"
+        DEAN = "dean", "Dean/Director"
+        VP = "vp", "VP"
+        PRESIDENT = "president", "President"
+        RELEASED = "released", "Released"
+
+    memo_request = models.OneToOneField(MemoRequest, on_delete=models.CASCADE, related_name="approval_flow")
+    current_stage = models.CharField(max_length=20, choices=Stage.choices, default=Stage.DRAFT)
+    
+    dept_head_approved = models.BooleanField(default=False)
+    dean_approved = models.BooleanField(default=False)
+    vp_approved = models.BooleanField(default=False)
+    president_approved = models.BooleanField(default=False)
+
+    def advance_stage(self):
+        if self.current_stage == self.Stage.DRAFT:
+            self.current_stage = self.Stage.DEPT_HEAD
+        elif self.current_stage == self.Stage.DEPT_HEAD and self.dept_head_approved:
+            self.current_stage = self.Stage.DEAN
+        elif self.current_stage == self.Stage.DEAN and self.dean_approved:
+            self.current_stage = self.Stage.VP
+        elif self.current_stage == self.Stage.VP and self.vp_approved:
+            self.current_stage = self.Stage.PRESIDENT
+        elif self.current_stage == self.Stage.PRESIDENT and self.president_approved:
+            self.current_stage = self.Stage.RELEASED
+        self.save()
+
+
+class InterCampusMemo(models.Model):
+    memo = models.OneToOneField(Memo, on_delete=models.CASCADE, related_name="inter_campus_details")
+    sender_campus = models.ForeignKey("accounts.Campus", on_delete=models.CASCADE, related_name="sent_inter_campus_memos")
+    recipient_campus = models.ForeignKey("accounts.Campus", on_delete=models.CASCADE, related_name="received_inter_campus_memos")
+    
+    sender_director_approved = models.BooleanField(default=False)
+    recipient_director_approved = models.BooleanField(default=False)
+
+
+class TravelOrder(models.Model):
+    memo = models.OneToOneField(Memo, on_delete=models.CASCADE, related_name="travel_order")
+    traveler_name = models.CharField(max_length=255)
+    destination = models.CharField(max_length=255)
+    purpose = models.TextField()
+    duration_days = models.PositiveIntegerField()
+    transportation_mode = models.CharField(max_length=100)
+    estimated_expenses = models.DecimalField(max_digits=10, decimal_places=2)
+    
+    dept_head_approved = models.BooleanField(default=False)
+    campus_director_approved = models.BooleanField(default=False)
+
+    # ISO Document Controls
+    doc_number = models.CharField(max_length=50, default="SNSU-F-TO-01")
+    rev_number = models.CharField(max_length=10, default="00")
+    effectivity_date = models.DateField(default=timezone.now)
+
+
+class DocumentTracking(models.Model):
+    class ActionTaken(models.TextChoices):
+        CREATED = "created", "Created"
+        FORWARDED = "forwarded", "Forwarded"
+        RECEIVED = "received", "Received"
+        APPROVED = "approved", "Approved"
+        REJECTED = "rejected", "Rejected"
+        RELEASED = "released", "Released"
+
+    memo = models.ForeignKey(Memo, on_delete=models.CASCADE, related_name="tracking_history")
+    action_taken = models.CharField(max_length=20, choices=ActionTaken.choices)
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="tracking_actions")
+    forwarded_to = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="received_documents")
+    date_tracked = models.DateTimeField(auto_now_add=True)
+    notes = models.TextField(blank=True)
+
+
+class ActivityAccomplishmentReport(models.Model):
+    activity = models.OneToOneField(ActivityDesign, on_delete=models.CASCADE, related_name="accomplishment_report")
+    submitted_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    actual_participants = models.PositiveIntegerField()
+    actual_budget_spent = models.DecimalField(max_digits=10, decimal_places=2)
+    summary_of_outcomes = models.TextField()
+    date_submitted = models.DateTimeField(auto_now_add=True)
+
+
+class TravelReport(models.Model):
+    travel_order = models.OneToOneField(TravelOrder, on_delete=models.CASCADE, related_name="travel_report")
+    submitted_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    actual_expenses = models.DecimalField(max_digits=10, decimal_places=2)
+    expense_liquidation_details = models.TextField()
+    accomplishments = models.TextField()
+    date_submitted = models.DateTimeField(auto_now_add=True)

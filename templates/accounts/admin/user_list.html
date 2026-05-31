@@ -3,64 +3,114 @@
 {% block title %}Manage Users | SkedIt.AI{% endblock %}
 
 {% block content %}
-<div class="flex items-center justify-between gap-4">
-  <div>
-    <h1 class="text-2xl font-bold tracking-tight">Manage {% if role == 'instructor' %}Employee{% else %}{{ role|title }}{% endif %}</h1>
-    <p class="text-sm text-slate-500 mt-1">Create, edit, and deactivate university accounts.</p>
+<div x-data="{ showDeleteModal: false, deleteUrl: '', deleteName: '', showFormModal: false, formUrl: '' }" @close-modal.window="showFormModal = false">
+  <script>
+    window.addEventListener('message', function(e) {
+        if (e.data === 'closeModal') {
+            window.dispatchEvent(new CustomEvent('close-modal'));
+        }
+    });
+  </script>
+  <div class="flex items-center justify-between gap-4">
+    <div>
+      <h1 class="text-xl font-bold tracking-tight">Manage {% if role == 'instructor' %}Employee{% else %}{{ role|title }}{% endif %}</h1>
+      <p class="text-xs text-slate-500 mt-1">Create, edit, and deactivate university accounts.</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <a href="#" @click.prevent="showFormModal = true; formUrl = '{% url 'accounts:admin_user_create' role %}?modal=1'" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-uniGreen text-white text-sm shadow-soft hover:opacity-95 transition">
+        <i class="fa-solid fa-user-plus text-xs"></i>
+        <span class="font-semibold">Add {% if role == 'instructor' %}Employee{% else %}{{ role|title }}{% endif %}</span>
+      </a>
+    </div>
   </div>
-  <div class="flex items-center gap-3">
-    <a href="{% url 'accounts:admin_user_create' role %}" class="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-uniGreen text-white shadow-soft hover:opacity-95 transition">
-      <i class="fa-solid fa-user-plus"></i>
-      <span class="font-semibold">Add {% if role == 'instructor' %}Employee{% else %}{{ role|title }}{% endif %}</span>
-    </a>
-  </div>
-</div>
 
-<div class="rounded-2xl bg-white border border-slate-100 shadow-soft overflow-hidden mt-6">
-  <div class="overflow-x-auto">
-    <table class="min-w-full text-sm">
-      <thead class="bg-slate-50 text-slate-600">
-        <tr>
-          <th class="text-left font-semibold px-5 py-3">Name</th>
-          <th class="text-left font-semibold px-5 py-3">Email</th>
-          <th class="text-left font-semibold px-5 py-3">Contact</th>
-          <th class="text-left font-semibold px-5 py-3">Active</th>
-          <th class="text-right font-semibold px-5 py-3">Actions</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-slate-100">
-        {% for u in users %}
-          <tr class="hover:bg-green-50/40 transition">
-            <td class="px-5 py-3 font-semibold">
-              {% if u.profile.first_name %}
-                {{ u.profile.first_name }} {{ u.profile.last_name }}
-              {% else %}
-                {{ u.username }}
-              {% endif %}
-            </td>
-            <td class="px-5 py-3 text-slate-600">{{ u.email|default:"-" }}</td>
-            <td class="px-5 py-3 text-slate-600">{{ u.profile.mobile_number|default:"-" }}</td>
-            <td class="px-5 py-3">
-              {% if u.is_active %}
-                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-green-50 text-uniGreen border border-green-100">Active</span>
-              {% else %}
-                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">Inactive</span>
-              {% endif %}
-            </td>
-            <td class="px-5 py-3">
-              <div class="flex items-center justify-end gap-2">
-                <a href="{% url 'accounts:admin_user_edit' role u.pk %}" class="px-3 py-2 rounded-xl bg-white border border-slate-200 text-sm font-semibold hover:border-uniGold transition">Edit</a>
-                <a href="{% url 'accounts:admin_user_delete' role u.pk %}" class="px-3 py-2 rounded-xl bg-red-50 text-red-700 border border-red-100 text-sm font-semibold hover:bg-red-100 transition">Delete</a>
-              </div>
-            </td>
-          </tr>
-        {% empty %}
+  <div class="rounded-xl bg-white border border-slate-100 shadow-soft overflow-hidden mt-4">
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-xs">
+        <thead class="bg-slate-50 text-slate-600">
           <tr>
-            <td class="px-5 py-8 text-sm text-slate-500" colspan="5">No users found.</td>
+            <th class="text-left font-semibold px-4 py-2.5">Name</th>
+            <th class="text-left font-semibold px-4 py-2.5">Email</th>
+            <th class="text-left font-semibold px-4 py-2.5">Contact</th>
+            <th class="text-left font-semibold px-4 py-2.5">Active</th>
+            <th class="text-right font-semibold px-4 py-2.5">Actions</th>
           </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          {% for u in users %}
+            <tr class="hover:bg-green-50/40 transition">
+              <td class="px-4 py-2.5 font-semibold text-sm">
+                {% if u.profile.first_name %}
+                  {{ u.profile.first_name }}{% if u.profile.middle_name %} {{ u.profile.middle_name|first|upper }}.{% endif %} {{ u.profile.last_name }}
+                {% else %}
+                  {{ u.username }}
+                {% endif %}
+              </td>
+              <td class="px-4 py-2.5 text-slate-600">{{ u.email|default:"-" }}</td>
+              <td class="px-4 py-2.5 text-slate-600">{{ u.profile.mobile_number|default:"-" }}</td>
+              <td class="px-4 py-2.5">
+                {% if u.is_active %}
+                  <span class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-green-50 text-uniGreen border border-green-100">Active</span>
+                {% else %}
+                  <span class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">Inactive</span>
+                {% endif %}
+              </td>
+              <td class="px-4 py-2.5">
+                <div class="flex items-center justify-end gap-2">
+                  <a href="#" @click.prevent="showFormModal = true; formUrl = '{% url 'accounts:admin_user_edit' role u.pk %}?modal=1'" class="px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-semibold hover:border-uniGold transition">Edit</a>
+                  <a href="#" @click.prevent="showDeleteModal = true; deleteUrl = '{% url 'accounts:admin_user_delete' role u.pk %}'; deleteName = '{% if u.profile.first_name %}{{ u.profile.first_name|escapejs }}{% if u.profile.middle_name %} {{ u.profile.middle_name|first|escapejs|upper }}.{% endif %} {{ u.profile.last_name|escapejs }}{% else %}{{ u.username|escapejs }}{% endif %}'" class="px-2.5 py-1.5 rounded-lg bg-red-50 text-red-700 border border-red-100 text-xs font-semibold hover:bg-red-100 transition">Delete</a>
+                </div>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td class="px-4 py-6 text-xs text-slate-500" colspan="5">No users found.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div x-show="showDeleteModal" style="display: none;" class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-0">
+    <div x-show="showDeleteModal" x-transition.opacity class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" @click="showDeleteModal = false"></div>
+    <div x-show="showDeleteModal" x-transition class="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-6 overflow-hidden">
+      <div class="flex items-start gap-4 mb-4">
+        <div class="h-10 w-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center flex-shrink-0 mt-1">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <div>
+          <h3 class="text-lg font-bold text-slate-800">Confirm Deletion</h3>
+          <p class="text-sm text-slate-500 mt-1">Are you sure you want to delete <span class="font-bold text-slate-800" x-text="deleteName"></span>? This action cannot be undone.</p>
+        </div>
+      </div>
+      <form :action="deleteUrl" method="post" class="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
+        {% csrf_token %}
+        <button type="button" @click="showDeleteModal = false" class="px-4 py-2 rounded-xl bg-white border border-slate-200 text-sm font-semibold text-slate-600 hover:text-slate-800 hover:border-slate-300 transition">Cancel</button>
+        <button type="submit" class="px-4 py-2 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition shadow-sm">Delete Account</button>
+      </form>
+    </div>
+  </div>
+  <!-- Form Modal (Iframe) -->
+  <div x-show="showFormModal" style="display: none;" class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-0">
+    <div x-show="showFormModal" x-transition.opacity class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" @click="showFormModal = false"></div>
+    <div x-show="showFormModal" x-transition class="relative bg-white rounded-2xl shadow-xl w-full max-w-md h-[85vh] flex flex-col overflow-hidden">
+      
+      <!-- Floating Close Button -->
+      <button @click="showFormModal = false" class="absolute top-4 right-4 z-10 flex items-center justify-center h-8 w-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition">
+        <i class="fa-solid fa-xmark text-sm"></i>
+      </button>
+
+      <!-- Iframe Content -->
+      <div class="flex-1 overflow-hidden relative">
+        <template x-if="showFormModal">
+          <iframe :src="formUrl" class="w-full h-full border-0"></iframe>
+        </template>
+      </div>
+
+    </div>
+  </div>
+
 </div>
 {% endblock %}

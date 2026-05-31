@@ -9,6 +9,12 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>{% block title %}SkedIt.AI{% endblock %}</title>
+  <script>
+    if (window.self !== window.top) {
+      document.documentElement.style.display = 'none';
+      window.top.location.reload();
+    }
+  </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {

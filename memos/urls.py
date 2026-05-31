@@ -14,6 +14,7 @@ urlpatterns = [
     path("requests/<int:pk>/approve/", views.memo_request_approve, name="memo_request_approve"),
     path("requests/<int:pk>/reject/", views.memo_request_reject, name="memo_request_reject"),
     path("memos/create/", views.memo_create, name="memo_create"),
+    path("activity-designs/create/", views.activity_design_create, name="activity_design_create"),
     path("memos/<int:pk>/edit/", views.memo_edit, name="memo_edit"),
     path("memos/<int:pk>/delete/", views.memo_delete, name="memo_delete"),
     path("memos/<int:pk>/answer/approve/", views.memo_user_approve, name="memo_user_approve"),

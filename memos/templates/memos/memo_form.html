@@ -35,6 +35,13 @@
   }
 </style>
 
+<div class="mb-4">
+  <button type="button" onclick="window.history.back()" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white border border-slate-200 text-sm font-semibold text-slate-600 hover:text-uniGold hover:border-uniGold transition shadow-sm">
+    <i class="fa-solid fa-arrow-left"></i>
+    Back
+  </button>
+</div>
+
 <div class="flex items-center justify-between gap-4">
   <div>
     <h1 class="text-2xl font-bold tracking-tight">{% if mode == "edit" %}Edit Memorandum{% else %}Create Memorandum{% endif %}</h1>
@@ -93,6 +100,14 @@
       memoCategory: '{{ form.category.value|default:'internal' }}',
       toAll: {{ form.to_all.value|yesno:'true,false' }},
       priority: '{{ form.priority.value|default:'normal' }}',
+      
+      // Signatures
+      preparedByName: '',
+      preparedByTitle: 'Prepared By',
+      notedByName: '',
+      notedByTitle: 'Noted By',
+      approvedByName: '',
+      approvedByTitle: 'Approved By',
       
       // Resource options
       needVehicle: false,
@@ -399,11 +414,18 @@
     <!-- Form Content -->
     <div class="w-full lg:w-1/2 space-y-6">
       <div class="rounded-2xl bg-white border border-slate-100 shadow-soft p-6">
-        <div class="flex items-center gap-3 mb-6">
-          <div class="h-10 w-10 rounded-xl bg-uniGold/20 flex items-center justify-center text-uniGreen shadow-inner">
-            <i class="fa-solid fa-file-signature text-lg"></i>
+        <div class="flex items-center justify-between mb-6">
+          <div class="flex items-center gap-3">
+            <div class="h-10 w-10 rounded-xl bg-uniGold/20 flex items-center justify-center text-uniGreen shadow-inner">
+              <i class="fa-solid fa-file-signature text-lg"></i>
+            </div>
+            <h2 class="text-xl font-bold text-slate-800">Memo Details</h2>
           </div>
-          <h2 class="text-xl font-bold text-slate-800">Memo Details</h2>
+          <div class="text-right text-[10px] text-slate-500 font-mono bg-slate-50 p-2 rounded-xl border border-slate-200">
+            <div><strong>Doc. No.:</strong> SNSU-F-MEM-01</div>
+            <div><strong>Rev. No.:</strong> 02</div>
+            <div><strong>Effectivity Date:</strong> {% now "Y-m-d" %}</div>
+          </div>
         </div>
 
         {% if form.errors %}
@@ -586,6 +608,25 @@
               </label>
             </div>
           </div>
+
+          <!-- Approvals (ISO 9001 Standard) -->
+          <div class="pt-6 border-t border-slate-100 mt-6">
+            <h3 class="text-sm font-bold text-slate-700 mb-6">Approval Signatures</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+              <div>
+                <input type="text" x-model="preparedByName" placeholder="Name" class="w-full text-center px-2 py-1 border-b border-slate-400 focus:outline-none focus:border-uniGold text-xs font-bold text-slate-800 bg-transparent mb-1">
+                <input type="text" x-model="preparedByTitle" placeholder="Title" class="w-full text-center px-2 py-1 text-[10px] text-slate-500 uppercase tracking-wider bg-transparent focus:outline-none focus:border-b focus:border-uniGold">
+              </div>
+              <div>
+                <input type="text" x-model="notedByName" placeholder="Name" class="w-full text-center px-2 py-1 border-b border-slate-400 focus:outline-none focus:border-uniGold text-xs font-bold text-slate-800 bg-transparent mb-1">
+                <input type="text" x-model="notedByTitle" placeholder="Title" class="w-full text-center px-2 py-1 text-[10px] text-slate-500 uppercase tracking-wider bg-transparent focus:outline-none focus:border-b focus:border-uniGold">
+              </div>
+              <div>
+                <input type="text" x-model="approvedByName" placeholder="Name" class="w-full text-center px-2 py-1 border-b border-slate-400 focus:outline-none focus:border-uniGold text-xs font-bold text-slate-800 bg-transparent mb-1">
+                <input type="text" x-model="approvedByTitle" placeholder="Title" class="w-full text-center px-2 py-1 text-[10px] text-slate-500 uppercase tracking-wider bg-transparent focus:outline-none focus:border-b focus:border-uniGold">
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -672,16 +713,21 @@
               <div x-html="(description || 'Memo body content will appear here...').replace(/\n/g, '<br>')"></div>
             </div>
 
-            <div class="mt-12 grid grid-cols-2 gap-8">
-              <div>
-                <!-- Left Signee Removed -->
+            <div class="mt-12 grid grid-cols-3 gap-8 text-center" x-show="preparedByName || notedByName || approvedByName">
+              <div class="flex flex-col items-center">
+                <div class="text-[8px] italic mb-3 w-full text-left" x-show="preparedByName">Prepared by:</div>
+                <div class="font-bold text-[10px] uppercase border-b border-black w-full pb-0.5 mb-1" x-text="preparedByName || '&nbsp;'"></div>
+                <div class="text-[8px] text-slate-600" x-text="preparedByTitle"></div>
               </div>
-              <div class="flex flex-col items-end">
-                <div class="text-left">
-                  <div class="text-[8px] italic mb-3">Noted by:</div>
-                  <div class="font-bold text-[10px] uppercase">DR. ROWENA A. PLANDO</div>
-                  <div class="text-[8px] text-slate-600">University President</div>
-                </div>
+              <div class="flex flex-col items-center">
+                <div class="text-[8px] italic mb-3 w-full text-left" x-show="notedByName">Noted by:</div>
+                <div class="font-bold text-[10px] uppercase border-b border-black w-full pb-0.5 mb-1" x-text="notedByName || '&nbsp;'"></div>
+                <div class="text-[8px] text-slate-600" x-text="notedByTitle"></div>
+              </div>
+              <div class="flex flex-col items-center">
+                <div class="text-[8px] italic mb-3 w-full text-left" x-show="approvedByName">Approved by:</div>
+                <div class="font-bold text-[10px] uppercase border-b border-black w-full pb-0.5 mb-1" x-text="approvedByName || '&nbsp;'"></div>
+                <div class="text-[8px] text-slate-600" x-text="approvedByTitle"></div>
               </div>
             </div>
           </div>

@@ -641,3 +641,21 @@ def memo_recommendations(request, pk=None):
         "summary": result['summary'],
         "slots": formatted_slots
     })
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def activity_design_create(request):
+    from .forms import ActivityDesignForm
+    # Determine permission, if needed
+    if not _is_admin(request.user) and not request.user.is_staff:
+        messages.error(request, "You do not have permission to create Activity Designs.")
+        return redirect("accounts:post_login")
+
+    form = ActivityDesignForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        activity = form.save()
+        messages.success(request, "Activity Design created successfully.")
+        return redirect("memos:memo_list")
+
+    return render(request, "memos/activity_design_form.html", {"form": form})
+

@@ -330,12 +330,12 @@ def admin_user_list(request, role: str):
 def admin_user_create(request, role: str):
     if not (request.user.is_staff or getattr(getattr(request.user, 'profile', None), 'role', None) == Profile.Role.ADMIN):
         return redirect('accounts:post_login')
-    role = _normalize_admin_role(role)
-    if not role:
+    role_list = _normalize_admin_role(role)
+    if not role_list:
         messages.error(request, "Invalid role.")
         return redirect("accounts:admin_dashboard")
 
-    initial = {"role": role}
+    initial = {"role": role_list[0]}
     form = AdminUserCreateForm(request.POST or None, initial=initial)
     if request.method == "POST" and form.is_valid():
         user = form.save()
@@ -353,8 +353,8 @@ def admin_user_create(request, role: str):
 def admin_user_edit(request, role: str, pk: int):
     if not (request.user.is_staff or getattr(getattr(request.user, 'profile', None), 'role', None) == Profile.Role.ADMIN):
         return redirect('accounts:post_login')
-    role = _normalize_admin_role(role)
-    if not role:
+    role_list = _normalize_admin_role(role)
+    if not role_list:
         messages.error(request, "Invalid role.")
         return redirect("accounts:admin_dashboard")
 
@@ -376,8 +376,8 @@ def admin_user_edit(request, role: str, pk: int):
 def admin_user_delete(request, role: str, pk: int):
     if not (request.user.is_staff or getattr(getattr(request.user, 'profile', None), 'role', None) == Profile.Role.ADMIN):
         return redirect('accounts:post_login')
-    role = _normalize_admin_role(role)
-    if not role:
+    role_list = _normalize_admin_role(role)
+    if not role_list:
         messages.error(request, "Invalid role.")
         return redirect("accounts:admin_dashboard")
 

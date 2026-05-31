@@ -3,15 +3,22 @@
 {% block title %}Delete User | SkedIt.AI{% endblock %}
 
 {% block content %}
-<div class="max-w-2xl">
-  <h1 class="text-2xl font-bold tracking-tight">Delete User</h1>
-  <p class="text-sm text-slate-500 mt-2">This will permanently delete <span class="font-semibold">{{ managed_user.username }}</span>.</p>
+<div class="mb-4">
+  <button onclick="window.history.back()" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white border border-slate-200 text-sm font-semibold text-slate-600 hover:text-uniGold hover:border-uniGold transition shadow-sm">
+    <i class="fa-solid fa-arrow-left"></i>
+    Back
+  </button>
+</div>
 
-  <div class="rounded-2xl bg-white border border-slate-100 shadow-soft p-6 mt-6">
+<div class="max-w-2xl">
+  <h1 class="text-xl font-bold tracking-tight">Delete User</h1>
+  <p class="text-xs text-slate-500 mt-2">This will permanently delete <span class="font-semibold">{{ managed_user.username }}</span>.</p>
+
+  <div class="rounded-xl bg-white border border-slate-100 shadow-soft p-5 mt-6">
     <form method="post" class="flex items-center gap-3">
       {% csrf_token %}
-      <button type="submit" class="px-5 py-3 rounded-2xl bg-red-600 text-white font-semibold shadow-soft hover:opacity-95 transition">Delete</button>
-      <a href="{% url 'accounts:admin_user_list' role %}" class="px-5 py-3 rounded-2xl bg-white border border-slate-200 font-semibold hover:border-uniGold transition">Cancel</a>
+      <a href="{% url 'accounts:admin_user_list' role %}" class="px-4 py-2 rounded-xl bg-white border border-slate-200 text-sm font-semibold hover:border-uniGold transition">Cancel</a>
+      <button type="submit" class="px-4 py-2 rounded-xl bg-red-600 text-white text-sm font-semibold shadow-soft hover:opacity-95 transition">Delete</button>
     </form>
   </div>
 </div>

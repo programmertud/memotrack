@@ -5,30 +5,21 @@
 {% block content %}
 <div class="flex items-center justify-between gap-4">
   <div>
-    <h1 class="text-2xl font-bold tracking-tight">Manage Memos</h1>
-    <p class="text-sm text-slate-500 mt-1">Admin-only memo management (use this page instead of the default Django admin
-      list).</p>
+    <h1 class="text-xl font-bold tracking-tight">Manage Memos</h1>
   </div>
-  <div class="flex items-center gap-3">
-    <a href="{% url 'accounts:admin_dashboard' %}"
-      class="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-white border border-slate-200 hover:border-uniGold transition">
-      <i class="fa-solid fa-arrow-left"></i>
-      <span class="font-semibold">Dashboard</span>
-    </a>
-    <a href="{% url 'memos:memo_create' %}"
-      class="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-uniGreen text-white shadow-soft hover:opacity-95 transition">
-      <i class="fa-solid fa-calendar-plus"></i>
-      <span class="font-semibold">Create Memo</span>
+  <div class="flex items-center gap-2">
+    <a href="{% url 'memos:memo_create' %}" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-uniGreen text-white text-xs font-semibold shadow-soft hover:opacity-95 transition">
+      <i class="fa-solid fa-calendar-plus text-xs"></i>
+      Create Memo
     </a>
   </div>
 </div>
 
-<div class="mt-6 rounded-2xl bg-white border border-slate-100 shadow-soft overflow-hidden">
-  <div class="p-5 border-b border-slate-100 flex items-center justify-between">
-    <div class="text-sm text-slate-500">Showing {{ memos|length }} memo(s)</div>
+<div class="mt-4 rounded-xl bg-white border border-slate-100 shadow-soft overflow-hidden" x-data="{ viewMemo: null, showDeleteModal: false, deleteUrl: '', deleteTitle: '' }">
+  <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+    <div class="text-xs text-slate-500">Showing {{ memos|length }} memo(s)</div>
     <div class="flex items-center gap-2">
-      <span
-        class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-green-50 text-uniGreen text-sm font-semibold border border-green-100">
+      <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-green-50 text-uniGreen text-[10px] font-semibold border border-green-100">
         <i class="fa-solid fa-lock"></i>
         Staff-only
       </span>
@@ -36,52 +27,203 @@
   </div>
 
   <div class="overflow-x-auto">
-    <table class="min-w-full">
+    <table class="min-w-full text-left divide-y divide-slate-200">
       <thead class="bg-slate-50">
-        <tr class="text-left text-xs font-semibold text-slate-600">
-          <th class="px-5 py-3">Title</th>
-          <th class="px-5 py-3">Created By</th>
-          <th class="px-5 py-3">Assigned</th>
-          <th class="px-5 py-3">Date</th>
-          <th class="px-5 py-3">Time</th>
-          <th class="px-5 py-3">Status</th>
-          <th class="px-5 py-3"></th>
+        <tr class="border-b border-slate-100">
+          <th class="px-2.5 py-1.5 text-[10px] font-semibold tracking-wider text-slate-500 uppercase">Title</th>
+          <th class="px-2.5 py-1.5 text-[10px] font-semibold tracking-wider text-slate-500 uppercase">Created By</th>
+          <th class="px-2.5 py-1.5 text-[10px] font-semibold tracking-wider text-slate-500 uppercase">Audience</th>
+          <th class="px-2.5 py-1.5 text-[10px] font-semibold tracking-wider text-slate-500 uppercase">Schedule Window</th>
+          <th class="px-2.5 py-1.5 text-[10px] font-semibold tracking-wider text-slate-500 uppercase text-center">Status</th>
+          <th class="px-2.5 py-1.5 text-[10px] font-semibold tracking-wider text-slate-500 uppercase text-right">Actions</th>
         </tr>
       </thead>
-      <tbody class="divide-y divide-slate-100">
+      <tbody class="divide-y divide-slate-100 bg-white">
         {% for memo in memos %}
-        <tr class="hover:bg-green-50/40 transition {% if memo.status == 'conflict' %}bg-red-50/30{% endif %}">
-          <td class="px-5 py-4">
-            <div class="font-semibold">{{ memo.title }}</div>
-            <div class="text-xs text-slate-500 mt-1">{{ memo.venue }}</div>
+        <tr class="hover:bg-slate-50/50 transition-colors">
+          <td class="px-2.5 py-1.5 w-2/5 max-w-sm">
+            <span class="font-semibold text-slate-900 text-[11px] line-clamp-1">{{ memo.title }}</span>
           </td>
-          <td class="px-5 py-4 text-sm text-slate-700">{{ memo.created_by|default:"—" }}</td>
-          <td class="px-5 py-4 text-sm text-slate-700">{{ memo.get_employee_names }}</td>
-          <td class="px-5 py-4 text-sm text-slate-700">{{ memo.date }}</td>
-          <td class="px-5 py-4 text-sm text-slate-700">{{ memo.start_time }} - {{ memo.end_time }}</td>
-          <td class="px-5 py-4">
-            <span class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">{{ memo.get_status_display }}</span>
+          <td class="px-2.5 py-1.5 whitespace-nowrap text-[11px] text-slate-600">{{ memo.created_by|default:"—" }}</td>
+          <td class="px-2.5 py-1.5 whitespace-nowrap text-[11px] text-slate-600 font-medium">{{ memo.get_employee_names|default:'<span class="text-slate-400 italic">Global</span>'|safe }}</td>
+          <td class="px-2.5 py-1.5 whitespace-nowrap text-[11px] text-slate-600">
+            <div class="flex flex-col">
+              <span class="font-medium text-slate-800">{{ memo.date }}</span>
+              <span class="text-[10px] text-slate-600 mt-0.5">{{ memo.start_time }} - {{ memo.end_time }}</span>
+            </div>
           </td>
-          <td class="px-5 py-4">
-            <div class="flex items-center justify-end gap-2">
+          <td class="px-2.5 py-1.5 whitespace-nowrap text-center">
+            {% if memo.status == 'approved' %}
+            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-100">
+              <span class="w-1.5 h-1.5 rounded-full mr-1 bg-emerald-500"></span>{{ memo.get_status_display }}
+            </span>
+            {% elif memo.status == 'conflict' %}
+            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-rose-50 text-rose-800 border border-rose-100">
+              <span class="w-1.5 h-1.5 rounded-full mr-1 bg-rose-500"></span>{{ memo.get_status_display }}
+            </span>
+            {% else %}
+            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-100">
+              <span class="w-1.5 h-1.5 rounded-full mr-1 bg-amber-500"></span>{{ memo.get_status_display }}
+            </span>
+            {% endif %}
+          </td>
+          <td class="px-2.5 py-1.5 whitespace-nowrap text-right">
+            <div class="inline-flex rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
+              <button title="Quick View" @click.prevent="viewMemo = { title: '{{ memo.title|escapejs }}', createdBy: '{{ memo.created_by|default:'—'|escapejs }}', assignedTo: '{{ memo.get_employee_names|escapejs }}', date: '{{ memo.date|date:'F j, Y'|escapejs }}', time: '{{ memo.start_time|time:'g:i a'|escapejs }} - {{ memo.end_time|time:'g:i a'|escapejs }}', status: '{{ memo.get_status_display|escapejs }}', priority: '{{ memo.get_priority_display|escapejs }}', createdAt: '{{ memo.created_at|date:'F j, Y g:i a'|escapejs }}', description: '{{ memo.description|default:''|escapejs }}', editUrl: '{% url 'memos:memo_edit' memo.pk %}' }" class="px-2 py-1 text-indigo-600 hover:text-indigo-800 hover:bg-slate-50 flex items-center gap-1 transition-colors border-r border-slate-100">
+                <i class="fa-solid fa-eye text-[10px]"></i><span class="text-[10px] font-bold">View</span>
+              </button>
               {% if memo.status == 'conflict' %}
-              <a href="{% url 'memos:memo_conflict' memo.pk %}"
-                class="px-3 py-2 rounded-xl bg-red-50 text-red-700 border border-red-100 text-sm font-semibold">Resolve</a>
+              <a href="{% url 'memos:memo_conflict' memo.pk %}" class="px-2 py-1 text-indigo-600 hover:text-indigo-800 hover:bg-slate-50 flex items-center gap-1 transition-colors border-r border-slate-100">
+                <i class="fa-solid fa-wrench text-[10px]"></i><span class="text-[10px] font-bold">Resolve</span>
+              </a>
               {% endif %}
-              <a href="{% url 'memos:memo_edit' memo.pk %}"
-                class="px-3 py-2 rounded-xl bg-white border border-slate-200 text-sm font-semibold hover:border-uniGold transition">Edit</a>
-              <a href="{% url 'memos:memo_delete' memo.pk %}"
-                class="px-3 py-2 rounded-xl bg-white border border-slate-200 text-sm font-semibold hover:border-uniGold transition">Delete</a>
+              <a href="{% url 'memos:memo_edit' memo.pk %}" class="px-2 py-1 text-slate-600 hover:text-slate-800 hover:bg-slate-50 flex items-center gap-1 transition-colors border-r border-slate-100">
+                <i class="fa-solid fa-pen text-[10px]"></i><span class="text-[10px] font-bold">Edit</span>
+              </a>
+              <button @click.prevent="showDeleteModal = true; deleteUrl = '{% url 'memos:memo_delete' memo.pk %}'; deleteTitle = '{{ memo.title|escapejs }}'" class="px-2 py-1 text-red-600 hover:text-red-800 hover:bg-red-50 flex items-center gap-1 transition-colors">
+                <i class="fa-solid fa-trash text-[10px]"></i><span class="text-[10px] font-bold">Delete</span>
+              </button>
             </div>
           </td>
         </tr>
         {% empty %}
         <tr>
-          <td colspan="7" class="px-5 py-10 text-center text-sm text-slate-500">No memos found.</td>
+          <td colspan="6" class="px-4 py-12 text-center">
+            <i class="fa-solid fa-magnifying-glass text-slate-300 text-3xl mb-3"></i>
+            <h3 class="text-sm font-semibold text-slate-800">No results found</h3>
+            <p class="text-xs text-slate-400 mt-1">Try adjusting your filters or search keywords.</p>
+          </td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
+  </div>
+  
+  <!-- PREMIUM DETAIL PANEL / DRAWER -->
+  <template x-if="viewMemo">
+    <div class="fixed inset-0 z-[100] overflow-hidden" role="dialog" aria-modal="true">
+      <div class="absolute inset-0 overflow-hidden">
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-slate-900/40 transition-opacity backdrop-blur-sm" @click="viewMemo = null"></div>
+
+        <!-- Slide-over Content wrapper -->
+        <div class="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10" 
+             x-transition:enter="transform transition ease-in-out duration-300" 
+             x-transition:enter-start="translate-x-full" 
+             x-transition:enter-end="translate-x-0" 
+             x-transition:leave="transform transition ease-in-out duration-300" 
+             x-transition:leave-start="translate-x-0" 
+             x-transition:leave-end="translate-x-full">
+          <div class="pointer-events-auto w-screen max-w-md transform transition-transform duration-200 ease-out bg-white shadow-2xl flex flex-col justify-between">
+            
+            <!-- Scrollable Container -->
+            <div class="flex-1 overflow-y-auto py-6 px-6">
+              <!-- Top Header Row -->
+              <div class="flex items-start justify-between border-b border-slate-100 pb-4">
+                <div>
+                  <h2 class="text-lg font-bold text-slate-950">
+                    Memo Details
+                  </h2>
+                </div>
+                <button @click="viewMemo = null" class="rounded-lg p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition">
+                  <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+              </div>
+
+              <!-- Body Content Details -->
+              <div class="space-y-5 pt-5">
+                <!-- Memo Title Header Area -->
+                <div>
+                  <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Memo Title</span>
+                  <p class="mt-1 text-base font-bold text-slate-900 leading-snug" x-text="viewMemo.title"></p>
+                </div>
+
+                <!-- Metadata Grid -->
+                <div class="grid grid-cols-2 gap-4 border-t border-slate-100 pt-4">
+                  <div>
+                    <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Created By</span>
+                    <p class="mt-0.5 text-sm font-semibold text-slate-700" x-text="viewMemo.createdBy"></p>
+                  </div>
+                  <div>
+                    <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Assigned Group</span>
+                    <p class="mt-0.5 text-sm font-semibold text-slate-700" x-html="viewMemo.assignedTo"></p>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 border-t border-slate-100 pt-4">
+                  <div>
+                    <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Scheduled Date</span>
+                    <p class="mt-0.5 text-sm font-semibold text-slate-700" x-text="viewMemo.date"></p>
+                  </div>
+                  <div>
+                    <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Duration Window</span>
+                    <p class="mt-0.5 text-sm font-semibold text-slate-700" x-text="viewMemo.time"></p>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 border-t border-slate-100 pt-4">
+                  <div>
+                    <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Priority</span>
+                    <p class="mt-0.5 text-sm font-semibold text-slate-700" x-text="viewMemo.priority"></p>
+                  </div>
+                  <div>
+                    <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Date Created</span>
+                    <p class="mt-0.5 text-sm font-semibold text-slate-700" x-text="viewMemo.createdAt"></p>
+                  </div>
+                </div>
+
+                <!-- Description Paragraph Body -->
+                <div class="border-t border-slate-100 pt-4">
+                  <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">Description & Content</span>
+                  <p class="text-sm text-slate-600 leading-relaxed bg-slate-50/70 p-3.5 rounded-lg border border-slate-100 whitespace-pre-wrap" x-text="viewMemo.description || 'No description available for this record.'">
+                  </p>
+                </div>
+
+                <!-- Footer Status Display Badge inside sidebar -->
+                <div class="border-t border-slate-100 pt-4 flex items-center justify-between">
+                  <span class="text-xs font-semibold text-slate-500">Verification Status</span>
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold"
+                        :class="{
+                          'bg-emerald-100 text-emerald-800': viewMemo.status === 'Approved',
+                          'bg-amber-100 text-amber-800': viewMemo.status !== 'Approved'
+                        }"
+                        x-text="viewMemo.status">
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Drawer Footer Actions -->
+            <div class="border-t border-slate-100 p-4 bg-slate-50 flex gap-2">
+              <button @click="viewMemo = null" class="w-full inline-flex items-center justify-center px-4 py-2 rounded-lg text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 transition">
+                Close Panel
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <!-- Delete Confirmation Modal -->
+  <div x-show="showDeleteModal" style="display: none;" class="fixed inset-0 z-[110] flex items-center justify-center p-4 sm:p-0">
+    <div x-show="showDeleteModal" x-transition.opacity class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" @click="showDeleteModal = false"></div>
+    <div x-show="showDeleteModal" x-transition class="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-6 overflow-hidden">
+      <div class="flex items-start gap-4 mb-4">
+        <div class="h-10 w-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center flex-shrink-0 mt-1">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <div>
+          <h3 class="text-lg font-bold text-slate-800">Confirm Deletion</h3>
+          <p class="text-sm text-slate-500 mt-1">Are you sure you want to delete <span class="font-bold text-slate-800" x-text="deleteTitle"></span>? This action cannot be undone.</p>
+        </div>
+      </div>
+      <form :action="deleteUrl" method="post" class="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
+        {% csrf_token %}
+        <button type="button" @click="showDeleteModal = false" class="px-4 py-2 rounded-xl bg-white border border-slate-200 text-sm font-semibold text-slate-600 hover:text-slate-800 hover:border-slate-300 transition">Cancel</button>
+        <button type="submit" class="px-4 py-2 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition shadow-sm">Delete Memo</button>
+      </form>
+    </div>
   </div>
 </div>
 {% endblock %}

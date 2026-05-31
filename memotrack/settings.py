@@ -174,3 +174,10 @@ else:
             "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
         },
     }
+
+
+
+
+
+
+X_FRAME_OPTIONS = 'SAMEORIGIN'

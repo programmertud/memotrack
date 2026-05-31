@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Activity Design Form - MemoTrack{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="mb-4">
+        <button type="button" onclick="window.history.back()" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white border border-slate-200 text-sm font-semibold text-slate-600 hover:text-uniGold hover:border-uniGold transition shadow-sm">
+            <i class="fa-solid fa-arrow-left"></i>
+            Back
+        </button>
+    </div>
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">Activity Design Form</h4>
+            <div class="text-end" style="font-size: 0.85rem;">
+                <!-- ISO 9001 Document Control Standards Header -->
+                <div><strong>Doc. No.:</strong> SNSU-F-AD-01</div>
+                <div><strong>Rev. No.:</strong> 00</div>
+                <div><strong>Effectivity Date:</strong> {% now "Y-m-d" %}</div>
+            </div>
+        </div>
+        <div class="card-body">
+            <form method="post" action="" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <h5 class="border-bottom pb-2 mb-3">1. General Information</h5>
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <label for="id_title" class="form-label">Activity Title <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="id_title" name="title" required>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="id_schedule" class="form-label">Schedule (Date & Time) <span class="text-danger">*</span></label>
+                        <input type="datetime-local" class="form-control" id="id_schedule" name="schedule" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="id_venue" class="form-label">Venue <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="id_venue" name="venue" required>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="id_participants" class="form-label">Target Participants <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="id_participants" name="target_participants" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="id_budget" class="form-label">Budget (PHP) <span class="text-danger">*</span></label>
+                        <input type="number" step="0.01" class="form-control" id="id_budget" name="budget" required>
+                    </div>
+                </div>
+
+                <h5 class="border-bottom pb-2 mb-3 mt-4">2. Detailed Description</h5>
+                <div class="mb-3">
+                    <label for="id_objectives" class="form-label">Objectives <span class="text-danger">*</span></label>
+                    <textarea class="form-control" id="id_objectives" name="objectives" rows="4" required></textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label for="id_expected_outcomes" class="form-label">Expected Outcomes <span class="text-danger">*</span></label>
+                    <textarea class="form-control" id="id_expected_outcomes" name="expected_outcomes" rows="3" required></textarea>
+                </div>
+
+                <h5 class="border-bottom pb-2 mb-3 mt-4">3. Approvals</h5>
+                <div class="row text-center mt-4 mb-3">
+                    <!-- Prepared By -->
+                    <div class="col-md-4">
+                        <p class="mb-5">Prepared By:</p>
+                        <div class="border-bottom border-dark w-75 mx-auto"></div>
+                        <div class="mt-2 fw-bold">Signature over Printed Name</div>
+                        <div class="text-muted small">Requester/Author</div>
+                    </div>
+                    
+                    <!-- Noted By -->
+                    <div class="col-md-4">
+                        <p class="mb-5">Noted By:</p>
+                        <div class="border-bottom border-dark w-75 mx-auto"></div>
+                        <div class="mt-2 fw-bold">Signature over Printed Name</div>
+                        <div class="text-muted small">Department Head / Dean</div>
+                    </div>
+                    
+                    <!-- Approved By -->
+                    <div class="col-md-4">
+                        <p class="mb-5">Approved By:</p>
+                        <div class="border-bottom border-dark w-75 mx-auto"></div>
+                        <div class="mt-2 fw-bold">Signature over Printed Name</div>
+                        <div class="text-muted small">Campus Director / VP</div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end mt-4">
+                    <a href="{% url 'memos:dashboard' %}" class="btn btn-secondary me-2">Cancel</a>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Activity Design</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

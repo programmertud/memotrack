@@ -2,7 +2,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css" />
 
 <header class="sticky top-0 z-20 bg-white/70 backdrop-blur border-b border-slate-100">
-  <div class="px-4 sm:px-6 lg:px-10 py-4 flex items-center justify-between gap-4">
+  <div class="px-4 sm:px-6 lg:px-10 py-2.5 flex items-center justify-between gap-4">
     <div class="lg:hidden flex items-center gap-3">
       <!-- Hamburger Toggle -->
       <button @click="sidebarOpen = true" class="h-10 w-10 flex items-center justify-center rounded-xl bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100 transition shadow-sm focus:outline-none flex-shrink-0">
@@ -20,9 +20,9 @@
 
     <div class="flex-1 hidden lg:block">
       <div class="relative max-w-xl">
-        <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
         <input
-          class="w-full pl-11 pr-4 py-3 rounded-2xl bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-uniGold/50 focus:border-uniGold transition"
+          class="w-full pl-9 pr-3 py-2 text-sm rounded-xl bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-uniGold/50 focus:border-uniGold transition"
           placeholder="Search memos, users, vehicles..." />
       </div>
     </div>
@@ -32,11 +32,11 @@
       <!-- AI Assistant button -->
       <div class="relative" id="aiChatWrapper">
         <button id="aiChatBtn" title="AI Assistant"
-          class="relative h-11 w-11 rounded-2xl bg-gradient-to-br from-uniGreen to-green-400 border border-green-300 hover:opacity-90 transition flex items-center justify-center focus:outline-none shadow-soft"
+          class="relative h-9 w-9 rounded-xl bg-gradient-to-br from-uniGreen to-green-400 border border-green-300 hover:opacity-90 transition flex items-center justify-center focus:outline-none shadow-soft"
           aria-haspopup="true" aria-expanded="false">
           <!-- Sparkle / AI icon (inline SVG) -->
           <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round"
-            stroke-linejoin="round" class="w-5 h-5">
+            stroke-linejoin="round" class="w-4 h-4">
             <path d="M12 2l2.09 6.26L20 10l-5.91 1.74L12 18l-2.09-6.26L4 10l5.91-1.74L12 2z" />
             <path d="M5 21l1.09 2.91L9 25l-2.91 1.09L5 29l-1.09-2.91L1 25l2.91-1.09L5 21z" opacity=".5"
               transform="scale(0.55) translate(2 -4)" />
@@ -114,9 +114,9 @@
 
       <div class="relative" id="notifDropdownWrapper">
         <button id="notifBellBtn"
-          class="relative h-11 w-11 rounded-2xl bg-white border border-slate-200 hover:border-uniGold transition flex items-center justify-center focus:outline-none"
+          class="relative h-9 w-9 rounded-xl bg-white border border-slate-200 hover:border-uniGold transition flex items-center justify-center focus:outline-none"
           aria-haspopup="true" aria-expanded="false">
-          <i class="fa-solid fa-bell text-slate-700"></i>
+          <i class="fa-solid fa-bell text-slate-600 text-sm"></i>
           {% if unread_notifications_count and unread_notifications_count > 0 %}
           <span id="notifBadge"
             class="absolute -top-1 -right-1 h-5 min-w-5 px-1 rounded-full bg-uniGold text-uniGreen text-xs font-bold flex items-center justify-center">
@@ -190,26 +190,26 @@
 
       <div class="relative" id="profileDropdownWrapper">
         <button id="profileDropdownBtn"
-          class="h-11 px-4 rounded-2xl bg-white border border-slate-200 hover:border-uniGold transition flex items-center gap-3 cursor-pointer focus:outline-none"
+          class="h-9 px-3 rounded-xl bg-white border border-slate-200 hover:border-uniGold transition flex items-center gap-2.5 cursor-pointer focus:outline-none"
           aria-haspopup="true" aria-expanded="false">
           <div id="topbarAvatar"
-            class="h-8 w-8 rounded-full overflow-hidden flex-shrink-0 bg-green-100 text-uniGreen flex items-center justify-center">
+            class="h-6 w-6 rounded-full overflow-hidden flex-shrink-0 bg-green-100 text-uniGreen flex items-center justify-center">
             {% if request.user.is_authenticated and request.user.profile.profile_picture %}
             <img src="{{ request.user.profile.profile_picture.url }}" alt="avatar" class="h-full w-full object-cover" />
             {% else %}
-            <canvas id="topbarIdenticonCanvas" width="32" height="32" style="display:block;border-radius:50%;"></canvas>
+            <canvas id="topbarIdenticonCanvas" width="24" height="24" style="display:block;border-radius:50%;"></canvas>
             {% endif %}
           </div>
           <div class="leading-tight text-left hidden sm:block">
             {% if request.user.is_authenticated %}
-            <div class="text-sm font-semibold" id="topbarName">
+            <div class="text-xs font-semibold" id="topbarName">
               {% if request.user.profile.first_name %}
               {{ request.user.profile.first_name }} {{ request.user.profile.last_name }}
               {% else %}
               {{ request.user.username }}
               {% endif %}
             </div>
-            <div class="text-xs text-slate-500">
+            <div class="text-[10px] text-slate-500">
               {% if request.user.is_staff %}
               Admin
               {% else %}
@@ -217,8 +217,8 @@
               {% endif %}
             </div>
             {% else %}
-            <div class="text-sm font-semibold">Guest</div>
-            <div class="text-xs text-slate-500">Sign in required</div>
+            <div class="text-xs font-semibold">Guest</div>
+            <div class="text-[10px] text-slate-500">Sign in required</div>
             {% endif %}
           </div>
           <i class="fa-solid fa-chevron-down text-xs text-slate-400 ml-1 transition-transform duration-200"

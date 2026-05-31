@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth import get_user_model
 
-from .models import Memo, MemoRequest
+from .models import Memo, MemoRequest, ActivityDesign
 from accounts.models import Profile
 from resources.models import Resource, ResourceBooking, Vehicle, VehicleBooking
 
@@ -153,4 +153,24 @@ class MemoRequestForm(forms.ModelForm):
                     "placeholder": "What is this memo for? (Optional)",
                 }
             ),
+        }
+
+class ActivityDesignForm(forms.ModelForm):
+    class Meta:
+        model = ActivityDesign
+        fields = [
+            "title", "schedule", "venue", "target_participants", "budget", 
+            "objectives", "expected_outcomes", "prepared_by", "noted_by", "approved_by"
+        ]
+        widgets = {
+            "schedule": forms.DateTimeInput(attrs={"type": "datetime-local", "class": "form-control"}),
+            "title": forms.TextInput(attrs={"class": "form-control"}),
+            "venue": forms.TextInput(attrs={"class": "form-control"}),
+            "target_participants": forms.TextInput(attrs={"class": "form-control"}),
+            "budget": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
+            "objectives": forms.Textarea(attrs={"class": "form-control", "rows": 4}),
+            "expected_outcomes": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+            "prepared_by": forms.Select(attrs={"class": "form-control"}),
+            "noted_by": forms.Select(attrs={"class": "form-control"}),
+            "approved_by": forms.Select(attrs={"class": "form-control"}),
         }

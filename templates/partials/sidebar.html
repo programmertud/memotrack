@@ -36,7 +36,7 @@
         <div class="sidebar-section-label mt-3">People</div>
 
         <a href="{% url 'accounts:admin_user_list' 'employee' %}"
-           class="sidebar-link {% if request.resolver_match.url_name == 'admin_user_list' and request.resolver_match.kwargs.role in 'employee instructor staff' %}active{% endif %}">
+           class="sidebar-link {% if request.resolver_match.url_name in 'admin_user_list admin_user_create admin_user_edit' and request.resolver_match.kwargs.role in 'employee instructor staff admin' %}active{% endif %}">
           <i class="fa-solid fa-chalkboard-user sidebar-icon"></i>
           <span>Employees</span>
         </a>

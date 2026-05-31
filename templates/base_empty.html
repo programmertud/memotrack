@@ -1,0 +1,29 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Modal Form</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { uniGreen: "#2F6B2F", uniGold: "#F2B705" },
+          boxShadow: { soft: "0 10px 30px rgba(0,0,0,0.08)" },
+        },
+      },
+    };
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script>
+  <style>
+    body { font-family: Inter, sans-serif; background: transparent; margin: 0; padding: 0; }
+  </style>
+</head>
+<body class="bg-white">
+  {% block content %}{% endblock %}
+</body>
+</html>
